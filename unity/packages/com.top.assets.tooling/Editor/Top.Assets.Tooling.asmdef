@@ -1,0 +1,19 @@
+{
+    "name": "Top.Assets.Tooling",
+    "rootNamespace": "Top.Assets.Tooling",
+    "references": [
+        "Top.Assets.Conversion",
+        "Top.Assets.Gltf.Editor",
+        "Top.Engine",
+        "Top.Logging"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

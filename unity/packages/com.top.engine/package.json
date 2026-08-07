@@ -2,11 +2,9 @@
   "name": "com.top.engine",
   "version": "0.1.0",
   "displayName": "Top.Engine",
-  "description": "Core functionality package",
+  "description": "Composition and gameplay-facing components.",
   "unity": "6000.0",
   "dependencies": {
-    "com.top.text": "0.1.0",
-    "com.top.mindpower": "0.1.0",
-    "com.top.gltf": "0.1.0"
+    "com.top.assets.contract": "0.1.0"
   }
 }

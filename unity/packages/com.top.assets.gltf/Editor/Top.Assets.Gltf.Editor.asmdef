@@ -1,0 +1,20 @@
+{
+    "name": "Top.Assets.Gltf.Editor",
+    "rootNamespace": "Top.Assets.Gltf.Editor",
+    "references": [
+        "Top.Assets",
+        "Top.Assets.Contract",
+        "Top.Assets.Gltf",
+        "Top.Gltf",
+        "Top.Logging"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,17 @@
+{
+    "name": "Top.Engine",
+    "rootNamespace": "Top.Engine",
+    "references": [
+        "Top.Assets.Contract",
+        "Top.Logging"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

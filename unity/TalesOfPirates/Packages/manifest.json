@@ -5,6 +5,7 @@
     "com.top.assets.contract": "file:../../../src/Top.Assets.Contract",
     "com.top.assets.conversion": "file:../../../src/Top.Assets.Conversion",
     "com.top.assets.gltf": "file:../../packages/com.top.assets.gltf",
+    "com.top.assets.tooling": "file:../../packages/com.top.assets.tooling",
     "com.top.engine": "file:../../packages/com.top.engine",
     "com.top.logging": "file:../../../src/Top.Logging",
     "com.top.mindpower": "file:../../../src/Top.MindPower",
@@ -60,6 +61,8 @@
   },
   "testables": [
     "com.top.assets",
-    "com.top.assets.gltf"
+    "com.top.assets.gltf",
+    "com.top.assets.tooling",
+    "com.top.engine"
   ]
 }

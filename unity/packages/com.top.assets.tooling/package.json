@@ -1,0 +1,18 @@
+{
+  "name": "com.top.assets.tooling",
+  "version": "0.1.0",
+  "displayName": "Top.Assets.Tooling",
+  "description": "Editor front-end for converting the original client's assets.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.top.assets": "0.1.0",
+    "com.top.assets.contract": "0.1.0",
+    "com.top.assets.conversion": "0.1.0",
+    "com.top.assets.gltf": "0.1.0",
+    "com.top.engine": "0.1.0",
+    "com.top.gltf": "0.1.0",
+    "com.top.logging": "0.1.0",
+    "com.top.mindpower": "0.1.0",
+    "com.top.tables": "0.1.0"
+  }
+}

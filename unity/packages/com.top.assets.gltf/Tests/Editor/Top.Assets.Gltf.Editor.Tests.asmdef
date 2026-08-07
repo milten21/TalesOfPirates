@@ -1,0 +1,21 @@
+{
+    "name": "Top.Assets.Gltf.Editor.Tests",
+    "rootNamespace": "Top.Assets.Gltf.Editor.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Top.Assets",
+        "Top.Assets.Contract",
+        "Top.Assets.Gltf.Editor",
+        "Top.Gltf"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

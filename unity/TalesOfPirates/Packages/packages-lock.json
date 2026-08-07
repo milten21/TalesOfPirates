@@ -55,14 +55,28 @@
         "com.top.gltf": "0.1.0"
       }
     },
+    "com.top.assets.tooling": {
+      "version": "file:../../packages/com.top.assets.tooling",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.top.assets": "0.1.0",
+        "com.top.assets.contract": "0.1.0",
+        "com.top.assets.conversion": "0.1.0",
+        "com.top.assets.gltf": "0.1.0",
+        "com.top.engine": "0.1.0",
+        "com.top.gltf": "0.1.0",
+        "com.top.logging": "0.1.0",
+        "com.top.mindpower": "0.1.0",
+        "com.top.tables": "0.1.0"
+      }
+    },
     "com.top.engine": {
       "version": "file:../../packages/com.top.engine",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.top.text": "0.1.0",
-        "com.top.mindpower": "0.1.0",
-        "com.top.gltf": "0.1.0"
+        "com.top.assets.contract": "0.1.0"
       }
     },
     "com.top.gltf": {
