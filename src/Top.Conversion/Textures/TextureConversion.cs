@@ -22,6 +22,15 @@ namespace Top.Conversion.Textures
         }
 
         /// <summary>
+        /// Encodes as is, no color key and no dilation. Throws
+        /// <see cref="InvalidDataException"/> on a source the readers reject.
+        /// </summary>
+        public static byte[] ToPng(byte[] source)
+        {
+            return PngWriter.Write(TextureReader.Read(source));
+        }
+
+        /// <summary>
         /// Throws <see cref="InvalidDataException"/> when the source is not a
         /// texture the readers recognize.
         /// </summary>

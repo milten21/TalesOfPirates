@@ -14,8 +14,8 @@ namespace Top.Contracts.Tables
         private readonly JsonSerializer _serializer = JsonSerializer
             .Create(new JsonSerializerSettings
             {
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore,
+                NullValueHandling = NullValueHandling.Include,
+                DefaultValueHandling = DefaultValueHandling.Include,
                 Converters = { new StringEnumConverter() },
             });
 

@@ -13,9 +13,9 @@ namespace Top.Legacy.Tables.Tests
             var table = TableFile.Read<TerrainInfoRecord>(stream);
 
             Assert.That(table[1].Name, Is.EqualTo("texture/terrain/subtract.bmp"));
-            Assert.That(table[1].Type, Is.EqualTo(TerrainType.Underwater));
+            Assert.That(table[1].Type, Is.EqualTo(1));
             Assert.That(table[1].LeavesFootprints, Is.False);
-            Assert.That(table[6].Type, Is.EqualTo((TerrainType)3));
+            Assert.That(table[6].Type, Is.EqualTo(3));
             Assert.That(table[6].LeavesFootprints, Is.True);
         }
     }

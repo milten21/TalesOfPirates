@@ -92,16 +92,6 @@ namespace Top.Contracts.Tables.Tests
         }
 
         [Test]
-        public void Fields_left_at_their_default_stay_out_of_the_file()
-        {
-            var json = Write(new SceneObjectEntry { Id = 7 });
-
-            Assert.That(json, Does.Not.Contain("modelPath"));
-            Assert.That(json, Does.Not.Contain("type"));
-            Assert.That(json, Does.Not.Contain("enableEnvLight"));
-        }
-
-        [Test]
         public void An_id_of_zero_still_writes_its_id_member()
         {
             var json = Write(new SceneObjectEntry { Id = 0 });
@@ -164,7 +154,7 @@ namespace Top.Contracts.Tables.Tests
         [Test]
         public void The_table_lives_at_one_tree_path()
         {
-            Assert.That(SceneObjectTable.TreePath, Is.EqualTo("tables/sceneobjects.json"));
+            Assert.That(SceneObjectTable.Path, Is.EqualTo("tables/sceneobjects.json"));
         }
 
         [Test]

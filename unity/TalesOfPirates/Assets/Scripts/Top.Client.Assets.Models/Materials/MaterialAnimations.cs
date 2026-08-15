@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using GLTFast;
 using Top.Client.Assets.Models.Animations;
+using Top.Client.Core;
 using Top.Contracts.Assets.Models.Extras;
 using UnityEngine;
 
@@ -75,9 +76,9 @@ namespace Top.Client.Assets.Models.Materials
                     continue;
                 }
 
-                Object.Destroy(tracks.Uv);
-                Object.Destroy(tracks.Opacity);
-                Object.Destroy(tracks.Flipbook);
+                UnityObjects.Destroy(tracks.Uv);
+                UnityObjects.Destroy(tracks.Opacity);
+                UnityObjects.Destroy(tracks.Flipbook);
             }
 
             _perMaterial.Clear();

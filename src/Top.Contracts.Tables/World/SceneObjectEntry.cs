@@ -3,8 +3,7 @@ using Newtonsoft.Json;
 namespace Top.Contracts.Tables.World
 {
     /// <summary>
-    /// Represents an entry in the scene object table, used to define properties and attributes
-    /// of a specific scene object.
+    /// Represents an entry in the scene object table.
     /// </summary>
     [JsonConverter(typeof(SceneObjectEntryConverter))]
     public class SceneObjectEntry : TableEntry

@@ -67,6 +67,14 @@ namespace Top.Conversion.Tests.Pipeline
             return path;
         }
 
+        internal void AddTexture(string kind, string fixture, string fileName)
+        {
+            var path = Path.Combine(ClientRoot, "texture", kind, fileName);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.Copy(Fixtures.Path(fixture), path, overwrite: true);
+        }
+
         internal void AddTextures(string kind, string fixtureDir)
         {
             var target = Path.Combine(ClientRoot, "texture", kind);
@@ -76,6 +84,14 @@ namespace Top.Conversion.Tests.Pipeline
             foreach (var file in Directory.GetFiles(Fixtures.Path(fixtureDir)))
             {
                 File.Copy(file, Path.Combine(target, Path.GetFileName(file)), overwrite: true);
+            }
+        }
+
+        internal void AddWaterLoop()
+        {
+            for (var frame = 1; frame <= 30; frame++)
+            {
+                AddTexture("terrain/water", "bmp/1.BMP", $"ocean_h.{frame:00}.bmp");
             }
         }
 

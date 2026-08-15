@@ -5,13 +5,13 @@ using UnityEngine.Rendering;
 namespace Top.Client.Assets.Models.Materials
 {
     /// <summary>
-    /// Projects a resolved render state onto a Top/Legacy material.
+    /// Projects a resolved render state onto a Top/Model material.
     /// </summary>
     public static class RenderStateMapper
     {
         public static Material CreateMaterial(RenderState state, Texture2D texture)
         {
-            var material = new Material(Shader.Find("Top/Legacy"));
+            var material = new Material(Shader.Find("Top/Model"));
 
             material.SetFloat("_SrcBlend", (float)ToUnity(state.EffectiveSrcBlend));
             material.SetFloat("_DstBlend", (float)ToUnity(state.EffectiveDstBlend));

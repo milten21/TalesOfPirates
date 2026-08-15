@@ -5,6 +5,25 @@ namespace Top.Contracts.Assets.Maps
     /// </summary>
     public struct MapTile
     {
+        /// <summary>
+        /// The terrain the original's stand-in tile carried over ground no
+        /// section wrote (UNDERWATER_TEXNO, MPMap.h).
+        /// </summary>
+        public const byte UnderwaterTerrain = 22;
+
+        public static readonly MapTile Underwater = new MapTile
+        {
+            Height = -2f,
+            ColorR = byte.MaxValue,
+            ColorG = byte.MaxValue,
+            ColorB = byte.MaxValue,
+            Layer0 = new MapTileLayer
+            {
+                TerrainId = UnderwaterTerrain,
+                MaskIndex = 15,
+            }
+        };
+
         public float Height;
         public byte ColorR;
         public byte ColorG;

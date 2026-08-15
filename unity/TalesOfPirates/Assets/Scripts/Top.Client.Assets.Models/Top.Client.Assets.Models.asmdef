@@ -2,6 +2,7 @@
     "name": "Top.Client.Assets.Models",
     "rootNamespace": "Top.Client.Assets.Models",
     "references": [
+        "Top.Client.Core",
         "Top.Content.Packs",
         "Top.Contracts.Assets",
         "Top.Logging",

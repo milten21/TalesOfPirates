@@ -5,7 +5,7 @@ namespace Top.Contracts.Assets.Maps
     /// </summary>
     public struct MapTileLayer
     {
-        public byte PaletteIndex;
+        public byte TerrainId;
         public byte MaskIndex;
     }
 }

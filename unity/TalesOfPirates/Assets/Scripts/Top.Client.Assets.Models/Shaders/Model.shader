@@ -1,4 +1,4 @@
-Shader "Top/Legacy"
+Shader "Top/Model"
 {
     Properties
     {

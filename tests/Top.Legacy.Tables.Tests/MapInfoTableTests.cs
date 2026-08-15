@@ -1,4 +1,5 @@
 using System.IO;
+using System.Numerics;
 using NUnit.Framework;
 using Top.Legacy.Tables.Records;
 
@@ -19,6 +20,9 @@ namespace Top.Legacy.Tables.Tests
             Assert.That(record.ShowSwitch, Is.True);
             Assert.That(record.InitX, Is.EqualTo(2202));
             Assert.That(record.InitY, Is.EqualTo(2782));
+            Assert.That(record.LightColor, Is.EqualTo(Vector3.One));
+            Assert.That(record.LightDirection, Is.EqualTo(new Vector3(1f, 1f, -1f)),
+                "the row's own column repeats the start pair, so the default stands");
         }
     }
 }

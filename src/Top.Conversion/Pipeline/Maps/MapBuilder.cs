@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Top.Legacy.Tables;
 using Top.Legacy.Tables.Records;
 using Top.Logging;
@@ -11,13 +12,13 @@ namespace Top.Conversion.Pipeline.Maps
     /// Builds a converted map from a .map terrain file and its .obj objects.
     /// Both tile record versions convert, in meters and degrees.
     /// </summary>
-    public class MapBuilder
+    public class MapBuilder(Original.MapFile terrain, Original.ObjFile objects, Table<TerrainInfoRecord> terrains)
     {
         public const int ChunkSize = 64;
 
         private const int ModelKind = 0;
         private const int EffectKind = 1;
-        private const int CatalogIdMask = 0x3FFF;
+        private const int IdMask = 0x3FFF;
         private const int Centimeters = 100;
         private const float RadianHundredths = 100f;
 
@@ -27,33 +28,16 @@ namespace Top.Conversion.Pipeline.Maps
         /// </summary>
         private const byte BaseMask = 15;
 
-        private static readonly Converted.MapTile Unwritten = new Converted.MapTile
-        {
-            ColorR = byte.MaxValue,
-            ColorG = byte.MaxValue,
-            ColorB = byte.MaxValue,
-        };
-
-        private readonly Original.MapFile _terrain;
-        private readonly Original.ObjFile _objects;
-        private readonly TerrainPalette _palette;
+        private readonly HashSet<byte> _reported = [];
 
         private int _offMap;
-        private int _openSea;
+        private int _openWater;
         private int _unknownKind;
-
-        public MapBuilder(Original.MapFile terrain, Original.ObjFile objects, Table<TerrainInfoRecord> terrainTable)
-        {
-            _terrain = terrain;
-            _objects = objects;
-            _palette = new TerrainPalette(terrainTable);
-        }
 
         public Converted.MapFile Build()
         {
-            // Chunks first - the palette is incomplete until every tile is read.
-            var countX = ChunkCount(_terrain.Width);
-            var countY = ChunkCount(_terrain.Height);
+            var countX = ChunkCount(terrain.Width);
+            var countY = ChunkCount(terrain.Height);
             var chunks = new Converted.MapChunk[countX, countY];
 
             for (var chunkY = 0; chunkY < countY; chunkY++)
@@ -64,7 +48,7 @@ namespace Top.Conversion.Pipeline.Maps
                 }
             }
 
-            var map = new Converted.MapFile(_terrain.Width, _terrain.Height, ChunkSize, _palette.Paths());
+            var map = new Converted.MapFile(terrain.Width, terrain.Height, ChunkSize);
 
             Array.Copy(chunks, map.Chunks, chunks.Length);
 
@@ -82,7 +66,7 @@ namespace Top.Conversion.Pipeline.Maps
         /// The current record packs color as B5G6R5, not R5G6B5
         /// (LW_RGB565TODWORD, MapDataVer.cpp). The earlier one stores 0xAARRGGBB.
         /// </summary>
-        private static uint Color(Original.MapTile tile, bool oldFormat)
+        private static uint PackedColor(Original.MapTile tile, bool oldFormat)
         {
             if (oldFormat)
             {
@@ -99,7 +83,7 @@ namespace Top.Conversion.Pipeline.Maps
 
         private Converted.MapChunk Chunk(int originX, int originY)
         {
-            if (!Written(originX, originY))
+            if (!HasTerrain(originX, originY))
             {
                 return null;
             }
@@ -117,18 +101,18 @@ namespace Top.Conversion.Pipeline.Maps
             return chunk;
         }
 
-        private bool Written(int originX, int originY)
+        private bool HasTerrain(int originX, int originY)
         {
-            var firstX = originX / _terrain.SectionWidth;
-            var firstY = originY / _terrain.SectionHeight;
-            var lastX = Math.Min((originX + ChunkSize - 1) / _terrain.SectionWidth, _terrain.SectionCountX - 1);
-            var lastY = Math.Min((originY + ChunkSize - 1) / _terrain.SectionHeight, _terrain.SectionCountY - 1);
+            var firstX = originX / terrain.SectionWidth;
+            var firstY = originY / terrain.SectionHeight;
+            var lastX = Math.Min((originX + ChunkSize - 1) / terrain.SectionWidth, terrain.SectionCountX - 1);
+            var lastY = Math.Min((originY + ChunkSize - 1) / terrain.SectionHeight, terrain.SectionCountY - 1);
 
             for (var sectionY = firstY; sectionY <= lastY; sectionY++)
             {
                 for (var sectionX = firstX; sectionX <= lastX; sectionX++)
                 {
-                    if (_terrain.Sections[(sectionY * _terrain.SectionCountX) + sectionX] != null)
+                    if (terrain.Sections[(sectionY * terrain.SectionCountX) + sectionX] != null)
                     {
                         return true;
                     }
@@ -144,11 +128,11 @@ namespace Top.Conversion.Pipeline.Maps
 
             if (source == null)
             {
-                return Unwritten;
+                return Converted.MapTile.Underwater;
             }
 
-            var oldFormat = _terrain.IsOldFormat;
-            var color = Color(source, oldFormat);
+            var oldFormat = terrain.IsOldFormat;
+            var color = PackedColor(source, oldFormat);
 
             return new Converted.MapTile
             {
@@ -171,28 +155,41 @@ namespace Top.Conversion.Pipeline.Maps
 
         private Original.MapTile OriginalTile(int x, int y)
         {
-            var sectionX = x / _terrain.SectionWidth;
-            var sectionY = y / _terrain.SectionHeight;
+            var sectionX = x / terrain.SectionWidth;
+            var sectionY = y / terrain.SectionHeight;
 
-            if (sectionX >= _terrain.SectionCountX || sectionY >= _terrain.SectionCountY)
+            if (sectionX >= terrain.SectionCountX || sectionY >= terrain.SectionCountY)
             {
                 return null;
             }
 
-            var section = _terrain.Sections[(sectionY * _terrain.SectionCountX) + sectionX];
+            var section = terrain.Sections[(sectionY * terrain.SectionCountX) + sectionX];
 
-            return section?.Tiles[((y % _terrain.SectionHeight) * _terrain.SectionWidth)
-                                  + (x % _terrain.SectionWidth)];
+            return section?.Tiles[((y % terrain.SectionHeight) * terrain.SectionWidth)
+                                  + (x % terrain.SectionWidth)];
         }
 
         private Converted.MapTileLayer Layer(byte terrainId, byte mask)
         {
-            var index = _palette.IndexOf(terrainId);
+            if (terrainId == 0)
+            {
+                return default;
+            }
+
+            if (terrains == null || !terrains.TryGetById(terrainId, out var row) || string.IsNullOrEmpty(row.Name))
+            {
+                if (_reported.Add(terrainId))
+                {
+                    Log.Warning($"no terraininfo row {terrainId}, leaving the layer unpainted");
+                }
+
+                return default;
+            }
 
             return new Converted.MapTileLayer
             {
-                PaletteIndex = index,
-                MaskIndex = index == 0 ? (byte)0 : mask,
+                TerrainId = terrainId,
+                MaskIndex = mask,
             };
         }
 
@@ -202,22 +199,22 @@ namespace Top.Conversion.Pipeline.Maps
         /// </summary>
         private void Place(Converted.MapFile map)
         {
-            if (_objects?.Sections == null)
+            if (objects?.Sections == null)
             {
                 return;
             }
 
-            for (var i = 0; i < _objects.Sections.Length; i++)
+            for (var i = 0; i < objects.Sections.Length; i++)
             {
-                var section = _objects.Sections[i];
+                var section = objects.Sections[i];
 
                 if (section?.Objects == null)
                 {
                     continue;
                 }
 
-                var originX = (i % _objects.SectionCountX) * _objects.SectionWidth * Centimeters;
-                var originY = (i / _objects.SectionCountX) * _objects.SectionHeight * Centimeters;
+                var originX = (i % objects.SectionCountX) * objects.SectionWidth * Centimeters;
+                var originY = (i / objects.SectionCountX) * objects.SectionHeight * Centimeters;
 
                 foreach (var placed in section.Objects)
                 {
@@ -235,9 +232,9 @@ namespace Top.Conversion.Pipeline.Maps
                 Log.Warning($"dropped {_offMap} placements standing past the map edge");
             }
 
-            if (_openSea > 0)
+            if (_openWater > 0)
             {
-                Log.Warning($"dropped {_openSea} placements standing where no section wrote terrain");
+                Log.Warning($"dropped {_openWater} placements standing where no section wrote terrain");
             }
         }
 
@@ -266,7 +263,7 @@ namespace Top.Conversion.Pipeline.Maps
 
             if (map.Chunks[chunkX, chunkY] == null)
             {
-                _openSea++;
+                _openWater++;
 
                 return;
             }
@@ -274,7 +271,7 @@ namespace Top.Conversion.Pipeline.Maps
             map.Chunks[chunkX, chunkY].Placements.Add(new Converted.MapPlacement
             {
                 Kind = kind == ModelKind ? Converted.PlacementKind.Model : Converted.PlacementKind.Effect,
-                CatalogId = placed.TypeId & CatalogIdMask,
+                Id = placed.TypeId & IdMask,
                 X = x,
                 Y = y,
                 HeightOffset = placed.HeightOff / (float)Centimeters,

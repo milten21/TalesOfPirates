@@ -19,10 +19,12 @@ namespace Top.Conversion.Pipeline
 
     /// <summary>
     /// Converts each .map in the client's map folder, with the .obj beside it,
-    /// to maps/name.map.
+    /// to maps/name.map, and writes the textures the map paints with.
     /// </summary>
     public class MapConverter(ConversionSettings settings, ClientTables tables)
     {
+        private readonly TerrainTextureWriter _textureWriter = new TerrainTextureWriter(settings);
+
         public MapResult Convert(string name)
         {
             var path = settings.Output.Map(name);
@@ -48,6 +50,7 @@ namespace Top.Conversion.Pipeline
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             Write(map, path);
+            _textureWriter.Write(tables.Terrain);
 
             return new MapResult(name, ConversionOutcome.Converted);
         }

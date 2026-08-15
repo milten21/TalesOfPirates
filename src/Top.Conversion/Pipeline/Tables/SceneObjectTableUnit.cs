@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Top.Contracts.Tables;
 using Top.Contracts.Tables.World;
@@ -14,7 +13,7 @@ namespace Top.Conversion.Pipeline.Tables
     {
         public string Name => "sceneobjects";
 
-        public string TreePath => SceneObjectTable.TreePath;
+        public string Path => SceneObjectTable.Path;
 
         public IEnumerable<TableEntry> Entries()
         {
@@ -44,9 +43,9 @@ namespace Top.Conversion.Pipeline.Tables
             };
 
             entry.Id = row.Id;
-            entry.ModelPath = string.IsNullOrEmpty(row.Name)
-                ? null
-                : OutputPaths.ModelTreePath(ContentKind.Scene, Path.GetFileNameWithoutExtension(row.Name));
+            entry.ModelPath = !string.IsNullOrEmpty(row.Name)
+                ? OutputPaths.ModelContentPath(ContentKind.Scene, System.IO.Path.GetFileNameWithoutExtension(row.Name))
+                : null;
             entry.DisplayName = string.IsNullOrEmpty(row.DisplayName) ? null : row.DisplayName;
             entry.Type = row.Type;
             entry.AttachEffectId = row.AttachEffectId;

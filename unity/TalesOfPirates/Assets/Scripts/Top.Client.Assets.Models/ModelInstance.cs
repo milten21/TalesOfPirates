@@ -1,6 +1,6 @@
 using System;
+using Top.Client.Core;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Top.Client.Assets.Models
 {
@@ -36,7 +36,7 @@ namespace Top.Client.Assets.Models
 
             if (Root != null)
             {
-                Object.Destroy(Root.gameObject);
+                UnityObjects.Destroy(Root.gameObject);
             }
 
             Root = null;

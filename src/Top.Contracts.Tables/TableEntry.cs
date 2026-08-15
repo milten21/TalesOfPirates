@@ -7,7 +7,7 @@ namespace Top.Contracts.Tables
     /// </summary>
     public class TableEntry
     {
-        [JsonProperty("id", DefaultValueHandling = DefaultValueHandling.Include)]
+        [JsonProperty("id", DefaultValueHandling = DefaultValueHandling.Include, Order = int.MinValue)]
         public int Id;
     }
 }

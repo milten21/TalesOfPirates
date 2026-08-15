@@ -33,12 +33,36 @@ namespace Top.Conversion.Tests.Pipeline
             return new SceneObjectInfoRecord { Id = id, Name = fileName };
         }
 
+        private static readonly TerrainInfoRecord[] TerrainRows =
+        [
+            new TerrainInfoRecord
+            {
+                Id = 3, Name = "texture/terrain/Sand01.bmp", Type = 2,
+            },
+        ];
+
+        private static readonly MapInfoRecord[] MapRows =
+        [
+            new MapInfoRecord
+            {
+                Id = 1, Name = "garner", DisplayName = "Ascaron", ShowSwitch = true,
+                InitX = 2202, InitY = 2782,
+            },
+        ];
+
         private TableConverter Converter(bool overwrite = true, params SceneObjectInfoRecord[] rows)
         {
             var tables = new ClientTables(null, null,
-                new Top.Legacy.Tables.Table<SceneObjectInfoRecord>([..rows]), null);
+                new Top.Legacy.Tables.Table<SceneObjectInfoRecord>([..rows]), null,
+                new Top.Legacy.Tables.Table<TerrainInfoRecord>([..TerrainRows]),
+                new Top.Legacy.Tables.Table<MapInfoRecord>([..MapRows]));
 
             return new TableConverter(_client.Settings(overwrite), tables);
+        }
+
+        private static TableResult Run(TableConverter converter, string unit = "sceneobjects")
+        {
+            return converter.ConvertAll().Single(result => result.Name == unit);
         }
 
         private string TablePath => Path.Combine(_client.OutputRoot, "tables", "sceneobjects.json");
@@ -50,14 +74,28 @@ namespace Top.Conversion.Tests.Pipeline
             return new TableFormat().Read<SceneObjectEntry>(stream);
         }
 
+        private List<TerrainEntry> EmittedTerrains()
+        {
+            using var stream = File.OpenRead(Path.Combine(_client.OutputRoot, "tables", "terrains.json"));
+
+            return new TableFormat().Read<TerrainEntry>(stream);
+        }
+
+        private List<MapEntry> EmittedMaps()
+        {
+            using var stream = File.OpenRead(Path.Combine(_client.OutputRoot, "tables", "maps.json"));
+
+            return new TableFormat().Read<MapEntry>(stream);
+        }
+
         [Test]
         public void Every_row_emits_mapped_to_its_id_and_converted_model_path()
         {
-            var result = Converter(rows:
+            var result = Run(Converter(rows:
             [
                 Row(42, "Stone01.lgo"),
                 Row(7, string.Empty),
-            ]).ConvertAll().Single();
+            ]));
 
             Assert.That(result.Outcome, Is.EqualTo(ConversionOutcome.Converted));
 
@@ -85,7 +123,7 @@ namespace Top.Conversion.Tests.Pipeline
             row.ShadeFlag = true;
             row.IsReallyBig = true;
 
-            Converter(rows: row).ConvertAll().Single();
+            Run(Converter(rows: row));
 
             var entry = Emitted().Single();
 
@@ -125,7 +163,7 @@ namespace Top.Conversion.Tests.Pipeline
                 Id = 5, Name = string.Empty, Type = 6, EnvSound = "wave.wav", EnvSoundDistance = 900,
             };
 
-            Converter(rows: [fading, light, ambient, fog, sound]).ConvertAll().Single();
+            Run(Converter(rows: [fading, light, ambient, fog, sound]));
 
             var entries = Emitted();
 
@@ -153,7 +191,7 @@ namespace Top.Conversion.Tests.Pipeline
         [Test]
         public void An_ordinary_row_without_fade_data_emits_as_the_base()
         {
-            Converter(rows: Row(42, "Stone01.lgo")).ConvertAll().Single();
+            Run(Converter(rows: Row(42, "Stone01.lgo")));
 
             Assert.That(Emitted().Single().GetType(), Is.EqualTo(typeof(SceneObjectEntry)));
         }
@@ -164,7 +202,7 @@ namespace Top.Conversion.Tests.Pipeline
             var settings = _client.Settings();
             var tables = new ClientTables(null, null, null, null);
 
-            var result = new TableConverter(settings, tables).ConvertAll().Single();
+            var result = Run(new TableConverter(settings, tables));
 
             Assert.That(result.Outcome, Is.EqualTo(ConversionOutcome.Failed));
             Assert.That(File.Exists(TablePath), Is.False);
@@ -174,23 +212,54 @@ namespace Top.Conversion.Tests.Pipeline
         [Test]
         public void A_table_already_in_the_tree_is_skipped_without_overwrite()
         {
-            Converter(rows: Row(42, "Stone01.lgo")).ConvertAll().Single();
+            Run(Converter(rows: Row(42, "Stone01.lgo")));
 
-            var result = Converter(overwrite: false, Row(42, "Stone01.lgo"), Row(7, string.Empty))
-                .ConvertAll().Single();
+            var result = Run(Converter(overwrite: false, Row(42, "Stone01.lgo"), Row(7, string.Empty)));
 
             Assert.That(result.Outcome, Is.EqualTo(ConversionOutcome.Skipped));
             Assert.That(Emitted(), Has.Count.EqualTo(1));
         }
 
         [Test]
-        public void A_batch_is_the_one_table_unit()
+        public void Every_terrain_row_emits_with_its_converted_texture_path()
+        {
+            Run(Converter(rows: Row(42, "Stone01.lgo")), "terrains");
+
+            var entry = EmittedTerrains().Single();
+
+            Assert.That(entry.Id, Is.EqualTo(3), "the id tiles carry");
+            Assert.That(entry.TexturePath, Is.EqualTo("textures/terrain/sand01.png"));
+            Assert.That(entry.Type, Is.EqualTo(2), "the original type number is kept");
+            Assert.That(entry.LeavesFootprints, Is.False);
+        }
+
+        [Test]
+        public void Every_map_row_emits_with_its_converted_map_path()
+        {
+            Run(Converter(rows: Row(42, "Stone01.lgo")), "maps");
+
+            var entry = EmittedMaps().Single();
+
+            Assert.That(entry.Id, Is.EqualTo(1));
+            Assert.That(entry.Name, Is.EqualTo("garner"), "the name the server addresses the map by");
+            Assert.That(entry.MapPath, Is.EqualTo("maps/garner.map"));
+            Assert.That(entry.DisplayName, Is.EqualTo("Ascaron"));
+            Assert.That(entry.ShowsAreaNames, Is.True);
+            Assert.That(entry.StartX, Is.EqualTo(2202));
+            Assert.That(entry.StartY, Is.EqualTo(2782));
+            Assert.That(entry.LightDirection, Is.EqualTo(new[] { 1f, 1f, -1f }));
+            Assert.That(entry.LightColor, Is.EqualTo(new[] { 1f, 1f, 1f }));
+        }
+
+        [Test]
+        public void A_batch_is_every_table_unit()
         {
             var results = Converter(rows: Row(42, "Stone01.lgo")).ConvertAll().ToList();
 
-            Assert.That(results, Has.Count.EqualTo(1));
-            Assert.That(results[0].Name, Is.EqualTo("sceneobjects"));
-            Assert.That(results[0].Outcome, Is.EqualTo(ConversionOutcome.Converted));
+            Assert.That(results.Select(result => result.Name),
+                Is.EqualTo(new[] { "sceneobjects", "terrains", "maps" }));
+            Assert.That(results.Select(result => result.Outcome),
+                Is.All.EqualTo(ConversionOutcome.Converted));
             Assert.That(results[0].Artifacts, Is.Empty);
         }
     }

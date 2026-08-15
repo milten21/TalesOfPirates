@@ -10,7 +10,7 @@ namespace Top.Legacy.Tables.Readers
             {
                 Id = row.NextInt(),
                 Name = row.NextString(),
-                Type = row.NextEnum<TerrainType>(),
+                Type = row.NextInt(),
                 LeavesFootprints = row.NextBool()
             };
         }

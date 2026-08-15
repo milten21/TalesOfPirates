@@ -27,10 +27,10 @@ namespace Top.Contracts.Assets.Tests
                     ColorR = (byte)i,
                     ColorG = (byte)(i + 1),
                     ColorB = (byte)(i + 2),
-                    Layer0 = new MapTileLayer { PaletteIndex = 0, MaskIndex = 15 },
-                    Layer1 = new MapTileLayer { PaletteIndex = 1, MaskIndex = (byte)(i % 16) },
-                    Layer2 = new MapTileLayer { PaletteIndex = (byte)(i % 3), MaskIndex = 7 },
-                    Layer3 = new MapTileLayer { PaletteIndex = 2, MaskIndex = 3 },
+                    Layer0 = new MapTileLayer { TerrainId = 0, MaskIndex = 15 },
+                    Layer1 = new MapTileLayer { TerrainId = 1, MaskIndex = (byte)(i % 16) },
+                    Layer2 = new MapTileLayer { TerrainId = (byte)(i % 3), MaskIndex = 7 },
+                    Layer3 = new MapTileLayer { TerrainId = 2, MaskIndex = 3 },
                     Region = (ushort)(1 << i % 15),
                     Island = (byte)(i % 201),
                     Corner00 = (byte)(0x80 | i % 64),
@@ -43,7 +43,7 @@ namespace Top.Contracts.Assets.Tests
             chunk.Placements.Add(new MapPlacement
             {
                 Kind = PlacementKind.Model,
-                CatalogId = 501,
+                Id = 501,
                 X = 100.5f,
                 Y = 7f,
                 HeightOffset = 0.2f,
@@ -52,7 +52,7 @@ namespace Top.Contracts.Assets.Tests
             chunk.Placements.Add(new MapPlacement
             {
                 Kind = PlacementKind.Effect,
-                CatalogId = 12,
+                Id = 12,
                 X = 64f,
                 Y = 65f,
                 HeightOffset = -1.5f,
@@ -65,7 +65,7 @@ namespace Top.Contracts.Assets.Tests
         [Test]
         public void A_map_with_every_layer_populated_round_trips()
         {
-            var map = new MapFile(128, 128, 64, new[] { "textures/terrain/grass.png", "textures/terrain/sand.png" });
+            var map = new MapFile(128, 128, 64);
             map.Chunks[1, 0] = FullyPopulatedChunk(64);
             map.Chunks[0, 1] = FullyPopulatedChunk(64);
 
@@ -80,7 +80,7 @@ namespace Top.Contracts.Assets.Tests
         [Test]
         public void A_chunk_absent_from_the_offset_table_reads_back_as_absent()
         {
-            var map = new MapFile(128, 128, 64, new string[0]);
+            var map = new MapFile(128, 128, 64);
             map.Chunks[1, 0] = FullyPopulatedChunk(64);
 
             var read = RoundTrip(map);
@@ -94,12 +94,12 @@ namespace Top.Contracts.Assets.Tests
         [Test]
         public void A_placement_carries_kind_catalog_id_ground_position_height_offset_and_yaw()
         {
-            var map = new MapFile(64, 64, 64, new string[0]);
+            var map = new MapFile(64, 64, 64);
             var chunk = new MapChunk(64);
             chunk.Placements.Add(new MapPlacement
             {
                 Kind = PlacementKind.Model,
-                CatalogId = 1234,
+                Id = 1234,
                 X = 12.5f,
                 Y = 33.25f,
                 HeightOffset = -0.75f,
@@ -108,7 +108,7 @@ namespace Top.Contracts.Assets.Tests
             chunk.Placements.Add(new MapPlacement
             {
                 Kind = PlacementKind.Effect,
-                CatalogId = 87,
+                Id = 87,
                 X = 1f,
                 Y = 2f,
                 HeightOffset = 0.1f,
@@ -124,12 +124,12 @@ namespace Top.Contracts.Assets.Tests
         [Test]
         public void Placement_lists_are_variable_length_beyond_the_original_slot_limit()
         {
-            var map = new MapFile(128, 64, 64, new string[0]);
+            var map = new MapFile(128, 64, 64);
             map.Chunks[0, 0] = new MapChunk(64);
             var crowded = new MapChunk(64);
             for (var i = 0; i < 40; i++)
             {
-                crowded.Placements.Add(new MapPlacement { Kind = PlacementKind.Model, CatalogId = i, X = i, Y = i });
+                crowded.Placements.Add(new MapPlacement { Kind = PlacementKind.Model, Id = i, X = i, Y = i });
             }
 
             map.Chunks[1, 0] = crowded;
@@ -143,20 +143,20 @@ namespace Top.Contracts.Assets.Tests
         [Test]
         public void The_header_round_trips()
         {
-            var map = new MapFile(896, 896, 64, new[] { "textures/terrain/grass.png", "textures/terrain/sand.png" });
+            var map = new MapFile(896, 896, 64);
 
             var read = RoundTrip(map);
 
             Assert.That(read.Width, Is.EqualTo(896));
             Assert.That(read.Height, Is.EqualTo(896));
             Assert.That(read.ChunkSize, Is.EqualTo(64));
-            Assert.That(read.TexturePalette,
-                Is.EqualTo(new[] { "textures/terrain/grass.png", "textures/terrain/sand.png" }));
+            Assert.That(read.ChunkCountX, Is.EqualTo(14));
+            Assert.That(read.ChunkCountY, Is.EqualTo(14));
         }
 
         private static long WrittenLength(Func<MapChunk> chunk)
         {
-            var map = new MapFile(128, 128, 64, new[] { "textures/terrain/grass.png" });
+            var map = new MapFile(128, 128, 64);
 
             for (var y = 0; y < map.ChunkCountY; y++)
             {
@@ -187,7 +187,7 @@ namespace Top.Contracts.Assets.Tests
         public void A_file_of_an_unknown_version_is_rejected()
         {
             using var stream = new MemoryStream();
-            new MapFile(64, 64, 64, new string[0]).Write(stream);
+            new MapFile(64, 64, 64).Write(stream);
             stream.Position = 0;
             stream.WriteByte(99);
             stream.Position = 0;

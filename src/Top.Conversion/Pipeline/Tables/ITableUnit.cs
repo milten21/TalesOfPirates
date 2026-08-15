@@ -11,7 +11,7 @@ namespace Top.Conversion.Pipeline.Tables
     {
         string Name { get; }
 
-        string TreePath { get; }
+        string Path { get; }
 
         IEnumerable<TableEntry> Entries();
     }

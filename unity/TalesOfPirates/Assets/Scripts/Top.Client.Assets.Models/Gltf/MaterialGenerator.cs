@@ -10,7 +10,7 @@ using Material = UnityEngine.Material;
 namespace Top.Client.Assets.Models.Gltf
 {
     /// <summary>
-    /// Builds a Top/Legacy palette material for every glTF material glTFast
+    /// Builds a Top/Model palette material for every glTF material glTFast
     /// hands over, the render state resolved by
     /// <see cref="MaterialStateReader"/>.
     /// </summary>

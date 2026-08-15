@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using GLTFast;
 using Top.Client.Assets.Models.Gltf;
 using Top.Client.Assets.Models.Materials;
+using Top.Client.Core;
 using Top.Content.Packs;
 using Top.Logging;
 using UnityEngine;
 using GltfImport = GLTFast.Newtonsoft.GltfImport;
-using Object = UnityEngine.Object;
 
 namespace Top.Client.Assets.Models
 {
@@ -85,7 +85,7 @@ namespace Top.Client.Assets.Models
                 {
                     if (instantiator.Scene != null)
                     {
-                        Object.Destroy(instantiator.Scene.gameObject);
+                        UnityObjects.Destroy(instantiator.Scene.gameObject);
                     }
 
                     Release(path);
@@ -124,7 +124,7 @@ namespace Top.Client.Assets.Models
 
             foreach (var hosted in entry.Clips)
             {
-                Object.Destroy(hosted.Clip);
+                UnityObjects.Destroy(hosted.Clip);
             }
         }
 

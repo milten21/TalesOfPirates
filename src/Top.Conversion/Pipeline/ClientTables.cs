@@ -20,26 +20,28 @@ namespace Top.Conversion.Pipeline
         private readonly Lazy<Table<SceneObjectInfoRecord>> _sceneObjects;
         private readonly Lazy<CharacterActionTable> _actions;
         private readonly Lazy<Table<TerrainInfoRecord>> _terrain;
+        private readonly Lazy<Table<MapInfoRecord>> _maps;
 
         public ClientTables(ConversionSettings settings)
         {
             _characters = Deferred(() => ReadTable<CharacterInfoRecord>(settings.Source.Table("characterinfo.txt")));
             _items = Deferred(() => ReadTable<ItemInfoRecord>(settings.Source.Table("iteminfo.txt")));
-            _sceneObjects =
-                Deferred(() => ReadTable<SceneObjectInfoRecord>(settings.Source.Table("sceneobjinfo.txt")));
+            _sceneObjects = Deferred(() => ReadTable<SceneObjectInfoRecord>(settings.Source.Table("sceneobjinfo.txt")));
             _actions = Deferred(() => Read(settings.Source.CharacterAction, CharacterActionTable.Read));
             _terrain = Deferred(() => ReadTable<TerrainInfoRecord>(settings.Source.Table("terraininfo.txt")));
+            _maps = Deferred(() => ReadTable<MapInfoRecord>(settings.Source.Table("mapinfo.txt")));
         }
 
         public ClientTables(Table<CharacterInfoRecord> characters, Table<ItemInfoRecord> items,
             Table<SceneObjectInfoRecord> sceneObjects, CharacterActionTable actions,
-            Table<TerrainInfoRecord> terrain = null)
+            Table<TerrainInfoRecord> terrain = null, Table<MapInfoRecord> maps = null)
         {
             _characters = Ready(characters);
             _items = Ready(items);
             _sceneObjects = Ready(sceneObjects);
             _actions = Ready(actions);
             _terrain = Ready(terrain);
+            _maps = Ready(maps);
         }
 
         public Table<CharacterInfoRecord> Characters => _characters.Value;
@@ -51,6 +53,8 @@ namespace Top.Conversion.Pipeline
         public CharacterActionTable Actions => _actions.Value;
 
         public Table<TerrainInfoRecord> Terrain => _terrain.Value;
+
+        public Table<MapInfoRecord> Maps => _maps.Value;
 
         public IReadOnlyList<CharacterInfoRecord> CharactersOn(int model)
         {

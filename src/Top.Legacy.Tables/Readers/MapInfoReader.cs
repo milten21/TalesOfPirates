@@ -15,34 +15,21 @@ namespace Top.Legacy.Tables.Readers
                 ShowSwitch = row.NextBool()
             };
 
-            int[] init = row.NextIntList();
+            var start = row.NextIntList();
 
-            if (init.Length >= 2)
+            if (start.Length >= 2)
             {
-                record.InitX = init[0];
-                record.InitY = init[1];
+                record.InitX = start[0];
+                record.InitY = start[1];
             }
 
-            var lightDirectionInts = row.NextIntList();
+            row.NextIntList();
 
-            if (lightDirectionInts.Length >= 3)
+            var color = row.NextIntList();
+
+            if (color.Length >= 3)
             {
-                record.LightDirection = new Vector3(
-                    lightDirectionInts.Length > 0 ? lightDirectionInts[0] / 255f : 1f,
-                    lightDirectionInts.Length > 1 ? lightDirectionInts[1] / 255f : 1f,
-                    lightDirectionInts.Length > 2 ? lightDirectionInts[2] / 255f : -1f
-                );
-            }
-
-            var colorInts = row.NextIntList();
-
-            if (colorInts.Length >= 3)
-            {
-                record.LightColor = new Vector3(
-                    colorInts.Length > 0 ? colorInts[0] / 255f : 0f,
-                    colorInts.Length > 1 ? colorInts[1] / 255f : 0f,
-                    colorInts.Length > 2 ? colorInts[2] / 255f : 0f
-                );
+                record.LightColor = new Vector3(color[0] / 255f, color[1] / 255f, color[2] / 255f);
             }
 
             return record;

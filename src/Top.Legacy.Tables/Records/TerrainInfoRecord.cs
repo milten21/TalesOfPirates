@@ -1,14 +1,8 @@
 namespace Top.Legacy.Tables.Records
 {
-    public enum TerrainType
-    {
-        Normal = 0,
-        Underwater = 1,
-    }
-
     public class TerrainInfoRecord : TableRecord
     {
-        public TerrainType Type;
+        public int Type;
         public bool LeavesFootprints;
     }
 }

@@ -23,7 +23,12 @@ namespace Top.Conversion.Pipeline
     {
         private readonly TableFormat _format = new TableFormat();
 
-        private readonly IReadOnlyList<ITableUnit> _units = [new SceneObjectTableUnit(tables)];
+        private readonly IReadOnlyList<ITableUnit> _units =
+        [
+            new SceneObjectTableUnit(tables),
+            new TerrainTableUnit(tables),
+            new MapTableUnit(tables)
+        ];
 
         public TableResult Convert(ITableUnit unit)
         {
@@ -36,7 +41,7 @@ namespace Top.Conversion.Pipeline
                 return new TableResult(unit.Name, ConversionOutcome.Failed);
             }
 
-            var path = settings.Output.At(unit.TreePath);
+            var path = settings.Output.At(unit.Path);
 
             if (!settings.Overwrite && File.Exists(path))
             {

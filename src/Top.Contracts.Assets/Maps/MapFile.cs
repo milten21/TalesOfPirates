@@ -14,15 +14,13 @@ namespace Top.Contracts.Assets.Maps
         public readonly int Width;
         public readonly int Height;
         public readonly int ChunkSize;
-        public readonly string[] TexturePalette;
         public readonly MapChunk[,] Chunks;
 
-        public MapFile(int width, int height, int chunkSize, string[] texturePalette)
+        public MapFile(int width, int height, int chunkSize)
         {
             Width = width;
             Height = height;
             ChunkSize = chunkSize;
-            TexturePalette = texturePalette;
             Chunks = new MapChunk[ChunkCountX, ChunkCountY];
         }
 
@@ -54,12 +52,6 @@ namespace Top.Contracts.Assets.Maps
             writer.Write(Width);
             writer.Write(Height);
             writer.Write(ChunkSize);
-            writer.Write(TexturePalette.Length);
-
-            foreach (var path in TexturePalette)
-            {
-                writer.Write(path);
-            }
 
             var tablePosition = stream.Position;
 
@@ -122,7 +114,7 @@ namespace Top.Contracts.Assets.Maps
             foreach (var placement in chunk.Placements)
             {
                 writer.Write((byte)placement.Kind);
-                writer.Write(placement.CatalogId);
+                writer.Write(placement.Id);
                 writer.Write(placement.X);
                 writer.Write(placement.Y);
                 writer.Write(placement.HeightOffset);
@@ -132,7 +124,7 @@ namespace Top.Contracts.Assets.Maps
 
         private static void WriteLayer(BinaryWriter writer, MapTileLayer layer)
         {
-            writer.Write(layer.PaletteIndex);
+            writer.Write(layer.TerrainId);
             writer.Write(layer.MaskIndex);
         }
 
@@ -169,14 +161,7 @@ namespace Top.Contracts.Assets.Maps
             var width = reader.ReadInt32();
             var height = reader.ReadInt32();
             var chunkSize = reader.ReadInt32();
-            var palette = new string[reader.ReadInt32()];
-
-            for (var i = 0; i < palette.Length; i++)
-            {
-                palette[i] = reader.ReadString();
-            }
-
-            var map = new MapFile(width, height, chunkSize, palette);
+            var map = new MapFile(width, height, chunkSize);
 
             var offsets = new long[map.ChunkCountX * map.ChunkCountY];
 
@@ -235,7 +220,7 @@ namespace Top.Contracts.Assets.Maps
                 chunk.Placements.Add(new MapPlacement
                 {
                     Kind = (PlacementKind)reader.ReadByte(),
-                    CatalogId = reader.ReadInt32(),
+                    Id = reader.ReadInt32(),
                     X = reader.ReadSingle(),
                     Y = reader.ReadSingle(),
                     HeightOffset = reader.ReadSingle(),
@@ -250,7 +235,7 @@ namespace Top.Contracts.Assets.Maps
         {
             return new MapTileLayer
             {
-                PaletteIndex = reader.ReadByte(),
+                TerrainId = reader.ReadByte(),
                 MaskIndex = reader.ReadByte(),
             };
         }

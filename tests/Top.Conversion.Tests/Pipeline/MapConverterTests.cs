@@ -29,6 +29,8 @@ namespace Top.Conversion.Tests.Pipeline
             _client.Dispose();
         }
 
+        private const int UnderwaterTerrain = 22;
+
         private static TerrainInfoRecord Terrain(int id, string fileName)
         {
             return new TerrainInfoRecord { Id = id, Name = fileName };
@@ -91,11 +93,12 @@ namespace Top.Conversion.Tests.Pipeline
             });
         }
 
-        private static readonly TerrainInfoRecord[] ThreeTextures =
+        private static readonly TerrainInfoRecord[] Textures =
         [
             Terrain(1, "texture/terrain/Grass05.bmp"),
             Terrain(2, "texture/terrain/Sand01.bmp"),
             Terrain(3, "texture/terrain/Rock02.bmp"),
+            Terrain(UnderwaterTerrain, "texture/terrain/Brick06.bmp"),
         ];
 
         [Test]
@@ -106,7 +109,7 @@ namespace Top.Conversion.Tests.Pipeline
 
             _client.AddMap("DreamIsland", terrain);
 
-            var result = Converter(terrain: ThreeTextures).ConvertAll().Single();
+            var result = Converter(terrain: Textures).ConvertAll().Single();
 
             Assert.That(result.Outcome, Is.EqualTo(ConversionOutcome.Converted));
 
@@ -122,13 +125,13 @@ namespace Top.Conversion.Tests.Pipeline
             Assert.That(tile.ColorR, Is.EqualTo(160));
             Assert.That(tile.ColorG, Is.EqualTo(68));
             Assert.That(tile.ColorB, Is.EqualTo(16));
-            Assert.That(tile.Layer0.PaletteIndex, Is.EqualTo(1));
+            Assert.That(tile.Layer0.TerrainId, Is.EqualTo(1), "the original terrain id is kept");
             Assert.That(tile.Layer0.MaskIndex, Is.EqualTo(15), "the base layer always covers fully");
-            Assert.That(tile.Layer1.PaletteIndex, Is.EqualTo(2));
+            Assert.That(tile.Layer1.TerrainId, Is.EqualTo(2));
             Assert.That(tile.Layer1.MaskIndex, Is.EqualTo(7));
-            Assert.That(tile.Layer2.PaletteIndex, Is.EqualTo(3));
+            Assert.That(tile.Layer2.TerrainId, Is.EqualTo(3));
             Assert.That(tile.Layer2.MaskIndex, Is.EqualTo(4));
-            Assert.That(tile.Layer3.PaletteIndex, Is.EqualTo(0), "an unpainted layer names no texture");
+            Assert.That(tile.Layer3.TerrainId, Is.EqualTo(0), "an unpainted layer names no texture");
             Assert.That(tile.Region, Is.EqualTo(5));
             Assert.That(tile.Island, Is.EqualTo(9));
             Assert.That(tile.Corner00, Is.EqualTo(0x80));
@@ -149,7 +152,7 @@ namespace Top.Conversion.Tests.Pipeline
             _client.AddMap("current", current);
             _client.AddMap("earlier", earlier);
 
-            Converter(terrain: ThreeTextures).ConvertAll().ToList();
+            Converter(terrain: Textures).ConvertAll().ToList();
 
             var fromCurrent = TileAt(Read("current"), 0, 0);
             var fromEarlier = TileAt(Read("earlier"), 0, 0);
@@ -181,14 +184,14 @@ namespace Top.Conversion.Tests.Pipeline
             var effect = map.Chunks[1, 0].Placements.Single();
 
             Assert.That(model.Kind, Is.EqualTo(Converted.PlacementKind.Model));
-            Assert.That(model.CatalogId, Is.EqualTo(501), "catalog ids convert untouched");
+            Assert.That(model.Id, Is.EqualTo(501), "catalog ids convert untouched");
             Assert.That(model.X, Is.EqualTo(2.5f), "centimeters become meters");
             Assert.That(model.Y, Is.EqualTo(7f));
             Assert.That(model.HeightOffset, Is.EqualTo(0.2f));
             Assert.That(model.Yaw, Is.EqualTo(90f), "model yaw was already whole degrees");
 
             Assert.That(effect.Kind, Is.EqualTo(Converted.PlacementKind.Effect));
-            Assert.That(effect.CatalogId, Is.EqualTo(12), "the kind bits never reach the catalog id");
+            Assert.That(effect.Id, Is.EqualTo(12), "the kind bits never reach the catalog id");
             Assert.That(effect.X, Is.EqualTo(70f));
             Assert.That(effect.Y, Is.EqualTo(5f));
             Assert.That(effect.HeightOffset, Is.EqualTo(-1.5f));
@@ -212,7 +215,7 @@ namespace Top.Conversion.Tests.Pipeline
 
             var placements = Read("town").Chunks[0, 0].Placements;
 
-            Assert.That(placements.Select(placement => placement.CatalogId), Is.EqualTo(new[] { 1, 2, 3 }),
+            Assert.That(placements.Select(placement => placement.Id), Is.EqualTo(new[] { 1, 2, 3 }),
                 "one chunk covers 64 original sections, and its list has no slot limit");
         }
 
@@ -237,7 +240,7 @@ namespace Top.Conversion.Tests.Pipeline
             var placement = map.Chunks[1, 1].Placements.Single();
 
             Assert.That(map.Chunks[0, 0].Placements, Is.Empty);
-            Assert.That(placement.CatalogId, Is.EqualTo(77));
+            Assert.That(placement.Id, Is.EqualTo(77));
             Assert.That(placement.X, Is.EqualTo(74.5f));
             Assert.That(placement.Y, Is.EqualTo(74.5f));
         }
@@ -280,7 +283,7 @@ namespace Top.Conversion.Tests.Pipeline
         }
 
         [Test]
-        public void The_palette_holds_the_tree_path_of_every_texture_the_map_uses()
+        public void A_tile_keeps_the_terrain_id_the_original_painted_it_with()
         {
             var terrain = LegacyMaps.Terrain(LegacyMaps.NewFormat, 64, 64);
             terrain.Sections[0] = LegacyMaps.Section(index =>
@@ -296,16 +299,112 @@ namespace Top.Conversion.Tests.Pipeline
 
             _client.AddMap("palette", terrain);
 
-            Converter(terrain: ThreeTextures).ConvertAll().ToList();
+            Converter(terrain: Textures).ConvertAll().ToList();
 
             var map = Read("palette");
 
-            Assert.That(map.TexturePalette, Is.EqualTo(new[]
+            Assert.That(TileAt(map, 0, 0).Layer0.TerrainId, Is.EqualTo(3), "rock02 is terrain three");
+            Assert.That(TileAt(map, 1, 0).Layer1.TerrainId, Is.EqualTo(1), "grass05 is terrain one");
+        }
+
+        private void AddTerrainTextures()
+        {
+            _client.AddTexture("terrain", "bmp/1.BMP", "Grass05.bmp");
+            _client.AddTexture("terrain", "tga/03040032.tga", "Sand01.bmp");
+            _client.AddTexture("terrain", "bmp/1.BMP", "Rock02.bmp");
+            _client.AddTexture("terrain", "bmp/1.BMP", "Brick06.bmp");
+            _client.AddTexture("terrain/alpha", "tga/9011001903.tga", "total.tga");
+        }
+
+        private static Original.MapFile TwoTextureTerrain()
+        {
+            var terrain = LegacyMaps.Terrain(LegacyMaps.NewFormat, 64, 64);
+
+            terrain.Sections[0] = LegacyMaps.Section(index =>
             {
-                string.Empty, "textures/terrain/rock02.png", "textures/terrain/grass05.png",
-            }), "index 0 names no texture, the rest are what the map paints with");
-            Assert.That(TileAt(map, 0, 0).Layer0.PaletteIndex, Is.EqualTo(1));
-            Assert.That(TileAt(map, 1, 0).Layer1.PaletteIndex, Is.EqualTo(2));
+                var tile = LegacyMaps.Tile();
+
+                tile.Texture0 = 1;
+                tile.Texture1 = (byte)(index == 0 ? 2 : 0);
+                tile.Alpha1 = (byte)(index == 0 ? 6 : 0);
+
+                return tile;
+            });
+
+            return terrain;
+        }
+
+        [Test]
+        public void Every_terrain_texture_the_table_names_lands_in_the_tree_with_the_mask_atlas()
+        {
+            AddTerrainTextures();
+            _client.AddWaterLoop();
+            _client.AddMap("painted", TwoTextureTerrain(), LegacyMaps.Objects(64, 64));
+
+            Converter(terrain: Textures).ConvertAll().ToList();
+
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain", "grass05.png")));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain", "sand01.png")));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain", "brick06.png")));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain", "rock02.png")),
+                "the whole catalogue is written, not only what this map paints with");
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain/alpha", "total.png")));
+            Assert.That(_log.Warnings, Is.Empty);
+        }
+
+        [Test]
+        public void The_thirty_water_loop_textures_land_in_the_tree()
+        {
+            var terrain = LegacyMaps.Terrain(LegacyMaps.NewFormat, 64, 64);
+            terrain.Sections[0] = LegacyMaps.Section();
+
+            AddTerrainTextures();
+            _client.AddWaterLoop();
+            _client.AddMap("bare", terrain, LegacyMaps.Objects(64, 64));
+
+            Converter(terrain: Textures).ConvertAll().ToList();
+
+            var written = Directory.GetFiles(Path.GetDirectoryName(
+                _client.ConvertedTexture("terrain/water", "ocean_h.01.png")));
+
+            Assert.That(written, Has.Length.EqualTo(30));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain/water", "ocean_h.01.png")));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain/water", "ocean_h.30.png")));
+            Assert.That(_log.Warnings, Is.Empty);
+        }
+
+        [Test]
+        public void A_terrain_texture_missing_from_the_client_is_reported_and_the_map_still_converts()
+        {
+            _client.AddTexture("terrain", "bmp/1.BMP", "Grass05.bmp");
+            _client.AddMap("painted", TwoTextureTerrain(), LegacyMaps.Objects(64, 64));
+
+            var result = Converter(terrain: Textures).ConvertAll().Single();
+
+            Assert.That(result.Outcome, Is.EqualTo(ConversionOutcome.Converted));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain", "grass05.png")));
+            Assert.That(File.Exists(_client.ConvertedTexture("terrain", "sand01.png")), Is.False);
+            Assert.That(_log.Warnings, Has.Some.Contains("Sand01.bmp"));
+            Assert.That(_log.Warnings, Has.Some.Contains("total.tga"));
+            Assert.That(_log.Warnings, Has.Some.Contains("ocean_h.01.bmp"));
+        }
+
+        [Test]
+        public void A_texture_already_in_the_tree_is_left_alone()
+        {
+            AddTerrainTextures();
+            _client.AddWaterLoop();
+            _client.AddMap("painted", TwoTextureTerrain(), LegacyMaps.Objects(64, 64));
+
+            var stale = _client.ConvertedTexture("terrain", "sand01.png");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(stale));
+            File.WriteAllBytes(stale, new byte[] { 1 });
+
+            Converter(terrain: Textures).ConvertAll().ToList();
+
+            Assert.That(File.ReadAllBytes(stale), Is.EqualTo(new byte[] { 1 }));
+            Assert.That(_log.Warnings, Is.Empty);
         }
 
         [Test]
@@ -323,9 +422,9 @@ namespace Top.Conversion.Tests.Pipeline
 
             _client.AddMap("stray", terrain);
 
-            Converter(terrain: ThreeTextures).ConvertAll().ToList();
+            Converter(terrain: Textures).ConvertAll().ToList();
 
-            Assert.That(TileAt(Read("stray"), 0, 0).Layer0.PaletteIndex, Is.EqualTo(0));
+            Assert.That(TileAt(Read("stray"), 0, 0).Layer0.TerrainId, Is.EqualTo(0));
             Assert.That(_log.Warnings, Has.Some.Contains("62"));
         }
 
@@ -348,19 +447,21 @@ namespace Top.Conversion.Tests.Pipeline
         }
 
         [Test]
-        public void A_tile_no_section_wrote_reads_as_flat_unpainted_ground()
+        public void A_tile_no_section_wrote_reads_as_underwater()
         {
             var terrain = LegacyMaps.Terrain(LegacyMaps.NewFormat, 64, 64);
             terrain.Sections[0] = PaintedSection(oldFormat: false);
 
             _client.AddMap("gap", terrain);
 
-            Converter(terrain: ThreeTextures).ConvertAll().ToList();
+            Converter(terrain: Textures).ConvertAll().ToList();
 
             var tile = TileAt(Read("gap"), 63, 63);
 
-            Assert.That(tile.Height, Is.EqualTo(0f));
-            Assert.That(tile.Layer0.PaletteIndex, Is.EqualTo(0));
+            Assert.That(tile.Height, Is.EqualTo(-2f),
+                "a height of zero would leave the neighboring quads coplanar with the water");
+            Assert.That(tile.Layer0.TerrainId, Is.EqualTo(Converted.MapTile.UnderwaterTerrain));
+            Assert.That(tile.Layer0.MaskIndex, Is.EqualTo(15), "the underwater tile covers fully");
             Assert.That(tile.ColorR, Is.EqualTo(255), "the engine's default tile is white");
             Assert.That(tile.ColorG, Is.EqualTo(255));
             Assert.That(tile.ColorB, Is.EqualTo(255));

@@ -8,7 +8,7 @@ namespace Top.Legacy.Tables.Records
         public bool ShowSwitch;
         public int InitX;
         public int InitY;
-        public Vector3 LightDirection;
-        public Vector3 LightColor;
+        public Vector3 LightDirection = new Vector3(1f, 1f, -1f);
+        public Vector3 LightColor = Vector3.One;
     }
 }
