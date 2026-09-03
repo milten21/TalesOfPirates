@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using Top.Contracts;
 using Top.Contracts.Tables;
 using Top.Contracts.Tables.World;
 using Top.Conversion.Pipeline;
@@ -139,7 +140,7 @@ namespace Top.Conversion.Tests.Pipeline
         }
 
         [Test]
-        public void The_type_selects_the_variation_the_row_emits_as()
+        public void The_kind_selects_the_variation_the_row_emits_as()
         {
             var fading = Row(1, "Tree01.lgo");
             fading.FadeObjSeq = new[] { 1, 2 };
@@ -174,13 +175,13 @@ namespace Top.Conversion.Tests.Pipeline
 
             var pointLight = (PointLightEntry)entries[1];
 
-            Assert.That(pointLight.Type, Is.EqualTo(3));
-            Assert.That(pointLight.Color, Is.EqualTo(new[] { 255, 128, 0 }));
+            Assert.That(pointLight.Kind, Is.EqualTo(SceneObjectKind.PointLight));
+            Assert.That(pointLight.Color, Is.EqualTo(new Rgb(255, 128, 0)));
             Assert.That(pointLight.Range, Is.EqualTo(500));
             Assert.That(pointLight.Attenuation, Is.EqualTo(0.7f));
             Assert.That(pointLight.AnimationId, Is.EqualTo(9));
-            Assert.That(((AmbientLightEntry)entries[2]).Color, Is.EqualTo(new[] { 10, 20, 30 }));
-            Assert.That(((FogEntry)entries[3]).Color, Is.EqualTo(new[] { 1, 2, 3 }));
+            Assert.That(((AmbientLightEntry)entries[2]).Color, Is.EqualTo(new Rgb(10, 20, 30)));
+            Assert.That(((FogEntry)entries[3]).Color, Is.EqualTo(new Rgb(1, 2, 3)));
 
             var emitted = (SoundEntry)entries[4];
 
@@ -247,8 +248,8 @@ namespace Top.Conversion.Tests.Pipeline
             Assert.That(entry.ShowsAreaNames, Is.True);
             Assert.That(entry.StartX, Is.EqualTo(2202));
             Assert.That(entry.StartY, Is.EqualTo(2782));
-            Assert.That(entry.LightDirection, Is.EqualTo(new[] { 1f, 1f, -1f }));
-            Assert.That(entry.LightColor, Is.EqualTo(new[] { 1f, 1f, 1f }));
+            Assert.That(entry.LightDirection, Is.EqualTo(new Float3(1f, 1f, -1f)));
+            Assert.That(entry.LightColor, Is.EqualTo(new Rgb(255, 255, 255)));
         }
 
         [Test]

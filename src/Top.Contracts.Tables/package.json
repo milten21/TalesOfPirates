@@ -5,6 +5,7 @@
   "description": "Typed entries and parse for the converted gameplay tables.",
   "unity": "6000.0",
   "dependencies": {
+    "com.top.contracts": "0.1.0",
     "com.unity.nuget.newtonsoft-json": "3.2.2"
   }
 }

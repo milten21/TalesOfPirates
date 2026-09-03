@@ -1,14 +1,7 @@
 namespace Top.Contracts.Assets.Maps
 {
-    /// <summary>
-    /// Represents a single tile in a map.
-    /// </summary>
     public struct MapTile
     {
-        /// <summary>
-        /// The terrain the original's stand-in tile carried over ground no
-        /// section wrote (UNDERWATER_TEXNO, MPMap.h).
-        /// </summary>
         public const byte UnderwaterTerrain = 22;
 
         public static readonly MapTile Underwater = new MapTile

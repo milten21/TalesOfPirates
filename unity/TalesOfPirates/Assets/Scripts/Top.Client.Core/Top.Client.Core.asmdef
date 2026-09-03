@@ -1,7 +1,10 @@
 {
     "name": "Top.Client.Core",
     "rootNamespace": "Top.Client.Core",
-    "references": [],
+    "references": [
+        "Top.Contracts",
+        "Top.Logging"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

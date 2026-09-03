@@ -1,8 +1,11 @@
 <linker>
   <!-- TOP_material extras deserialize reflectively through Newtonsoft, and the
        glTFast Newtonsoft schema populates extras via JsonExtensionData; neither
-       survives managed stripping without being pinned here. -->
+       survives managed stripping without being pinned here. Table entries and the
+       primitives they carry are filled the same way. -->
+  <assembly fullname="Top.Contracts" preserve="all" />
   <assembly fullname="Top.Contracts.Assets" preserve="all" />
+  <assembly fullname="Top.Contracts.Tables" preserve="all" />
   <assembly fullname="glTFast.Newtonsoft" preserve="all" />
   <assembly fullname="Newtonsoft.Json" preserve="all" />
 </linker>

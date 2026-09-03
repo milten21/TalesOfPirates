@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "com.top.content.packs": "file:../../../src/Top.Content.Packs",
+    "com.top.content": "file:../../../src/Top.Content",
+    "com.top.contracts": "file:../../../src/Top.Contracts",
     "com.top.contracts.assets": "file:../../../src/Top.Contracts.Assets",
     "com.top.contracts.tables": "file:../../../src/Top.Contracts.Tables",
     "com.top.logging": "file:../../../src/Top.Logging",

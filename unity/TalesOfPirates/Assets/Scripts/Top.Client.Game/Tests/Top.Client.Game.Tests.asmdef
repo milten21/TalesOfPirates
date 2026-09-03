@@ -1,0 +1,25 @@
+{
+    "name": "Top.Client.Game.Tests",
+    "rootNamespace": "Top.Client.Game.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Top.Client.Game",
+        "Top.Client.Core",
+        "Top.Client.Models",
+        "Top.Content",
+        "Top.Contracts",
+        "Top.Contracts.Assets",
+        "Top.Contracts.Tables",
+        "Top.Logging"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

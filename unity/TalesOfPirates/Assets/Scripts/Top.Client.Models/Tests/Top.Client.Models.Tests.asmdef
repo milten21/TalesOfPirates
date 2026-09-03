@@ -1,0 +1,22 @@
+{
+    "name": "Top.Client.Models.Tests",
+    "rootNamespace": "Top.Client.Models.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Top.Client.Models",
+        "Top.Content",
+        "Top.Contracts.Assets",
+        "glTFast",
+        "glTFast.Newtonsoft"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

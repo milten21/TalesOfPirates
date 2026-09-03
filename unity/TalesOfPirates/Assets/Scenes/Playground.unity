@@ -448,6 +448,7 @@ MonoBehaviour:
   _followSceneView: 0
   _sun: {fileID: 81175268}
   _radius: 192
+  _shaders: {fileID: 11400000, guid: 50202a3100653574a954ecdd6b520132, type: 2}
 --- !u!4 &1014006410
 Transform:
   m_ObjectHideFlags: 0

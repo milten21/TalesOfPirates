@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using Top.Contracts;
 using Top.Contracts.Tables;
 using Top.Contracts.Tables.World;
 using Top.Legacy.Tables.Records;
@@ -34,11 +34,9 @@ namespace Top.Conversion.Pipeline.Tables
                 ShowsAreaNames = row.ShowSwitch,
                 StartX = row.InitX,
                 StartY = row.InitY,
-                LightDirection = Numbers(row.LightDirection),
-                LightColor = Numbers(row.LightColor),
+                LightDirection = new Float3(row.LightDirection.X, row.LightDirection.Y, row.LightDirection.Z),
+                LightColor = TableColor.Read(row.LightColor),
             };
         }
-
-        private static float[] Numbers(Vector3 value) => [value.X, value.Y, value.Z];
     }
 }

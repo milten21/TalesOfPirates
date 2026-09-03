@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using Top.Contracts;
 using Top.Contracts.Tables.World;
 
 namespace Top.Contracts.Tables.Tests
@@ -32,7 +33,8 @@ namespace Top.Contracts.Tables.Tests
                 [
                   { "id": 42, "modelPath": "models/scene/stone01.glb", "displayName": "stone",
                     "isReallyBig": true },
-                  { "id": 7, "type": 3, "color": [255, 128, 0], "range": 500 }
+                  { "id": 7, "kind": "PointLight", "color": { "r": 255, "g": 128, "b": 0 },
+                    "range": 500 }
                 ]
                 """);
 
@@ -44,21 +46,21 @@ namespace Top.Contracts.Tables.Tests
 
             var light = (PointLightEntry)entries[1];
 
-            Assert.That(light.Type, Is.EqualTo(3));
-            Assert.That(light.Color, Is.EqualTo(new[] { 255, 128, 0 }));
+            Assert.That(light.Kind, Is.EqualTo(SceneObjectKind.PointLight));
+            Assert.That(light.Color, Is.EqualTo(new Rgb(255, 128, 0)));
             Assert.That(light.Range, Is.EqualTo(500));
         }
 
         [Test]
-        public void The_type_names_the_variation_a_row_reads_as()
+        public void The_kind_names_the_variation_a_row_reads_as()
         {
             var entries = Read("""
                 [
                   { "id": 1, "sequence": [1, 2], "coefficient": 0.5 },
-                  { "id": 2, "type": 4, "color": [10, 20, 30] },
-                  { "id": 3, "type": 5, "color": [1, 2, 3] },
-                  { "id": 4, "type": 6, "sound": "wave.wav", "distance": 900 },
-                  { "id": 5, "type": 2 },
+                  { "id": 2, "kind": "AmbientLight", "color": { "r": 10, "g": 20, "b": 30 } },
+                  { "id": 3, "kind": "Fog", "color": { "r": 1, "g": 2, "b": 3 } },
+                  { "id": 4, "kind": "Sound", "sound": "wave.wav", "distance": 900 },
+                  { "id": 5, "kind": "Passability" },
                   { "id": 6 }
                 ]
                 """);
@@ -68,7 +70,7 @@ namespace Top.Contracts.Tables.Tests
             Assert.That(entries[2], Is.InstanceOf<FogEntry>());
             Assert.That(entries[3], Is.InstanceOf<SoundEntry>());
             Assert.That(entries[4].GetType(), Is.EqualTo(typeof(SceneObjectEntry)),
-                "a type without parameters reads as the base");
+                "a kind without parameters reads as the base");
             Assert.That(entries[5].GetType(), Is.EqualTo(typeof(SceneObjectEntry)),
                 "an ordinary object without fade data reads as the base");
         }
@@ -79,7 +81,7 @@ namespace Top.Contracts.Tables.Tests
             var entry = Read("""[ { "id": 7 } ]""").Single();
 
             Assert.That(entry.ModelPath, Is.Null);
-            Assert.That(entry.Type, Is.Zero);
+            Assert.That(entry.Kind, Is.EqualTo(SceneObjectKind.Model));
             Assert.That(entry.EnableEnvLight, Is.False);
         }
 
@@ -122,8 +124,8 @@ namespace Top.Contracts.Tables.Tests
                 new PointLightEntry
                 {
                     Id = 7,
-                    Type = 3,
-                    Color = new[] { 255, 128, 0 },
+                    Kind = SceneObjectKind.PointLight,
+                    Color = new Rgb(255, 128, 0),
                     Range = 500,
                     Attenuation = 0.7f,
                     AnimationId = 9,
@@ -145,10 +147,18 @@ namespace Top.Contracts.Tables.Tests
 
             var light = (PointLightEntry)entries[1];
 
-            Assert.That(light.Color, Is.EqualTo(new[] { 255, 128, 0 }));
+            Assert.That(light.Color, Is.EqualTo(new Rgb(255, 128, 0)));
             Assert.That(light.Range, Is.EqualTo(500));
             Assert.That(light.Attenuation, Is.EqualTo(0.7f));
             Assert.That(light.AnimationId, Is.EqualTo(9));
+        }
+
+        [Test]
+        public void A_kind_writes_as_its_name()
+        {
+            var json = Write(new PointLightEntry { Id = 7, Kind = SceneObjectKind.PointLight });
+
+            Assert.That(json, Does.Contain("\"kind\": \"PointLight\""));
         }
 
         [Test]

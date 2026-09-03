@@ -40,7 +40,7 @@ namespace Top.Conversion.Pipeline.Maps
 
             for (var frame = 0; frame < MapTexturePaths.WaterFrames; frame++)
             {
-                Write(WaterSource(frame), MapTexturePaths.Water(frame));
+                Write(WaterSource(frame), MapTexturePaths.WaterFrame(frame));
             }
         }
 

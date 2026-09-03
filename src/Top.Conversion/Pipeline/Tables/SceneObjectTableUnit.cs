@@ -22,23 +22,25 @@ namespace Top.Conversion.Pipeline.Tables
 
         private static SceneObjectEntry Entry(SceneObjectInfoRecord row)
         {
-            SceneObjectEntry entry = row.Type switch
+            var kind = (SceneObjectKind)row.Type;
+
+            SceneObjectEntry entry = kind switch
             {
-                0 when row.FadeObjSeq.Length > 0 => new FadeEntry
+                SceneObjectKind.Model when row.FadeObjSeq.Length > 0 => new FadeEntry
                 {
                     Sequence = row.FadeObjSeq,
                     Coefficient = row.FadeCoefficient,
                 },
-                3 => new PointLightEntry
+                SceneObjectKind.PointLight => new PointLightEntry
                 {
-                    Color = row.PointColor,
+                    Color = TableColor.Read(row.PointColor),
                     Range = row.PointLightRange,
                     Attenuation = row.PointLightAttenuation,
                     AnimationId = row.PointLightAnimCtrlId,
                 },
-                4 => new AmbientLightEntry { Color = row.EnvColor },
-                5 => new FogEntry { Color = row.FogColor },
-                6 => new SoundEntry { Sound = row.EnvSound, Distance = row.EnvSoundDistance },
+                SceneObjectKind.AmbientLight => new AmbientLightEntry { Color = TableColor.Read(row.EnvColor) },
+                SceneObjectKind.Fog => new FogEntry { Color = TableColor.Read(row.FogColor) },
+                SceneObjectKind.Sound => new SoundEntry { Sound = row.EnvSound, Distance = row.EnvSoundDistance },
                 _ => new SceneObjectEntry(),
             };
 
@@ -47,7 +49,7 @@ namespace Top.Conversion.Pipeline.Tables
                 ? OutputPaths.ModelContentPath(ContentKind.Scene, System.IO.Path.GetFileNameWithoutExtension(row.Name))
                 : null;
             entry.DisplayName = string.IsNullOrEmpty(row.DisplayName) ? null : row.DisplayName;
-            entry.Type = row.Type;
+            entry.Kind = kind;
             entry.AttachEffectId = row.AttachEffectId;
             entry.EnableEnvLight = row.EnableEnvLight;
             entry.EnablePointLight = row.EnablePointLight;

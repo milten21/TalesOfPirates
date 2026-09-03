@@ -1,4 +1,3 @@
-using System.Numerics;
 using Top.Legacy.Tables.Records;
 
 namespace Top.Legacy.Tables.Readers
@@ -29,7 +28,7 @@ namespace Top.Legacy.Tables.Readers
 
             if (color.Length >= 3)
             {
-                record.LightColor = new Vector3(color[0] / 255f, color[1] / 255f, color[2] / 255f);
+                record.LightColor = color;
             }
 
             return record;

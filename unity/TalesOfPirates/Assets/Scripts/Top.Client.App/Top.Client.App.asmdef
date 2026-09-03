@@ -2,12 +2,12 @@
     "name": "Top.Client.App",
     "rootNamespace": "Top.Client.App",
     "references": [
-        "Top.Client.Assets.Maps",
         "Top.Client.Core",
-        "Top.Client.Assets.Models",
-        "Top.Client.Definitions",
-        "Top.Client.Presentation",
-        "Top.Content.Packs",
+        "Top.Client.Models",
+        "Top.Client.Game",
+        "Top.Content",
+        "Top.Contracts",
+        "Top.Contracts.Assets",
         "Top.Contracts.Tables",
         "Top.Logging"
     ],

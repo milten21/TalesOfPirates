@@ -6,9 +6,6 @@ using Newtonsoft.Json.Converters;
 
 namespace Top.Contracts.Tables
 {
-    /// <summary>
-    /// Utility class for reading and writing table data in JSON format.
-    /// </summary>
     public class TableFormat
     {
         private readonly JsonSerializer _serializer = JsonSerializer

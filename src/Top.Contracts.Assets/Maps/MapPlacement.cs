@@ -1,8 +1,5 @@
 namespace Top.Contracts.Assets.Maps
 {
-    /// <summary>
-    /// Represents the placement of an object within a map.
-    /// </summary>
     public struct MapPlacement
     {
         public PlacementKind Kind;

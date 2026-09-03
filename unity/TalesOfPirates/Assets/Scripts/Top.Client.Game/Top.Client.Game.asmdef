@@ -1,0 +1,22 @@
+{
+    "name": "Top.Client.Game",
+    "rootNamespace": "Top.Client.Game",
+    "references": [
+        "Top.Client.Core",
+        "Top.Client.Models",
+        "Top.Content",
+        "Top.Contracts",
+        "Top.Contracts.Assets",
+        "Top.Contracts.Tables",
+        "Top.Logging"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

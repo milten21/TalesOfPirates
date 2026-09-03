@@ -1,7 +1,9 @@
 {
     "name": "Top.Contracts.Tables",
     "rootNamespace": "Top.Contracts.Tables",
-    "references": [],
+    "references": [
+        "Top.Contracts"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -4,10 +4,6 @@ using Top.Contracts.Assets.Models.Materials;
 
 namespace Top.Contracts.Assets.Models.Extras
 {
-    /// <summary>
-    /// Provides extensible render state properties not supported by standard glTF,
-    /// allowing customization for advanced rendering scenarios.
-    /// </summary>
     public class RenderStateExtras
     {
         [JsonProperty("srcBlend")] [DefaultValue(BlendFactor.One)]

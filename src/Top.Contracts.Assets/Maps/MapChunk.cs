@@ -2,9 +2,6 @@ using System.Collections.Generic;
 
 namespace Top.Contracts.Assets.Maps
 {
-    /// <summary>
-    /// Represents a chunk of a map, containing tiles and placements.
-    /// </summary>
     public class MapChunk
     {
         public readonly MapTile[] Tiles;

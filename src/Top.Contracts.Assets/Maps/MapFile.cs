@@ -4,9 +4,6 @@ using System.Text;
 
 namespace Top.Contracts.Assets.Maps
 {
-    /// <summary>
-    /// Represents a map file that contains information about the structure and content of a game map.
-    /// </summary>
     public class MapFile
     {
         public const int Version = 1;

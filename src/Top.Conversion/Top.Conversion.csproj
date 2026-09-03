@@ -4,6 +4,7 @@
     <RootNamespace>Top.Conversion</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Top.Contracts\Top.Contracts.csproj" />
     <ProjectReference Include="..\Top.Contracts.Assets\Top.Contracts.Assets.csproj" />
     <ProjectReference Include="..\Top.Contracts.Tables\Top.Contracts.Tables.csproj" />
     <ProjectReference Include="..\Top.Logging\Top.Logging.csproj" />

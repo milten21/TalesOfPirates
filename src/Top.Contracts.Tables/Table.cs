@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 namespace Top.Contracts.Tables
 {
-    /// <summary>
-    /// Generic table structure that stores entries of type <typeparamref name="TEntry"/>.
-    /// </summary>
     public class Table<TEntry> : IReadOnlyCollection<TEntry> where TEntry : TableEntry
     {
         private readonly List<TEntry> _entries;

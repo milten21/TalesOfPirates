@@ -21,9 +21,10 @@
     <Project Path="src/Top.Legacy.Text/Top.Legacy.Text.csproj" />
     <Project Path="src/Top.Conversion.Gltf/Top.Conversion.Gltf.csproj" />
     <Project Path="src/Top.Legacy.Tables/Top.Legacy.Tables.csproj" />
+    <Project Path="src/Top.Contracts/Top.Contracts.csproj" />
     <Project Path="src/Top.Contracts.Assets/Top.Contracts.Assets.csproj" />
     <Project Path="src/Top.Contracts.Tables/Top.Contracts.Tables.csproj" />
-    <Project Path="src/Top.Content.Packs/Top.Content.Packs.csproj" />
+    <Project Path="src/Top.Content/Top.Content.csproj" />
     <Project Path="src/Top.Conversion/Top.Conversion.csproj" />
     <Project Path="src/Top.Conversion.Cli/Top.Conversion.Cli.csproj" />
   </Folder>
@@ -33,9 +34,10 @@
     <Project Path="tests/Top.Legacy.Text.Tests/Top.Legacy.Text.Tests.csproj" />
     <Project Path="tests/Top.Conversion.Gltf.Tests/Top.Conversion.Gltf.Tests.csproj" />
     <Project Path="tests/Top.Legacy.Tables.Tests/Top.Legacy.Tables.Tests.csproj" />
+    <Project Path="tests/Top.Contracts.Tests/Top.Contracts.Tests.csproj" />
     <Project Path="tests/Top.Contracts.Assets.Tests/Top.Contracts.Assets.Tests.csproj" />
     <Project Path="tests/Top.Contracts.Tables.Tests/Top.Contracts.Tables.Tests.csproj" />
-    <Project Path="tests/Top.Content.Packs.Tests/Top.Content.Packs.Tests.csproj" />
+    <Project Path="tests/Top.Content.Tests/Top.Content.Tests.csproj" />
     <Project Path="tests/Top.Conversion.Tests/Top.Conversion.Tests.csproj" />
   </Folder>
 </Solution>

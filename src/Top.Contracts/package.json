@@ -1,0 +1,10 @@
+{
+  "name": "com.top.contracts",
+  "version": "0.1.0",
+  "displayName": "Top.Contracts",
+  "description": "Engine-free primitives the contract packages share.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.2"
+  }
+}

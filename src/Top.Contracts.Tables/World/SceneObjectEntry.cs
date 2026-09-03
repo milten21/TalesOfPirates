@@ -2,15 +2,12 @@ using Newtonsoft.Json;
 
 namespace Top.Contracts.Tables.World
 {
-    /// <summary>
-    /// Represents an entry in the scene object table.
-    /// </summary>
     [JsonConverter(typeof(SceneObjectEntryConverter))]
     public class SceneObjectEntry : TableEntry
     {
         [JsonProperty("modelPath")] public string ModelPath;
         [JsonProperty("displayName")] public string DisplayName;
-        [JsonProperty("type")] public int Type;
+        [JsonProperty("kind")] public SceneObjectKind Kind;
         [JsonProperty("attachEffectId")] public int AttachEffectId;
         [JsonProperty("enableEnvLight")] public bool EnableEnvLight;
         [JsonProperty("enablePointLight")] public bool EnablePointLight;
@@ -21,9 +18,10 @@ namespace Top.Contracts.Tables.World
         [JsonProperty("isReallyBig")] public bool IsReallyBig;
     }
 
+
     public class PointLightEntry : SceneObjectEntry
     {
-        [JsonProperty("color")] public int[] Color;
+        [JsonProperty("color")] public Rgb Color;
         [JsonProperty("range")] public int Range;
         [JsonProperty("attenuation")] public float Attenuation;
         [JsonProperty("animationId")] public int AnimationId;
@@ -31,12 +29,12 @@ namespace Top.Contracts.Tables.World
 
     public class AmbientLightEntry : SceneObjectEntry
     {
-        [JsonProperty("color")] public int[] Color;
+        [JsonProperty("color")] public Rgb Color;
     }
 
     public class FogEntry : SceneObjectEntry
     {
-        [JsonProperty("color")] public int[] Color;
+        [JsonProperty("color")] public Rgb Color;
     }
 
     public class SoundEntry : SceneObjectEntry

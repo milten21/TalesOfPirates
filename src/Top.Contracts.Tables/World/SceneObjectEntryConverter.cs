@@ -17,7 +17,7 @@ namespace Top.Contracts.Tables.World
             JsonSerializer serializer)
         {
             var json = JObject.Load(reader);
-            var entry = Blank(json);
+            var entry = Blank(json, serializer);
 
             serializer.Populate(json.CreateReader(), entry);
 
@@ -29,14 +29,14 @@ namespace Top.Contracts.Tables.World
             throw new NotSupportedException();
         }
 
-        private static SceneObjectEntry Blank(JObject json)
+        private static SceneObjectEntry Blank(JObject json, JsonSerializer serializer)
         {
-            return (int?)json["type"] switch
+            return json["kind"]?.ToObject<SceneObjectKind>(serializer) switch
             {
-                3 => new PointLightEntry(),
-                4 => new AmbientLightEntry(),
-                5 => new FogEntry(),
-                6 => new SoundEntry(),
+                SceneObjectKind.PointLight => new PointLightEntry(),
+                SceneObjectKind.AmbientLight => new AmbientLightEntry(),
+                SceneObjectKind.Fog => new FogEntry(),
+                SceneObjectKind.Sound => new SoundEntry(),
                 _ => json["sequence"] != null ? new FadeEntry() : new SceneObjectEntry(),
             };
         }
