@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
     "com.top.content.packs": "file:../../../src/Top.Content.Packs",
     "com.top.contracts.assets": "file:../../../src/Top.Contracts.Assets",
     "com.top.contracts.tables": "file:../../../src/Top.Contracts.Tables",
@@ -13,6 +12,7 @@
     "com.unity.inputsystem": "1.20.0",
     "com.unity.multiplayer.center": "2.0.1",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.pipeline": "0.6.0-exp.1",
     "com.unity.render-pipelines.universal": "17.6.0",
     "com.unity.test-framework": "1.8.0",
     "com.unity.timeline": "6.6.0",
