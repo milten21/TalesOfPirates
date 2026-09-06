@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <RootNamespace>Top.Legacy.Protocol</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Top.Legacy.Text\Top.Legacy.Text.csproj" />
+    <ProjectReference Include="..\Top.Logging\Top.Logging.csproj" />
+  </ItemGroup>
+</Project>

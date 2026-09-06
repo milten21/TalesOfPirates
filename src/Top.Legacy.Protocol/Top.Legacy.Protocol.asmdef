@@ -1,0 +1,19 @@
+{
+    "name": "Top.Legacy.Protocol",
+    "rootNamespace": "Top.Legacy.Protocol",
+    "references": [
+        "Top.Legacy.Text",
+        "Top.Logging"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "BouncyCastle.Cryptography.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

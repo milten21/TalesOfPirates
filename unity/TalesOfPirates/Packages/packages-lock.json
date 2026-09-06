@@ -31,6 +31,15 @@
         "com.unity.nuget.newtonsoft-json": "3.2.2"
       }
     },
+    "com.top.legacy.protocol": {
+      "version": "file:../../../src/Top.Legacy.Protocol",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.top.legacy.text": "0.1.0",
+        "com.top.logging": "0.1.0"
+      }
+    },
     "com.top.legacy.text": {
       "version": "file:../../../src/Top.Legacy.Text",
       "depth": 0,

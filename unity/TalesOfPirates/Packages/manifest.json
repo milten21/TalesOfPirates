@@ -4,6 +4,7 @@
     "com.top.contracts": "file:../../../src/Top.Contracts",
     "com.top.contracts.assets": "file:../../../src/Top.Contracts.Assets",
     "com.top.contracts.tables": "file:../../../src/Top.Contracts.Tables",
+    "com.top.legacy.protocol": "file:../../../src/Top.Legacy.Protocol",
     "com.top.legacy.text": "file:../../../src/Top.Legacy.Text",
     "com.top.logging": "file:../../../src/Top.Logging",
     "com.unity.ai.navigation": "2.0.14",

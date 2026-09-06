@@ -1,0 +1,11 @@
+{
+  "name": "com.top.legacy.protocol",
+  "version": "0.1.0",
+  "displayName": "Top.Legacy.Protocol",
+  "description": "The original protocol format between the client and the gate server.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.top.legacy.text": "0.1.0",
+    "com.top.logging": "0.1.0"
+  }
+}

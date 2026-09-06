@@ -19,6 +19,7 @@
     <Project Path="src/Top.Logging/Top.Logging.csproj" />
     <Project Path="src/Top.Legacy.MindPower/Top.Legacy.MindPower.csproj" />
     <Project Path="src/Top.Legacy.Text/Top.Legacy.Text.csproj" />
+    <Project Path="src/Top.Legacy.Protocol/Top.Legacy.Protocol.csproj" />
     <Project Path="src/Top.Conversion.Gltf/Top.Conversion.Gltf.csproj" />
     <Project Path="src/Top.Legacy.Tables/Top.Legacy.Tables.csproj" />
     <Project Path="src/Top.Contracts/Top.Contracts.csproj" />
@@ -32,6 +33,7 @@
     <Project Path="tests/Top.Logging.Tests/Top.Logging.Tests.csproj" />
     <Project Path="tests/Top.Legacy.MindPower.Tests/Top.Legacy.MindPower.Tests.csproj" />
     <Project Path="tests/Top.Legacy.Text.Tests/Top.Legacy.Text.Tests.csproj" />
+    <Project Path="tests/Top.Legacy.Protocol.Tests/Top.Legacy.Protocol.Tests.csproj" />
     <Project Path="tests/Top.Conversion.Gltf.Tests/Top.Conversion.Gltf.Tests.csproj" />
     <Project Path="tests/Top.Legacy.Tables.Tests/Top.Legacy.Tables.Tests.csproj" />
     <Project Path="tests/Top.Contracts.Tests/Top.Contracts.Tests.csproj" />
