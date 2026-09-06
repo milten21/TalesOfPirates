@@ -31,6 +31,12 @@
         "com.unity.nuget.newtonsoft-json": "3.2.2"
       }
     },
+    "com.top.legacy.text": {
+      "version": "file:../../../src/Top.Legacy.Text",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.top.logging": {
       "version": "file:../../../src/Top.Logging",
       "depth": 0,

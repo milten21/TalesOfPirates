@@ -1,0 +1,14 @@
+{
+    "name": "Top.Legacy.Text",
+    "rootNamespace": "Top.Legacy.Text",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

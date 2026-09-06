@@ -1,0 +1,7 @@
+{
+  "name": "com.top.legacy.text",
+  "version": "0.1.0",
+  "displayName": "Top.Legacy.Text",
+  "description": "GBK decode and the C runtime number parse for the original text formats.",
+  "unity": "6000.0"
+}
