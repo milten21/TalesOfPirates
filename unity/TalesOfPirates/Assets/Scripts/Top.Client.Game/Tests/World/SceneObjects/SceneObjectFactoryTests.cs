@@ -15,21 +15,21 @@ namespace Top.Client.Game.Tests.World.SceneObjects
         {
             public readonly List<string> Requested = new List<string>();
 
-            public Task<ModelInstance> Spawn(string path, Transform parent,
-                CancellationToken cancel = default)
+            public Task<ModelInstance> Instantiate(string path, Transform parent,
+                CancellationToken cancellationToken = default)
             {
                 Requested.Add(path);
 
                 return Task.FromResult<ModelInstance>(null);
             }
 
-            public Task Preload(IEnumerable<string> paths)
+            public Task EnsureLoaded(IEnumerable<string> paths)
             {
                 return Task.CompletedTask;
             }
         }
 
-        private static (SceneObjectFactory Factory, RecordingModels Models) Factory(
+        private static (SceneObjectFactory Factory, RecordingModels Models) CreateFactory(
             params SceneObjectEntry[] entries)
         {
             var models = new RecordingModels();
@@ -38,41 +38,41 @@ namespace Top.Client.Game.Tests.World.SceneObjects
         }
 
         [Test]
-        public async Task An_entry_is_built_from_the_model_its_row_names()
+        public async Task An_entry_instantiates_the_model_its_row_names()
         {
-            var (factory, models) = Factory(new SceneObjectEntry { Id = 42, ModelPath = "models/scene/stone01.glb" });
+            var (factory, models) = CreateFactory(new SceneObjectEntry { Id = 42, ModelPath = "models/scene/stone01.glb" });
 
-            await factory.Build(42, null);
+            await factory.Instantiate(42, null);
 
             Assert.That(models.Requested, Is.EqualTo(new[] { "models/scene/stone01.glb" }));
         }
 
         [Test]
-        public async Task An_id_the_table_does_not_name_builds_nothing()
+        public async Task An_id_the_table_does_not_name_instantiates_nothing()
         {
-            var (factory, models) = Factory(new SceneObjectEntry { Id = 42, ModelPath = "models/scene/stone01.glb" });
+            var (factory, models) = CreateFactory(new SceneObjectEntry { Id = 42, ModelPath = "models/scene/stone01.glb" });
 
-            Assert.That(await factory.Build(9000, null), Is.Null);
+            Assert.That(await factory.Instantiate(9000, null), Is.Null);
             Assert.That(models.Requested, Is.Empty);
         }
 
         [Test]
-        public async Task A_helper_entry_never_builds_its_placeholder_model()
+        public async Task A_helper_entry_never_instantiates_its_placeholder_model()
         {
-            var (factory, models) = Factory(new SceneObjectEntry
+            var (factory, models) = CreateFactory(new SceneObjectEntry
                 { Id = 353, Kind = SceneObjectKind.Passability, ModelPath = "models/scene/yyyy003.glb" });
 
-            Assert.That(await factory.Build(353, null), Is.Null,
+            Assert.That(await factory.Instantiate(353, null), Is.Null,
                 "the original draws only normal-type scene objects, helper types are logic markers");
             Assert.That(models.Requested, Is.Empty);
         }
 
         [Test]
-        public async Task An_entry_naming_no_model_builds_nothing()
+        public async Task An_entry_naming_no_model_instantiates_nothing()
         {
-            var (factory, models) = Factory(new SceneObjectEntry { Id = 7 });
+            var (factory, models) = CreateFactory(new SceneObjectEntry { Id = 7 });
 
-            Assert.That(await factory.Build(7, null), Is.Null);
+            Assert.That(await factory.Instantiate(7, null), Is.Null);
             Assert.That(models.Requested, Is.Empty);
         }
     }

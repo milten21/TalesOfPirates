@@ -4,17 +4,17 @@ namespace Top.Client.Game.Tables
 {
     public class TableSet
     {
-        public TableSet(SceneObjectTable sceneObjects, TerrainTable terrains, MapTable maps)
+        public TableSet(SceneObjectTable sceneObjectTable, TerrainTable terrainTable, MapTable mapTable)
         {
-            SceneObjects = sceneObjects;
-            Terrains = terrains;
-            Maps = maps;
+            SceneObjectTable = sceneObjectTable;
+            TerrainTable = terrainTable;
+            MapTable = mapTable;
         }
 
-        public SceneObjectTable SceneObjects { get; }
+        public SceneObjectTable SceneObjectTable { get; }
 
-        public TerrainTable Terrains { get; }
+        public TerrainTable TerrainTable { get; }
 
-        public MapTable Maps { get; }
+        public MapTable MapTable { get; }
     }
 }

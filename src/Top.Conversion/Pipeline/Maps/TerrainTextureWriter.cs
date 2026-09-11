@@ -36,11 +36,11 @@ namespace Top.Conversion.Pipeline.Maps
                 }
             }
 
-            Write(MaskSource, MapTexturePaths.Masks);
+            Write(MaskSource, MapTexturePaths.MaskAtlas);
 
-            for (var frame = 0; frame < MapTexturePaths.WaterFrames; frame++)
+            for (var frame = 0; frame < MapTexturePaths.WaterFrameCount; frame++)
             {
-                Write(WaterSource(frame), MapTexturePaths.WaterFrame(frame));
+                Write(WaterSource(frame), MapTexturePaths.GetWaterFramePath(frame));
             }
         }
 

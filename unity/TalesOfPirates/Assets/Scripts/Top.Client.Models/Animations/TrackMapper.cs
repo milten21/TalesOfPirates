@@ -4,11 +4,6 @@ using UnityEngine;
 
 namespace Top.Client.Models.Animations
 {
-    /// <summary>
-    /// Turns the animation sections a material carries into the tracks the
-    /// components play. The numbers are the contract's; what happens here is
-    /// the step that needs Unity.
-    /// </summary>
     public static class TrackMapper
     {
         public static UvAnimationTrack CreateUvTrack(UvAnimationExtras extras)

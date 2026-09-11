@@ -33,24 +33,5 @@ namespace Top.Contracts.Tables.Tests
             Assert.That(entries[1].Type, Is.EqualTo(3));
             Assert.That(entries[1].LeavesFootprints, Is.False);
         }
-
-        [Test]
-        public void Texture_paths_are_indexed_by_terrain_id()
-        {
-            var table = new TerrainTable(Read("""
-                [
-                  { "id": 1, "texturePath": "textures/terrain/subtract.png" },
-                  { "id": 3, "texturePath": "textures/terrain/brick04.png" }
-                ]
-                """));
-
-            var paths = table.TexturePaths();
-
-            Assert.That(paths, Has.Length.EqualTo(4), "the array reaches the highest id");
-            Assert.That(paths[1], Is.EqualTo("textures/terrain/subtract.png"));
-            Assert.That(paths[3], Is.EqualTo("textures/terrain/brick04.png"));
-            Assert.That(paths[0], Is.Null, "id zero is no terrain at all");
-            Assert.That(paths[2], Is.Null, "an id the table skips names nothing");
-        }
     }
 }

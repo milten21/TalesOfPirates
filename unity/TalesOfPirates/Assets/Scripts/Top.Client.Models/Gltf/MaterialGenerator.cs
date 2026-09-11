@@ -9,11 +9,6 @@ using Material = UnityEngine.Material;
 
 namespace Top.Client.Models.Gltf
 {
-    /// <summary>
-    /// Builds a Top/Model palette material for every glTF material glTFast
-    /// hands over, the render state resolved by
-    /// <see cref="MaterialStateReader"/>.
-    /// </summary>
     public class MaterialGenerator : IMaterialGenerator
     {
         private readonly Shader _shader;

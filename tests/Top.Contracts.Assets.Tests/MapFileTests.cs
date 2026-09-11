@@ -33,10 +33,10 @@ namespace Top.Contracts.Assets.Tests
                     Layer3 = new MapTileLayer { TerrainId = 2, MaskIndex = 3 },
                     Region = (ushort)(1 << i % 15),
                     Island = (byte)(i % 201),
-                    Corner00 = (byte)(0x80 | i % 64),
-                    Corner10 = (byte)(0x40 | i % 64),
-                    Corner01 = (byte)(i % 64),
-                    Corner11 = (byte)(0xC0 | i % 64),
+                    Cell00 = (byte)(0x80 | i % 64),
+                    Cell10 = (byte)(0x40 | i % 64),
+                    Cell01 = (byte)(i % 64),
+                    Cell11 = (byte)(0xC0 | i % 64),
                 };
             }
 

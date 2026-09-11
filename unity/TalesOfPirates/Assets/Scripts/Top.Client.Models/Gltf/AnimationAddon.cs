@@ -4,12 +4,6 @@ using GLTFast.Animations;
 
 namespace Top.Client.Models.Gltf
 {
-    /// <summary>
-    /// Replaces glTFast's stock clip creation with legacy clips whose curve
-    /// paths are relative to the common ancestor of the nodes each clip
-    /// drives, so every clip can live on its own subtree instead of one
-    /// Animation at the scene root.
-    /// </summary>
     public class AnimationAddon : ImportAddonInstance, IAnimationProcessorFactory
     {
         public AnimationProcessor Processor { get; private set; }

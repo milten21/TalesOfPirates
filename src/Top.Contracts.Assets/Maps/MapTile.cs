@@ -27,9 +27,9 @@ namespace Top.Contracts.Assets.Maps
         public MapTileLayer Layer3;
         public ushort Region;
         public byte Island;
-        public byte Corner00;
-        public byte Corner10;
-        public byte Corner01;
-        public byte Corner11;
+        public byte Cell00;
+        public byte Cell10;
+        public byte Cell01;
+        public byte Cell11;
     }
 }

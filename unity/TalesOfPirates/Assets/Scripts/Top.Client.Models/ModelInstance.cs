@@ -4,20 +4,17 @@ using UnityEngine;
 
 namespace Top.Client.Models
 {
-    /// <summary>
-    /// One live copy of a model. Disposing destroys its object tree and drops
-    /// its claim on the import the whole model came from.
-    /// </summary>
     public class ModelInstance : IDisposable
     {
         private readonly string _path;
 
-        private ModelStore _store;
+        private ModelStore _modelStore;
 
-        internal ModelInstance(ModelStore store, string path, Transform root)
+        internal ModelInstance(ModelStore modelStore, string path, Transform root)
         {
-            _store = store;
+            _modelStore = modelStore;
             _path = path;
+
             Root = root;
         }
 
@@ -25,14 +22,14 @@ namespace Top.Client.Models
 
         public void Dispose()
         {
-            if (_store == null)
+            if (_modelStore == null)
             {
                 return;
             }
 
-            var store = _store;
+            var store = _modelStore;
 
-            _store = null;
+            _modelStore = null;
 
             if (Root != null)
             {

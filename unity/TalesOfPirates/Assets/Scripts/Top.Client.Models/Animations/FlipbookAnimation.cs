@@ -2,9 +2,6 @@ using UnityEngine;
 
 namespace Top.Client.Models.Animations
 {
-    /// <summary>
-    /// Plays a FlipbookTrack on one material slot.
-    /// </summary>
     [RequireComponent(typeof(Renderer))]
     public class FlipbookAnimation : MonoBehaviour
     {
@@ -39,7 +36,7 @@ namespace Top.Client.Models.Animations
                 return;
             }
 
-            var index = FrameIndex(Time.time, track.framesPerSecond, track.frames.Length);
+            var index = GetFrameIndex(Time.time, track.framesPerSecond, track.frames.Length);
             var frame = track.frames[index];
 
             if (frame == null)
@@ -52,7 +49,7 @@ namespace Top.Client.Models.Animations
             _renderer.SetPropertyBlock(_block, materialIndex);
         }
 
-        public static int FrameIndex(float time, float framesPerSecond, int frameCount)
+        public static int GetFrameIndex(float time, float framesPerSecond, int frameCount)
         {
             return (int)(time * framesPerSecond) % frameCount;
         }

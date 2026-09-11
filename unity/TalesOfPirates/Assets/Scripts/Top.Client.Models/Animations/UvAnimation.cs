@@ -2,9 +2,6 @@ using UnityEngine;
 
 namespace Top.Client.Models.Animations
 {
-    /// <summary>
-    /// Plays a UvAnimationTrack on one material slot.
-    /// </summary>
     [RequireComponent(typeof(Renderer))]
     public class UvAnimation : MonoBehaviour
     {

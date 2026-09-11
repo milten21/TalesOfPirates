@@ -7,11 +7,6 @@ using Material = GLTFast.Newtonsoft.Schema.Material;
 
 namespace Top.Client.Models.Materials
 {
-    /// <summary>
-    /// Resolves what a glTF material asks for, reading the standard fields
-    /// glTFast parsed first and letting a <see cref="MaterialExtras"/> payload
-    /// refine them.
-    /// </summary>
     public static class MaterialStateReader
     {
         public static RenderState Read(MaterialBase material)

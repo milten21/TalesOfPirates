@@ -26,12 +26,12 @@ namespace Top.Client.Game.Tests.World
             Assert.That(data.ChunkCountY, Is.EqualTo(3));
         }
 
-        private static MapFile Map(int width, int height, int chunkSize)
+        private static MapFile CreateMap(int width, int height, int chunkSize)
         {
             return new MapFile(width, height, chunkSize);
         }
 
-        private static MapChunk Chunk(MapFile map, int chunkX, int chunkY)
+        private static MapChunk AddChunk(MapFile map, int chunkX, int chunkY)
         {
             var chunk = new MapChunk(map.ChunkSize);
 
@@ -52,11 +52,11 @@ namespace Top.Client.Game.Tests.World
             SetTile(map, x, y, new MapTile { Height = height });
         }
 
-        private static MapFile QuadMap()
+        private static MapFile CreateQuadMap()
         {
-            var map = Map(2, 2, 2);
+            var map = CreateMap(2, 2, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
             SetHeight(map, 0, 0, 1f);
             SetHeight(map, 1, 0, 3f);
             SetHeight(map, 0, 1, 5f);
@@ -68,7 +68,7 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Height_at_a_vertex_is_that_vertex_height()
         {
-            var data = Load(QuadMap());
+            var data = Load(CreateQuadMap());
 
             Assert.That(data.HeightAt(0f, 0f), Is.EqualTo(1f));
             Assert.That(data.HeightAt(1f, 0f), Is.EqualTo(3f));
@@ -79,7 +79,7 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Height_between_vertices_interpolates_over_the_quad_triangles()
         {
-            var data = Load(QuadMap());
+            var data = Load(CreateQuadMap());
 
             Assert.That(data.HeightAt(0.25f, 0.25f), Is.EqualTo(2.5f).Within(0.0001f),
                 "below the diagonal: 1 + 0.25*(3-1) + 0.25*(5-1)");
@@ -92,10 +92,10 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Height_interpolates_across_a_chunk_boundary()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
-            Chunk(map, 1, 0);
+            AddChunk(map, 0, 0);
+            AddChunk(map, 1, 0);
             SetHeight(map, 1, 0, 2f);
             SetHeight(map, 2, 0, 6f);
 
@@ -107,9 +107,9 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Height_off_the_written_ground_is_open_water()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
             SetHeight(map, 0, 0, 7f);
 
             var data = Load(map);
@@ -120,17 +120,17 @@ namespace Top.Client.Game.Tests.World
         }
 
         [Test]
-        public void Blocked_corners_read_back_at_fine_resolution()
+        public void Blocked_bits_read_back_per_cell()
         {
-            var map = Map(2, 2, 2);
+            var map = CreateMap(2, 2, 2);
 
-            Chunk(map, 0, 0);
-            SetTile(map, 1, 0, new MapTile { Corner10 = 0x80, Corner01 = 0x80 });
+            AddChunk(map, 0, 0);
+            SetTile(map, 1, 0, new MapTile { Cell10 = 0x80, Cell01 = 0x80 });
 
             var data = Load(map);
 
-            Assert.That(data.IsBlocked(3, 0), Is.True, "the tile's east-south corner");
-            Assert.That(data.IsBlocked(2, 1), Is.True, "the tile's west-north corner");
+            Assert.That(data.IsBlocked(3, 0), Is.True, "the tile's east-south cell");
+            Assert.That(data.IsBlocked(2, 1), Is.True, "the tile's west-north cell");
             Assert.That(data.IsBlocked(2, 0), Is.False);
             Assert.That(data.IsBlocked(3, 1), Is.False);
             Assert.That(data.IsBlocked(0, 0), Is.False, "the neighbor tile stays open");
@@ -139,9 +139,9 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Off_the_written_ground_is_blocked()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
 
             var data = Load(map);
 
@@ -151,28 +151,28 @@ namespace Top.Client.Game.Tests.World
         }
 
         [Test]
-        public void Fine_height_decodes_sign_and_five_centimeter_steps()
+        public void Cell_height_decodes_sign_and_five_centimeter_steps()
         {
-            var map = Map(2, 2, 2);
+            var map = CreateMap(2, 2, 2);
 
-            Chunk(map, 0, 0);
-            SetTile(map, 0, 0, new MapTile { Corner00 = 10, Corner10 = 0x40 | 10, Corner01 = 0x80 | 10 });
+            AddChunk(map, 0, 0);
+            SetTile(map, 0, 0, new MapTile { Cell00 = 10, Cell10 = 0x40 | 10, Cell01 = 0x80 | 10 });
 
             var data = Load(map);
 
-            Assert.That(data.FineHeightAt(0, 0), Is.EqualTo(0.5f).Within(0.0001f));
-            Assert.That(data.FineHeightAt(1, 0), Is.EqualTo(-0.5f).Within(0.0001f), "bit six is the sign");
-            Assert.That(data.FineHeightAt(0, 1), Is.EqualTo(0.5f).Within(0.0001f),
+            Assert.That(data.CellHeightAt(0, 0), Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(data.CellHeightAt(1, 0), Is.EqualTo(-0.5f).Within(0.0001f), "bit six is the sign");
+            Assert.That(data.CellHeightAt(0, 1), Is.EqualTo(0.5f).Within(0.0001f),
                 "the blocked bit leaves the height alone");
-            Assert.That(data.FineHeightAt(6, 6), Is.EqualTo(0f), "off the map there is no relief");
+            Assert.That(data.CellHeightAt(6, 6), Is.EqualTo(0f), "off the map there is no relief");
         }
 
         [Test]
         public void Vertex_color_reads_back_per_tile_and_open_water_is_white()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
             SetTile(map, 1, 0, new MapTile { ColorR = 10, ColorG = 20, ColorB = 30 });
 
             var data = Load(map);
@@ -187,9 +187,9 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Regions_and_islands_read_back_per_tile()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
             SetTile(map, 1, 1, new MapTile { Region = 0b101, Island = 7 });
 
             var data = Load(map);
@@ -207,9 +207,9 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Placements_come_back_with_their_chunk()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            var chunk = Chunk(map, 0, 0);
+            var chunk = AddChunk(map, 0, 0);
 
             chunk.Placements.Add(new MapPlacement
             {
@@ -221,7 +221,7 @@ namespace Top.Client.Game.Tests.World
                 Yaw = 90f,
             });
             chunk.Placements.Add(new MapPlacement { Kind = PlacementKind.Effect, Id = 7 });
-            Chunk(map, 1, 0);
+            AddChunk(map, 1, 0);
 
             var data = Load(map);
 
@@ -242,9 +242,9 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void The_tile_layers_read_back_as_written()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
             SetTile(map, 1, 0, new MapTile
             {
                 Layer0 = new MapTileLayer { TerrainId = 5, MaskIndex = 15 },
@@ -261,9 +261,9 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Ground_off_the_written_chunks_reads_as_underwater()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
 
             var data = Load(map);
 
@@ -275,12 +275,42 @@ namespace Top.Client.Game.Tests.World
             Assert.That(data.LayerAt(3, 3, 1).TerrainId, Is.EqualTo(0), "it carries no detail layers");
         }
 
+        private static MapData LoadFlatGround(float height)
+        {
+            var map = CreateMap(2, 2, 2);
+
+            AddChunk(map, 0, 0);
+            SetHeight(map, 0, 0, height);
+            SetHeight(map, 1, 0, height);
+            SetHeight(map, 0, 1, height);
+            SetHeight(map, 1, 1, height);
+
+            return Load(map);
+        }
+
+        [Test]
+        public void A_placement_over_sunken_ground_rests_at_the_water_line()
+        {
+            var sunk = new MapPlacement { X = 0.5f, Y = 0.5f, HeightOffset = -1.5f };
+
+            Assert.That(LoadFlatGround(-2f).GetPlacementHeight(sunk), Is.EqualTo(-1.5f),
+                "the original clamps ground to the water line before the offset");
+        }
+
+        [Test]
+        public void A_placement_on_dry_ground_rests_at_terrain_height_plus_its_offset()
+        {
+            var standing = new MapPlacement { X = 0.5f, Y = 0.5f, HeightOffset = 0.25f };
+
+            Assert.That(LoadFlatGround(3f).GetPlacementHeight(standing), Is.EqualTo(3.25f));
+        }
+
         [Test]
         public void A_chunk_absent_from_the_file_reads_as_absent()
         {
-            var map = Map(4, 4, 2);
+            var map = CreateMap(4, 4, 2);
 
-            Chunk(map, 0, 0);
+            AddChunk(map, 0, 0);
 
             var data = Load(map);
 

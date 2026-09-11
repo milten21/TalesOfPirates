@@ -18,7 +18,7 @@ namespace Top.Client.Models.Gltf
             _content = content ?? throw new ArgumentNullException(nameof(content));
         }
 
-        public static Uri UriFor(string path)
+        public static Uri CreateUri(string path)
         {
             return new Uri(Root, path);
         }
@@ -35,7 +35,7 @@ namespace Top.Client.Models.Gltf
 
         private async Task<ContentDownload> Fetch(Uri url, bool nonReadable)
         {
-            var path = PathOf(url);
+            var path = GetContentPath(url);
 
             if (path == null)
             {
@@ -52,7 +52,7 @@ namespace Top.Client.Models.Gltf
             }
         }
 
-        private static string PathOf(Uri url)
+        private static string GetContentPath(Uri url)
         {
             if (url == null || !url.IsAbsoluteUri || url.Scheme != Scheme)
             {

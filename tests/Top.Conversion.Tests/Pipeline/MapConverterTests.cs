@@ -134,10 +134,10 @@ namespace Top.Conversion.Tests.Pipeline
             Assert.That(tile.Layer3.TerrainId, Is.EqualTo(0), "an unpainted layer names no texture");
             Assert.That(tile.Region, Is.EqualTo(5));
             Assert.That(tile.Island, Is.EqualTo(9));
-            Assert.That(tile.Corner00, Is.EqualTo(0x80));
-            Assert.That(tile.Corner10, Is.EqualTo(0x41));
-            Assert.That(tile.Corner01, Is.EqualTo(0x02));
-            Assert.That(tile.Corner11, Is.EqualTo(0xC3));
+            Assert.That(tile.Cell00, Is.EqualTo(0x80));
+            Assert.That(tile.Cell10, Is.EqualTo(0x41));
+            Assert.That(tile.Cell01, Is.EqualTo(0x02));
+            Assert.That(tile.Cell11, Is.EqualTo(0xC3));
         }
 
         [Test]

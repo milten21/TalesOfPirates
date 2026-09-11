@@ -16,13 +16,13 @@ namespace Top.Client.Models
 {
     public class ModelStore : IModelStore
     {
-        private class Entry
+        private class CachedModel
         {
-            public Task Loading;
-            public GltfImport Import;
-            public List<HostedClip> Clips;
-            public MaterialAnimations Materials;
-            public int Instances;
+            public Task LoadingTask;
+            public GltfImport GltfImport;
+            public List<HostedClip> HostedClips;
+            public MaterialAnimationSet MaterialAnimations;
+            public int InstanceCount;
         }
 
         private static readonly InstantiationSettings Settings = new InstantiationSettings
@@ -30,46 +30,39 @@ namespace Top.Client.Models
             SceneObjectCreation = SceneObjectCreation.Always,
         };
 
-        private readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry>(StringComparer.Ordinal);
+        private readonly Dictionary<string, CachedModel> _cachedModels =
+            new Dictionary<string, CachedModel>(StringComparer.Ordinal);
 
-        private readonly IContentSource _content;
+        private readonly IContentSource _contentSource;
         private readonly Shader _shader;
 
-        public ModelStore(IContentSource content, Shader shader)
+        public ModelStore(IContentSource contentSource, Shader shader)
         {
-            _content = content ?? throw new ArgumentNullException(nameof(content));
+            _contentSource = contentSource ?? throw new ArgumentNullException(nameof(contentSource));
             _shader = shader;
         }
 
-        /// <summary>
-        /// Builds the model at <paramref name="path"/> under
-        /// <paramref name="parent"/>, returning it only once it is whole.
-        /// </summary>
-        /// <remarks>
-        /// The instance count rises before instantiation, not after, so a
-        /// release running in between cannot take away the import this spawn is
-        /// still building from.
-        /// </remarks>
-        public async Task<ModelInstance> Spawn(string path, Transform parent,
-            CancellationToken cancel = default)
+        public async Task<ModelInstance> Instantiate(string path, Transform parent,
+            CancellationToken cancellationToken = default)
         {
-            var entry = await Ready(path);
+            var cachedModel = await GetOrLoad(path);
 
-            cancel.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var instantiator = new Instantiator(entry.Import, parent, entry.Materials, settings: Settings);
+            var instantiator = new Instantiator(cachedModel.GltfImport, parent, cachedModel.MaterialAnimations,
+                settings: Settings);
             var built = false;
 
-            entry.Instances++;
+            cachedModel.InstanceCount++;
 
             try
             {
-                if (!await entry.Import.InstantiateMainSceneAsync(instantiator, cancel))
+                if (!await cachedModel.GltfImport.InstantiateMainSceneAsync(instantiator, cancellationToken))
                 {
                     throw new InvalidOperationException($"{path} did not instantiate");
                 }
 
-                Play(instantiator, entry.Clips);
+                Play(instantiator, cachedModel.HostedClips);
 
                 built = true;
 
@@ -89,72 +82,63 @@ namespace Top.Client.Models
             }
         }
 
-        /// <summary>
-        /// Imports the given models without instantiating any of them, so a
-        /// later spawn has nothing left to wait for.
-        /// </summary>
-        public Task Preload(IEnumerable<string> paths)
+        public Task EnsureLoaded(IEnumerable<string> paths)
         {
-            var loads = paths.Select(Ready).Cast<Task>().ToList();
+            var loads = paths.Select(GetOrLoad).Cast<Task>().ToList();
 
             return Task.WhenAll(loads);
         }
 
         internal void Release(string path)
         {
-            if (!_entries.TryGetValue(path, out var entry))
+            if (!_cachedModels.TryGetValue(path, out var cachedModel))
             {
                 return;
             }
 
-            entry.Instances--;
+            cachedModel.InstanceCount--;
 
-            if (entry.Instances > 0)
+            if (cachedModel.InstanceCount > 0)
             {
                 return;
             }
 
-            _entries.Remove(path);
-            entry.Materials.Dispose();
-            entry.Import.Dispose();
+            _cachedModels.Remove(path);
+            cachedModel.MaterialAnimations.Dispose();
+            cachedModel.GltfImport.Dispose();
 
-            foreach (var hosted in entry.Clips)
+            foreach (var hosted in cachedModel.HostedClips)
             {
                 UnityObjects.Destroy(hosted.Clip);
             }
         }
 
-        /// <remarks>
-        /// Concurrent spawns for one path await the one load. A load that broke
-        /// vacates its entry, so the next spawn tries again instead of handing
-        /// out the same failure forever.
-        /// </remarks>
-        private async Task<Entry> Ready(string path)
+        private async Task<CachedModel> GetOrLoad(string path)
         {
-            if (!_entries.TryGetValue(path, out var entry))
+            if (!_cachedModels.TryGetValue(path, out var cachedModel))
             {
-                entry = new Entry();
-                _entries[path] = entry;
-                entry.Loading = Load(path, entry);
+                cachedModel = new CachedModel();
+                _cachedModels[path] = cachedModel;
+                cachedModel.LoadingTask = Load(path, cachedModel);
             }
 
             try
             {
-                await entry.Loading;
+                await cachedModel.LoadingTask;
             }
             catch
             {
-                Vacate(path, entry);
+                Release(path, cachedModel);
 
                 throw;
             }
 
-            return entry;
+            return cachedModel;
         }
 
-        private async Task Load(string path, Entry entry)
+        private async Task Load(string path, CachedModel cachedModel)
         {
-            var import = new GltfImport(new ContentDownloadProvider(_content),
+            var import = new GltfImport(new ContentDownloadProvider(_contentSource),
                 materialGenerator: new MaterialGenerator(_shader));
             var addon = new AnimationAddon();
 
@@ -162,7 +146,7 @@ namespace Top.Client.Models
 
             try
             {
-                if (!await import.Load(ContentDownloadProvider.UriFor(path)))
+                if (!await import.Load(ContentDownloadProvider.CreateUri(path)))
                 {
                     throw new InvalidOperationException($"{path} did not load");
                 }
@@ -174,47 +158,47 @@ namespace Top.Client.Models
                 throw;
             }
 
-            entry.Import = import;
-            entry.Clips = addon.Processor?.Clips ?? new List<HostedClip>();
-            entry.Materials = new MaterialAnimations(import);
+            cachedModel.GltfImport = import;
+            cachedModel.HostedClips = addon.Processor?.Clips ?? new List<HostedClip>();
+            cachedModel.MaterialAnimations = new MaterialAnimationSet(import);
         }
 
-        private void Vacate(string path, Entry entry)
+        private void Release(string path, CachedModel cachedModel)
         {
-            if (_entries.TryGetValue(path, out var current) && ReferenceEquals(current, entry))
+            if (_cachedModels.TryGetValue(path, out var cacheModel) && ReferenceEquals(cacheModel, cachedModel))
             {
-                _entries.Remove(path);
+                _cachedModels.Remove(path);
             }
         }
 
         private static void Play(Instantiator instantiator, List<HostedClip> clips)
         {
-            foreach (var hosted in clips)
+            foreach (var hostedClip in clips)
             {
-                var host = hosted.HostNode >= 0
-                    ? instantiator.NodeObject((uint)hosted.HostNode)
+                var host = hostedClip.HostNode >= 0
+                    ? instantiator.FindNodeObject((uint)hostedClip.HostNode)
                     : instantiator.Scene.gameObject;
 
                 if (host == null)
                 {
-                    Log.Warning($"clip '{hosted.Clip.name}' has no node to play on");
+                    Log.Warning($"clip '{hostedClip.Clip.name}' has no node to play on");
 
                     continue;
                 }
 
-                var first = !host.TryGetComponent<Animation>(out var animation);
+                var isNewAnimation = !host.TryGetComponent<Animation>(out var animation);
 
-                if (first)
+                if (isNewAnimation)
                 {
                     animation = host.AddComponent<Animation>();
                     animation.playAutomatically = true;
                 }
 
-                animation.AddClip(hosted.Clip, hosted.Clip.name);
+                animation.AddClip(hostedClip.Clip, hostedClip.Clip.name);
 
-                if (first)
+                if (isNewAnimation)
                 {
-                    animation.clip = hosted.Clip;
+                    animation.clip = hostedClip.Clip;
                     animation.Play();
                 }
             }

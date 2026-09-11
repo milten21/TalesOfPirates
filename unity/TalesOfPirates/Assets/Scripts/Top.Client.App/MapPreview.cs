@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
-using Top.Client.Core;
+using Top.Client.Game;
 using Top.Client.Game.Tables;
 using Top.Client.Game.World;
 using Top.Client.Game.World.SceneObjects;
@@ -9,7 +9,6 @@ using Top.Client.Game.World.Terrain;
 using Top.Client.Game.World.Water;
 using Top.Client.Models;
 using Top.Content;
-using Top.Contracts.Tables.World;
 using Top.Logging;
 using UnityEngine;
 
@@ -18,69 +17,47 @@ namespace Top.Client.App
     public class MapPreview : MonoBehaviour
     {
         [SerializeField] private int _mapId = 1;
-        [SerializeField] private Transform _center;
+        [SerializeField] private Transform _focus;
         [SerializeField] private bool _followSceneView;
         [SerializeField] private Light _sun;
-        [SerializeField] private float _radius = 192f;
+        [SerializeField] private float _mapStreamingRadius = 192f;
         [SerializeField] private ShaderSettings _shaders;
 
-        private ChunkWindow _allChunks;
-        private ChunkWindow _populatedChunks;
-        private MapStore _mapStore;
-        private MapTerrain _terrain;
-        private MapWater _water;
-        private SceneObjectSpawner _sceneObjects;
-        private Transform _terrainGroup;
-        private Transform _waterGroup;
-        private Transform _sceneObjectGroup;
-        private CancellationTokenSource _cancel;
+        private TerrainMaterial _terrainMaterial;
+        private WaterMaterial _waterMaterial;
+        private GameWorld _world;
+        private CancellationTokenSource _cancellationTokenSource;
 
         private void OnEnable()
         {
-            Show();
+            Load();
         }
 
         private void OnDisable()
         {
-            _cancel?.Cancel();
-            _cancel?.Dispose();
-            _cancel = null;
-            _sceneObjects?.Dispose();
-            _sceneObjects = null;
-            _terrain?.Dispose();
-            _terrain = null;
-            _water?.Dispose();
-            _water = null;
-            _mapStore?.Dispose();
-            _mapStore = null;
-            _allChunks = null;
-            _populatedChunks = null;
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
 
-            DestroyGroup(ref _terrainGroup);
-            DestroyGroup(ref _waterGroup);
-            DestroyGroup(ref _sceneObjectGroup);
+            _world?.Dispose();
+            _world = null;
+
+            _waterMaterial?.Dispose();
+            _waterMaterial = null;
+
+            _terrainMaterial?.Dispose();
+            _terrainMaterial = null;
         }
 
-        private Transform Group(string groupName)
+        private void Update()
         {
-            var group = new GameObject(groupName);
-
-            group.transform.SetParent(transform, worldPositionStays: false);
-
-            return group.transform;
-        }
-
-        private static void DestroyGroup(ref Transform group)
-        {
-            if (group != null)
+            if (TryFocus(out var position))
             {
-                UnityObjects.Destroy(group.gameObject);
+                _world?.SetCenter(position);
             }
-
-            group = null;
         }
 
-        private async void Show()
+        private async void Load()
         {
             if (_shaders == null)
             {
@@ -90,59 +67,46 @@ namespace Top.Client.App
             }
 
             // TODO: Temp
-            var root = Path.Combine(Application.dataPath, "..", "..", "..", "artifacts", "content");
-            var cancel = new CancellationTokenSource();
+            var contentRoot = Path.Combine(Application.dataPath, "..", "..", "..", "artifacts", "content");
+            var cancellationTokenSource = new CancellationTokenSource();
 
-            _cancel = cancel;
+            _cancellationTokenSource = cancellationTokenSource;
 
             try
             {
-                var content = new FolderContentSource(root);
-                var tables = await new TableStore(content).Load(cancel.Token);
+                var cancellationToken = cancellationTokenSource.Token;
+                var contentSource = new FolderContentSource(contentRoot);
+                var tableReader = new TableReader(contentSource);
+                var tableSet = await tableReader.Read(cancellationTokenSource.Token);
 
-                if (!tables.Maps.TryGetById(_mapId, out var entry))
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var terrainMaterial = await TerrainMaterial.Load(contentSource, tableSet.TerrainTable, _shaders.Terrain,
+                    cancellationToken);
+                var waterMaterial = await WaterMaterial.Load(contentSource, _shaders.Water, cancellationToken);
+                var mapReader = new MapReader(contentSource);
+                var modelStore = new ModelStore(contentSource, _shaders.Model);
+                var sceneObjectFactory = new SceneObjectFactory(tableSet.SceneObjectTable, modelStore);
+                var mapFactory = new MapFactory(tableSet.MapTable, mapReader, sceneObjectFactory, terrainMaterial.Material,
+                    waterMaterial.Material, _mapStreamingRadius);
+                var world = new GameWorld(mapFactory, transform, _sun);
+
+                await world.SetMap(_mapId, cancellationTokenSource.Token);
+
+                if (cancellationTokenSource.IsCancellationRequested)
                 {
-                    Log.Error($"no map {_mapId} in the table");
+                    world.Dispose();
+                    waterMaterial.Dispose();
+                    terrainMaterial.Dispose();
 
                     return;
                 }
 
-                var mapStore = new MapStore(content, tables.Terrains.TexturePaths(), _shaders.Terrain, _shaders.Water);
-                var map = await mapStore.Load(entry.MapPath, cancel.Token);
+                _terrainMaterial = terrainMaterial;
+                _waterMaterial = waterMaterial;
+                _world = world;
 
-                if (!ReferenceEquals(_cancel, cancel))
-                {
-                    mapStore.Dispose();
-
-                    return;
-                }
-
-                var terrain = await mapStore.GetTerrainMaterial(cancel.Token);
-                var water = await mapStore.GetWaterMaterial(cancel.Token);
-
-                if (!ReferenceEquals(_cancel, cancel))
-                {
-                    mapStore.Dispose();
-
-                    return;
-                }
-
-                _mapStore = mapStore;
-
-                ConfigureLighting(entry);
-
-                _terrainGroup = Group("Terrain");
-                _waterGroup = Group("Water");
-                _sceneObjectGroup = Group("SceneObjects");
-
-                _allChunks = new ChunkWindow(map, _radius, populatedOnly: false);
-                _populatedChunks = new ChunkWindow(map, _radius);
-                _terrain = new MapTerrain(map, _allChunks, _terrainGroup, terrain);
-                _water = new MapWater(map, _allChunks, _waterGroup, water);
-                _sceneObjects = new SceneObjectSpawner(map, _populatedChunks, _sceneObjectGroup,
-                    new SceneObjectFactory(tables.SceneObjects, new ModelStore(content, _shaders.Model)));
-
-                Log.Info($"Streaming {entry.DisplayName} ({entry.MapPath}) from {root}");
+                Log.Info($"Streaming {world.Map.DisplayName} ({world.Map.MapPath}) from {contentRoot}");
             }
             catch (OperationCanceledException)
             {
@@ -153,52 +117,21 @@ namespace Top.Client.App
             }
         }
 
-        private void ConfigureLighting(MapEntry entry)
-        {
-            if (_sun == null)
-            {
-                return;
-            }
-
-            var lightDirection = entry.LightDirection;
-            var direction = MapSpace.ToWorld(lightDirection.X, lightDirection.Y, lightDirection.Z);
-
-            if (direction != Vector3.zero)
-            {
-                _sun.transform.rotation = Quaternion.LookRotation(direction);
-            }
-
-            _sun.color = entry.LightColor.ToUnity();
-        }
-
-        private void Update()
-        {
-            if (!TryCenter(out var position))
-            {
-                return;
-            }
-
-            var center = MapSpace.ToMap(position);
-
-            _allChunks?.SetCenter(center);
-            _populatedChunks?.SetCenter(center);
-        }
-
-        private bool TryCenter(out Vector3 position)
+        private bool TryFocus(out Vector3 position)
         {
 #if UNITY_EDITOR
-            var view = UnityEditor.SceneView.lastActiveSceneView;
+            var sceneView = UnityEditor.SceneView.lastActiveSceneView;
 
-            if (_followSceneView && view != null)
+            if (_followSceneView && sceneView != null)
             {
-                position = view.camera.transform.position;
+                position = sceneView.camera.transform.position;
 
                 return true;
             }
 #endif
-            position = _center != null ? _center.position : default;
+            position = _focus != null ? _focus.position : default;
 
-            return _center != null;
+            return _focus != null;
         }
     }
 }

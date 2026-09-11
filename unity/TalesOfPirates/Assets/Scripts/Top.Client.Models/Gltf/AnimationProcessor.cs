@@ -56,7 +56,12 @@ namespace Top.Client.Models.Gltf
             var curves = new[] { new AnimationCurve(), new AnimationCurve(), new AnimationCurve() };
 
             BuildLinear(times, i => values[i], curves);
-            WarnIfNotLinear(interpolationType);
+
+            if (interpolationType != InterpolationType.Linear)
+            {
+                Log.Warning($"{interpolationType} animation interpolation played as linear");
+            }
+
             Store(clipIndex, targetNode, nodeHierarchyInfo, TranslationProperties, curves);
         }
 
@@ -85,7 +90,11 @@ namespace Top.Client.Models.Gltf
                 return value;
             }, curves);
 
-            WarnIfNotLinear(interpolationType);
+            if (interpolationType != InterpolationType.Linear)
+            {
+                Log.Warning($"{interpolationType} animation interpolation played as linear");
+            }
+
             Store(clipIndex, targetNode, nodeHierarchyInfo, RotationProperties, curves);
         }
 
@@ -96,7 +105,12 @@ namespace Top.Client.Models.Gltf
             var curves = new[] { new AnimationCurve(), new AnimationCurve(), new AnimationCurve() };
 
             BuildLinear(times, i => values[i], curves);
-            WarnIfNotLinear(interpolationType);
+
+            if (interpolationType != InterpolationType.Linear)
+            {
+                Log.Warning($"{interpolationType} animation interpolation played as linear");
+            }
+
             Store(clipIndex, targetNode, nodeHierarchyInfo, ScaleProperties, curves);
         }
 
@@ -107,7 +121,7 @@ namespace Top.Client.Models.Gltf
         {
         }
 
-        public GLTFast.Addons.IDataInstanceApplierFactory Complete()
+        public IDataInstanceApplierFactory Complete()
         {
             Clips = new List<HostedClip>();
 
@@ -125,7 +139,7 @@ namespace Top.Client.Models.Gltf
                     targets.Add(curve.TargetNode);
                 }
 
-                var host = CommonAncestor(targets, pending.Hierarchy);
+                var host = FindCommonAncestor(targets, pending.Hierarchy);
                 var clip = new AnimationClip
                 {
                     name = pending.Name,
@@ -135,7 +149,7 @@ namespace Top.Client.Models.Gltf
 
                 foreach (var curve in pending.Curves)
                 {
-                    var path = PathBetween(curve.TargetNode, host, pending.Hierarchy);
+                    var path = GetPathBetween(curve.TargetNode, host, pending.Hierarchy);
 
                     for (var i = 0; i < curve.Properties.Length; i++)
                     {
@@ -153,16 +167,8 @@ namespace Top.Client.Models.Gltf
         {
         }
 
-        private static void WarnIfNotLinear(InterpolationType interpolationType)
-        {
-            if (interpolationType != InterpolationType.Linear)
-            {
-                Log.Warning($"{interpolationType} animation interpolation played as linear");
-            }
-        }
-
-        private void Store(int clipIndex, int targetNode, INodeHierarchyInfo hierarchy,
-            string[] properties, AnimationCurve[] curves)
+        private void Store(int clipIndex, int targetNode, INodeHierarchyInfo hierarchy, string[] properties,
+            AnimationCurve[] curves)
         {
             var clip = _clips[clipIndex];
 
@@ -208,8 +214,7 @@ namespace Top.Client.Models.Gltf
             AddKeys(curves, previousTime, previousValue, inTangent, float3.zero);
         }
 
-        private static void BuildLinear4(NativeArray<float>.ReadOnly times, Vec4At valueAt,
-            AnimationCurve[] curves)
+        private static void BuildLinear4(NativeArray<float>.ReadOnly times, Vec4At valueAt, AnimationCurve[] curves)
         {
             var previousTime = times[0];
             var previousValue = valueAt(0);
@@ -254,19 +259,19 @@ namespace Top.Client.Models.Gltf
             curves[3].AddKey(new Keyframe(time, value.w, inTangent.w, outTangent.w));
         }
 
-        private static int CommonAncestor(HashSet<int> targets, INodeHierarchyInfo hierarchy)
+        private static int FindCommonAncestor(HashSet<int> targets, INodeHierarchyInfo hierarchy)
         {
             var ancestor = -2;
 
             foreach (var target in targets)
             {
-                ancestor = ancestor == -2 ? target : Ancestor(ancestor, target, hierarchy);
+                ancestor = ancestor == -2 ? target : FindCommonAncestor(ancestor, target, hierarchy);
             }
 
             return ancestor;
         }
 
-        private static int Ancestor(int first, int second, INodeHierarchyInfo hierarchy)
+        private static int FindCommonAncestor(int first, int second, INodeHierarchyInfo hierarchy)
         {
             if (first < 0 || second < 0)
             {
@@ -291,7 +296,7 @@ namespace Top.Client.Models.Gltf
             return -1;
         }
 
-        private static string PathBetween(int target, int host, INodeHierarchyInfo hierarchy)
+        private static string GetPathBetween(int target, int host, INodeHierarchyInfo hierarchy)
         {
             if (target == host)
             {

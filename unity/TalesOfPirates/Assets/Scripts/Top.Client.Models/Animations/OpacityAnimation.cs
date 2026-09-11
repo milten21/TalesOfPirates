@@ -2,9 +2,6 @@ using UnityEngine;
 
 namespace Top.Client.Models.Animations
 {
-    /// <summary>
-    /// Plays an OpacityAnimationTrack on one material slot.
-    /// </summary>
     [RequireComponent(typeof(Renderer))]
     public class OpacityAnimation : MonoBehaviour
     {

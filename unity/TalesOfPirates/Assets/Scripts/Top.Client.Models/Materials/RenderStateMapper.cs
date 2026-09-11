@@ -4,9 +4,6 @@ using UnityEngine.Rendering;
 
 namespace Top.Client.Models.Materials
 {
-    /// <summary>
-    /// Projects a resolved render state onto a Top/Model material.
-    /// </summary>
     public static class RenderStateMapper
     {
         public static Material CreateMaterial(RenderState state, Texture2D texture, Shader shader)

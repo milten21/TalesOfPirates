@@ -1,27 +1,25 @@
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Top.Client.Core;
 using Top.Content;
 using Top.Logging;
 using UnityEngine;
 
-namespace Top.Client.Game.World
+namespace Top.Client.Models.Textures
 {
-    /// <summary>
-    /// Reads images out of the content and resizes them to a common size, as
-    /// texture arrays need every slice the same. A missing image draws white.
-    /// </summary>
     public class TextureReader
     {
-        private readonly IContentSource _content;
+        private readonly IContentSource _contentSource;
 
-        public TextureReader(IContentSource content)
+        public TextureReader(IContentSource contentSource)
         {
-            _content = content;
+            _contentSource = contentSource;
         }
 
         public async Task<Texture2D> Read(string path)
         {
-            if (!_content.Exists(path))
+            if (!_contentSource.Exists(path))
             {
                 Log.Warning($"no '{path}', drawing white");
 
@@ -30,7 +28,7 @@ namespace Top.Client.Game.World
 
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false);
 
-            if (texture.LoadImage(await _content.Read(path)))
+            if (texture.LoadImage(await _contentSource.Read(path)))
             {
                 return texture;
             }
@@ -41,7 +39,47 @@ namespace Top.Client.Game.World
             return null;
         }
 
-        public Color32[] WhitePixels(int size)
+        public async Task<Texture2DArray> ReadArray(IReadOnlyList<string> paths,
+            CancellationToken cancellationToken = default)
+        {
+            var images = new Texture2D[paths.Count];
+            var size = 1;
+
+            for (var i = 0; i < images.Length; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (string.IsNullOrEmpty(paths[i]))
+                {
+                    continue;
+                }
+
+                images[i] = await Read(paths[i]);
+
+                if (images[i] != null)
+                {
+                    size = Mathf.Max(size, images[i].width, images[i].height);
+                }
+            }
+
+            var array = new Texture2DArray(size, size, images.Length, TextureFormat.RGBA32, mipChain: true)
+            {
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Trilinear,
+            };
+
+            for (var i = 0; i < images.Length; i++)
+            {
+                array.SetPixels32(images[i] == null ? CreateWhitePixels(size) : Resize(images[i], size), i);
+                UnityObjects.Destroy(images[i]);
+            }
+
+            array.Apply(updateMipmaps: true, makeNoLongerReadable: true);
+
+            return array;
+        }
+
+        public Color32[] CreateWhitePixels(int size)
         {
             var pixels = new Color32[size * size];
 
@@ -53,11 +91,11 @@ namespace Top.Client.Game.World
             return pixels;
         }
 
-        public Texture2D WhiteTexture()
+        public Texture2D CreateWhiteTexture()
         {
             var texture = new Texture2D(1, 1, TextureFormat.RGBA32, mipChain: false);
 
-            texture.SetPixels32(WhitePixels(1));
+            texture.SetPixels32(CreateWhitePixels(1));
             texture.Apply();
 
             return texture;

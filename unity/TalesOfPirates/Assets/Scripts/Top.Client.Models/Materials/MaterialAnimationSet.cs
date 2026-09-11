@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Top.Client.Models.Materials
 {
-    public class MaterialAnimations : IDisposable
+    public class MaterialAnimationSet : IDisposable
     {
         private class Tracks
         {
@@ -17,13 +17,13 @@ namespace Top.Client.Models.Materials
             public FlipbookTrack Flipbook;
         }
 
-        private readonly IGltfReadable _gltf;
+        private readonly IGltfReadable _gltfReadable;
 
         private readonly Dictionary<int, Tracks> _perMaterial = new Dictionary<int, Tracks>();
 
-        public MaterialAnimations(IGltfReadable gltf)
+        public MaterialAnimationSet(IGltfReadable gltfReadable)
         {
-            _gltf = gltf;
+            _gltfReadable = gltfReadable;
         }
 
         public void Attach(Renderer renderer, int[] materialIndices)
@@ -92,7 +92,7 @@ namespace Top.Client.Models.Materials
                 return tracks;
             }
 
-            tracks = MaterialStateReader.TryReadExtras(_gltf.GetSourceMaterial(material), out var extras)
+            tracks = MaterialStateReader.TryReadExtras(_gltfReadable.GetSourceMaterial(material), out var extras)
                 ? Build(extras)
                 : null;
 
@@ -115,7 +115,7 @@ namespace Top.Client.Models.Materials
                     ? Kept(TrackMapper.CreateOpacityTrack(extras.OpacityAnimation))
                     : null,
                 Flipbook = extras.Flipbook != null
-                    ? Kept(TrackMapper.CreateFlipbookTrack(extras.Flipbook, _gltf.GetTexture))
+                    ? Kept(TrackMapper.CreateFlipbookTrack(extras.Flipbook, _gltfReadable.GetTexture))
                     : null,
             };
         }

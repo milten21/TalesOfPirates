@@ -6,26 +6,20 @@ using UnityEngine;
 
 namespace Top.Client.Models.Gltf
 {
-    /// <summary>
-    /// Keeps helper_* collision meshes out of rendering, giving them a mesh
-    /// filter and no renderer, attaches the material animations each renderer's
-    /// slots ask for, and exposes the node lookup so clips can be hosted per
-    /// subtree after instantiation.
-    /// </summary>
     public class Instantiator : GameObjectInstantiator
     {
-        private readonly MaterialAnimations _materials;
+        private readonly MaterialAnimationSet _materialAnimations;
 
-        public Instantiator(IGltfReadable gltf, Transform parent, MaterialAnimations materials,
+        public Instantiator(IGltfReadable gltf, Transform parent, MaterialAnimationSet materialAnimations,
             ICodeLogger logger = null, InstantiationSettings settings = null)
             : base(gltf, parent, logger, settings)
         {
-            _materials = materials;
+            _materialAnimations = materialAnimations;
         }
 
         public Transform Scene => SceneTransform;
 
-        public GameObject NodeObject(uint nodeIndex)
+        public GameObject FindNodeObject(uint nodeIndex)
         {
             return m_Nodes != null && m_Nodes.TryGetValue(nodeIndex, out var node) ? node : null;
         }
@@ -56,7 +50,7 @@ namespace Top.Client.Models.Gltf
                 renderer.enabled = false;
             }
 
-            _materials.Attach(renderer, meshResult.materialIndices);
+            _materialAnimations.Attach(renderer, meshResult.materialIndices);
         }
     }
 }

@@ -8,27 +8,27 @@ using Top.Contracts.Tables.World;
 
 namespace Top.Client.Game.Tables
 {
-    public class TableStore : ITableStore
+    public class TableReader : ITableReader
     {
         private readonly IContentSource _content;
         private readonly TableFormat _format = new TableFormat();
 
-        public TableStore(IContentSource content)
+        public TableReader(IContentSource content)
         {
             _content = content;
         }
 
-        public async Task<TableSet> Load(CancellationToken cancel = default)
+        public async Task<TableSet> Read(CancellationToken cancellationToken = default)
         {
-            var sceneObjects = await Read<SceneObjectEntry>(SceneObjectTable.Path);
+            var sceneObjects = await ReadTable<SceneObjectEntry>(SceneObjectTable.Path);
 
-            cancel.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var terrains = await Read<TerrainEntry>(TerrainTable.Path);
+            var terrains = await ReadTable<TerrainEntry>(TerrainTable.Path);
 
-            cancel.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var maps = await Read<MapEntry>(MapTable.Path);
+            var maps = await ReadTable<MapEntry>(MapTable.Path);
 
             return new TableSet(
                 new SceneObjectTable(sceneObjects),
@@ -36,7 +36,7 @@ namespace Top.Client.Game.Tables
                 new MapTable(maps));
         }
 
-        private async Task<List<TEntry>> Read<TEntry>(string path) where TEntry : TableEntry
+        private async Task<List<TEntry>> ReadTable<TEntry>(string path) where TEntry : TableEntry
         {
             using var stream = new MemoryStream(await _content.Read(path));
 

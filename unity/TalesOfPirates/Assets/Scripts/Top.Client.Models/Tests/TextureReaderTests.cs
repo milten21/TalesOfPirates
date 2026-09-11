@@ -1,17 +1,17 @@
 using System.Threading.Tasks;
 using NUnit.Framework;
-using Top.Client.Game.World;
+using Top.Client.Models.Textures;
 using Top.Content;
 using UnityEngine;
 
-namespace Top.Client.Game.Tests.World
+namespace Top.Client.Models.Tests
 {
     public class TextureReaderTests
     {
         private static readonly Color32 Red = new Color32(255, 0, 0, 255);
         private static readonly Color32 Blue = new Color32(0, 0, 255, 255);
 
-        private static Texture2D Texture(int size, Color32 left, Color32 right)
+        private static Texture2D CreateTexture(int size, Color32 left, Color32 right)
         {
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             var pixels = new Color32[size * size];
@@ -33,7 +33,7 @@ namespace Top.Client.Game.Tests.World
         [Test]
         public void Fitting_a_texture_to_a_larger_size_keeps_its_picture()
         {
-            var texture = Texture(2, Red, Blue);
+            var texture = CreateTexture(2, Red, Blue);
 
             var pixels = new TextureReader(new MemoryContentSource()).Resize(texture, 4);
 

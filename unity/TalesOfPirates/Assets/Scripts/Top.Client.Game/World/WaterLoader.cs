@@ -1,63 +1,36 @@
-using System;
 using System.Collections.Generic;
 using Top.Client.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Top.Client.Game.World.Water
+namespace Top.Client.Game.World
 {
-    /// <summary>
-    /// The water at height zero over the chunks in the window, one quad per four-by-four tiles.
-    /// </summary>
-    public class MapWater : IDisposable
+    public class WaterLoader : IChunkLoader
     {
         private const int QuadTiles = 4;
         private const float FadeDepth = -0.5f;
 
-        private static readonly Color32 Water = new Color32(140, 140, 220, 207);
-        private static readonly Color32 Faded = new Color32(255, 255, 255, 0);
+        private static readonly Color32 WaterColor = new Color32(140, 140, 220, 207);
+        private static readonly Color32 FadedColor = new Color32(255, 255, 255, 0);
 
-        private readonly MapData _map;
-        private readonly ChunkWindow _chunks;
+        private readonly MapData _mapData;
         private readonly Transform _parent;
         private readonly Material _material;
-        private readonly Dictionary<Vector2Int, GameObject> _built = new Dictionary<Vector2Int, GameObject>();
+        private readonly Dictionary<Vector2Int, GameObject> _loadedChunks = new Dictionary<Vector2Int, GameObject>();
 
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Color32> _colors = new List<Color32>();
         private readonly List<Vector2> _uv = new List<Vector2>();
         private readonly List<int> _triangles = new List<int>();
 
-        public MapWater(MapData map, ChunkWindow chunks, Transform parent, Material material)
+        public WaterLoader(MapData mapData, Transform parent, Material material)
         {
-            _map = map;
-            _chunks = chunks;
+            _mapData = mapData;
             _parent = parent;
             _material = material;
-
-            _chunks.Added += Build;
-            _chunks.Removed += Release;
-
-            foreach (var chunk in _chunks.Chunks)
-            {
-                Build(chunk);
-            }
         }
 
-        public void Dispose()
-        {
-            _chunks.Added -= Build;
-            _chunks.Removed -= Release;
-
-            foreach (var chunk in _built.Values)
-            {
-                Destroy(chunk);
-            }
-
-            _built.Clear();
-        }
-
-        private void Build(Vector2Int chunk)
+        public void Load(Vector2Int chunk)
         {
             var mesh = BuildMesh(chunk);
 
@@ -66,11 +39,11 @@ namespace Top.Client.Game.World.Water
                 return;
             }
 
-            var size = _map.ChunkSize;
+            var chunkSize = _mapData.ChunkSize;
             var chunkObject = new GameObject($"water_{chunk.x}_{chunk.y}");
 
             chunkObject.transform.SetParent(_parent, worldPositionStays: false);
-            chunkObject.transform.localPosition = MapSpace.ToWorld(chunk.x * size, chunk.y * size, 0f);
+            chunkObject.transform.localPosition = MapSpace.ToWorld(chunk.x * chunkSize, chunk.y * chunkSize, 0f);
 
             var filter = chunkObject.AddComponent<MeshFilter>();
             var renderer = chunkObject.AddComponent<MeshRenderer>();
@@ -80,24 +53,32 @@ namespace Top.Client.Game.World.Water
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
 
-            _built[chunk] = chunkObject;
+            _loadedChunks[chunk] = chunkObject;
+        }
+
+        public void Unload(Vector2Int chunk)
+        {
+            if (_loadedChunks.Remove(chunk, out var chunkObject))
+            {
+                Destroy(chunkObject);
+            }
         }
 
         private Mesh BuildMesh(Vector2Int chunk)
         {
-            var quads = _map.ChunkSize / QuadTiles;
-            var vertexRow = quads + 1;
+            var quadsPerEdge = _mapData.ChunkSize / QuadTiles;
+            var verticesPerRow = quadsPerEdge + 1;
             var visible = false;
 
             Clear();
 
-            for (var y = 0; y <= quads; y++)
+            for (var y = 0; y <= quadsPerEdge; y++)
             {
-                for (var x = 0; x <= quads; x++)
+                for (var x = 0; x <= quadsPerEdge; x++)
                 {
-                    var mapX = ((chunk.x * quads) + x) * QuadTiles;
-                    var mapY = ((chunk.y * quads) + y) * QuadTiles;
-                    var color = VertexColor(mapX, mapY);
+                    var mapX = ((chunk.x * quadsPerEdge) + x) * QuadTiles;
+                    var mapY = ((chunk.y * quadsPerEdge) + y) * QuadTiles;
+                    var color = VertexColorAt(mapX, mapY);
 
                     visible |= color.a != 0;
 
@@ -114,18 +95,18 @@ namespace Top.Client.Game.World.Water
                 return null;
             }
 
-            for (var y = 0; y < quads; y++)
+            for (var y = 0; y < quadsPerEdge; y++)
             {
-                for (var x = 0; x < quads; x++)
+                for (var x = 0; x < quadsPerEdge; x++)
                 {
-                    var first = (y * vertexRow) + x;
+                    var firstVertex = (y * verticesPerRow) + x;
 
-                    _triangles.Add(first);
-                    _triangles.Add(first + 1);
-                    _triangles.Add(first + vertexRow);
-                    _triangles.Add(first + 1);
-                    _triangles.Add(first + vertexRow + 1);
-                    _triangles.Add(first + vertexRow);
+                    _triangles.Add(firstVertex);
+                    _triangles.Add(firstVertex + 1);
+                    _triangles.Add(firstVertex + verticesPerRow);
+                    _triangles.Add(firstVertex + 1);
+                    _triangles.Add(firstVertex + verticesPerRow + 1);
+                    _triangles.Add(firstVertex + verticesPerRow);
                 }
             }
 
@@ -142,9 +123,9 @@ namespace Top.Client.Game.World.Water
             return mesh;
         }
 
-        private Color32 VertexColor(int mapX, int mapY)
+        private Color32 VertexColorAt(int mapX, int mapY)
         {
-            return _map.HeightAt(mapX, mapY) > FadeDepth ? Faded : Water;
+            return _mapData.HeightAt(mapX, mapY) > FadeDepth ? FadedColor : WaterColor;
         }
 
         private void Clear()
@@ -153,14 +134,6 @@ namespace Top.Client.Game.World.Water
             _colors.Clear();
             _uv.Clear();
             _triangles.Clear();
-        }
-
-        private void Release(Vector2Int chunk)
-        {
-            if (_built.Remove(chunk, out var chunkObject))
-            {
-                Destroy(chunkObject);
-            }
         }
 
         private static void Destroy(GameObject chunkObject)

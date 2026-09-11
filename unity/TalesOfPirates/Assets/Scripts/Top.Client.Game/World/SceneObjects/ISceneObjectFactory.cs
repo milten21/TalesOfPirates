@@ -7,6 +7,6 @@ namespace Top.Client.Game.World.SceneObjects
 {
     public interface ISceneObjectFactory
     {
-        Task<ModelInstance> Build(int id, Transform parent, CancellationToken cancel = default);
+        Task<ModelInstance> Instantiate(int id, Transform parent, CancellationToken cancellationToken = default);
     }
 }

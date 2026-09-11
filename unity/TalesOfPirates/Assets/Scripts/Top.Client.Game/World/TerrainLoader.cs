@@ -1,25 +1,20 @@
-using System;
 using System.Collections.Generic;
 using Top.Client.Core;
+using Top.Client.Game.World.Terrain;
 using Top.Contracts.Assets.Maps;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Top.Client.Game.World.Terrain
+namespace Top.Client.Game.World
 {
-    /// <summary>
-    /// Terrain meshes for the chunks in the window, one quad per painted tile carrying
-    /// its heights, vertex colors and texture layers.
-    /// </summary>
-    public class MapTerrain : IDisposable
+    public class TerrainLoader : IChunkLoader
     {
-        private const int Layers = 4;
+        private const int TileLayers = 4;
 
-        private readonly MapData _map;
-        private readonly ChunkWindow _chunks;
+        private readonly MapData _mapData;
         private readonly Transform _parent;
         private readonly Material _material;
-        private readonly Dictionary<Vector2Int, GameObject> _built = new Dictionary<Vector2Int, GameObject>();
+        private readonly Dictionary<Vector2Int, GameObject> _loadedChunks = new Dictionary<Vector2Int, GameObject>();
 
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Color32> _colors = new List<Color32>();
@@ -28,42 +23,20 @@ namespace Top.Client.Game.World.Terrain
         private readonly List<Vector4> _slices = new List<Vector4>();
         private readonly List<int> _triangles = new List<int>();
 
-        public MapTerrain(MapData map, ChunkWindow chunks, Transform parent, Material material)
+        public TerrainLoader(MapData mapData, Transform parent, Material material)
         {
-            _map = map;
-            _chunks = chunks;
+            _mapData = mapData;
             _parent = parent;
             _material = material;
-
-            _chunks.Added += Build;
-            _chunks.Removed += Release;
-
-            foreach (var chunk in _chunks.Chunks)
-            {
-                Build(chunk);
-            }
         }
 
-        public void Dispose()
+        public void Load(Vector2Int chunk)
         {
-            _chunks.Added -= Build;
-            _chunks.Removed -= Release;
-
-            foreach (var chunk in _built.Values)
-            {
-                Destroy(chunk);
-            }
-
-            _built.Clear();
-        }
-
-        private void Build(Vector2Int chunk)
-        {
-            var size = _map.ChunkSize;
+            var chunkSize = _mapData.ChunkSize;
             var chunkObject = new GameObject($"chunk_{chunk.x}_{chunk.y}");
 
             chunkObject.transform.SetParent(_parent, worldPositionStays: false);
-            chunkObject.transform.localPosition = MapSpace.ToWorld(chunk.x * size, chunk.y * size, 0f);
+            chunkObject.transform.localPosition = MapSpace.ToWorld(chunk.x * chunkSize, chunk.y * chunkSize, 0f);
 
             var filter = chunkObject.AddComponent<MeshFilter>();
             var renderer = chunkObject.AddComponent<MeshRenderer>();
@@ -73,35 +46,43 @@ namespace Top.Client.Game.World.Terrain
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = true;
 
-            _built[chunk] = chunkObject;
+            _loadedChunks[chunk] = chunkObject;
+        }
+
+        public void Unload(Vector2Int chunk)
+        {
+            if (_loadedChunks.Remove(chunk, out var chunkObject))
+            {
+                Destroy(chunkObject);
+            }
         }
 
         private Mesh BuildMesh(Vector2Int chunk)
         {
-            var size = _map.ChunkSize;
-            var layers = new MapTileLayer[Layers];
+            var chunkSize = _mapData.ChunkSize;
+            var layers = new MapTileLayer[TileLayers];
 
             Clear();
 
-            if (_map.HasChunk(chunk.x, chunk.y))
+            if (_mapData.HasChunk(chunk.x, chunk.y))
             {
-                for (var y = 0; y < size; y++)
+                for (var localY = 0; localY < chunkSize; localY++)
                 {
-                    for (var x = 0; x < size; x++)
+                    for (var localX = 0; localX < chunkSize; localX++)
                     {
-                        var tileX = (chunk.x * size) + x;
-                        var tileY = (chunk.y * size) + y;
+                        var tileX = (chunk.x * chunkSize) + localX;
+                        var tileY = (chunk.y * chunkSize) + localY;
 
                         if (TryReadLayers(tileX, tileY, layers))
                         {
-                            AddTile(x, y, tileX, tileY, layers);
+                            AddTile(localX, localY, tileX, tileY, layers);
                         }
                     }
                 }
             }
             else
             {
-                AddUnderwater(size);
+                AddOpenWater(chunkSize);
             }
 
             var mesh = new Mesh();
@@ -121,23 +102,23 @@ namespace Top.Client.Game.World.Terrain
 
         private bool TryReadLayers(int tileX, int tileY, MapTileLayer[] layers)
         {
-            var stopped = false;
+            var ended = false;
 
-            for (var i = 0; i < Layers; i++)
+            for (var i = 0; i < TileLayers; i++)
             {
-                var layer = _map.LayerAt(tileX, tileY, i);
-                var painted = !stopped && layer.TerrainId != 0 && layer.MaskIndex != 0;
+                var layer = _mapData.LayerAt(tileX, tileY, i);
+                var painted = !ended && layer.TerrainId != 0 && layer.MaskIndex != 0;
 
-                stopped |= layer.TerrainId == 0;
+                ended |= layer.TerrainId == 0;
                 layers[i] = painted ? layer : default;
             }
 
             return layers[0].TerrainId != 0;
         }
 
-        private void AddTile(int x, int y, int tileX, int tileY, MapTileLayer[] layers)
+        private void AddTile(int localX, int localY, int tileX, int tileY, MapTileLayer[] layers)
         {
-            var first = _vertices.Count;
+            var firstVertex = _vertices.Count;
             var slices = new Vector4(layers[0].TerrainId, layers[1].TerrainId, layers[2].TerrainId,
                 layers[3].TerrainId);
 
@@ -145,29 +126,29 @@ namespace Top.Client.Game.World.Terrain
             {
                 for (var cornerX = 0; cornerX <= 1; cornerX++)
                 {
-                    var height = _map.HeightAt(tileX + cornerX, tileY + cornerY);
-                    var baseUv = TerrainUv.BaseUv(tileX, tileY, cornerX, cornerY);
-                    var mask1 = TerrainUv.MaskUv(layers[1].MaskIndex, cornerX, cornerY);
-                    var mask2 = TerrainUv.MaskUv(layers[2].MaskIndex, cornerX, cornerY);
-                    var mask3 = TerrainUv.MaskUv(layers[3].MaskIndex, cornerX, cornerY);
+                    var height = _mapData.HeightAt(tileX + cornerX, tileY + cornerY);
+                    var baseUv = TerrainUv.BaseUvAt(tileX, tileY, cornerX, cornerY);
+                    var mask1 = TerrainUv.MaskUvAt(layers[1].MaskIndex, cornerX, cornerY);
+                    var mask2 = TerrainUv.MaskUvAt(layers[2].MaskIndex, cornerX, cornerY);
+                    var mask3 = TerrainUv.MaskUvAt(layers[3].MaskIndex, cornerX, cornerY);
 
-                    _vertices.Add(MapSpace.ToWorld(x + cornerX, y + cornerY, height));
-                    _colors.Add(_map.ColorAt(tileX + cornerX, tileY + cornerY));
+                    _vertices.Add(MapSpace.ToWorld(localX + cornerX, localY + cornerY, height));
+                    _colors.Add(_mapData.ColorAt(tileX + cornerX, tileY + cornerY));
                     _uv0.Add(new Vector4(baseUv.x, baseUv.y, mask1.x, mask1.y));
                     _uv1.Add(new Vector4(mask2.x, mask2.y, mask3.x, mask3.y));
                     _slices.Add(slices);
                 }
             }
 
-            _triangles.Add(first);
-            _triangles.Add(first + 1);
-            _triangles.Add(first + 2);
-            _triangles.Add(first + 1);
-            _triangles.Add(first + 3);
-            _triangles.Add(first + 2);
+            _triangles.Add(firstVertex);
+            _triangles.Add(firstVertex + 1);
+            _triangles.Add(firstVertex + 2);
+            _triangles.Add(firstVertex + 1);
+            _triangles.Add(firstVertex + 3);
+            _triangles.Add(firstVertex + 2);
         }
 
-        private void AddUnderwater(int size)
+        private void AddOpenWater(int chunkSize)
         {
             var ground = MapTile.Underwater;
             var color = new Color32(ground.ColorR, ground.ColorG, ground.ColorB, byte.MaxValue);
@@ -177,9 +158,9 @@ namespace Top.Client.Game.World.Terrain
             {
                 for (var cornerX = 0; cornerX <= 1; cornerX++)
                 {
-                    var baseUv = TerrainUv.BaseUvSpan(size, cornerX, cornerY);
+                    var baseUv = TerrainUv.BaseUvAtSpanCorner(chunkSize, cornerX, cornerY);
 
-                    _vertices.Add(MapSpace.ToWorld(cornerX * size, cornerY * size, ground.Height));
+                    _vertices.Add(MapSpace.ToWorld(cornerX * chunkSize, cornerY * chunkSize, ground.Height));
                     _colors.Add(color);
                     _uv0.Add(new Vector4(baseUv.x, baseUv.y, 0f, 0f));
                     _uv1.Add(Vector4.zero);
@@ -203,14 +184,6 @@ namespace Top.Client.Game.World.Terrain
             _uv1.Clear();
             _slices.Clear();
             _triangles.Clear();
-        }
-
-        private void Release(Vector2Int chunk)
-        {
-            if (_built.Remove(chunk, out var chunkObject))
-            {
-                Destroy(chunkObject);
-            }
         }
 
         private static void Destroy(GameObject chunkObject)

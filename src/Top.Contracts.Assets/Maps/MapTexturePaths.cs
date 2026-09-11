@@ -2,10 +2,10 @@ namespace Top.Contracts.Assets.Maps
 {
     public static class MapTexturePaths
     {
-        public const int WaterFrames = 30;
+        public const int WaterFrameCount = 30;
 
-        public const string Masks = "textures/terrain/alpha/total.png";
+        public const string MaskAtlas = "textures/terrain/alpha/total.png";
 
-        public static string WaterFrame(int frame) => $"textures/terrain/water/ocean_h.{frame + 1:00}.png";
+        public static string GetWaterFramePath(int frame) => $"textures/terrain/water/ocean_h.{frame + 1:00}.png";
     }
 }

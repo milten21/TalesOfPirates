@@ -25,8 +25,8 @@ namespace Top.Client.Models.Tests
         [SetUp]
         public void Setup()
         {
-            _glb = Glb();
-            _png = Png();
+            _glb = CreateGlb();
+            _png = EncodePng();
 
             var content = new MemoryContentSource();
 
@@ -40,7 +40,7 @@ namespace Top.Client.Models.Tests
         [Test]
         public async Task A_model_comes_back_as_the_bytes_the_content_holds()
         {
-            var download = await _provider.Request(ContentDownloadProvider.UriFor(ModelPath));
+            var download = await _provider.Request(ContentDownloadProvider.CreateUri(ModelPath));
 
             Assert.That(download.Success, Is.True);
             Assert.That(download.Data, Is.EqualTo(_glb));
@@ -50,7 +50,7 @@ namespace Top.Client.Models.Tests
         [Test]
         public async Task A_texture_uri_relative_to_the_model_resolves()
         {
-            var model = ContentDownloadProvider.UriFor(ModelPath);
+            var model = ContentDownloadProvider.CreateUri(ModelPath);
 
             var download = await _provider.Request(new Uri(model, "../../textures/scene/010297.png"));
 
@@ -70,7 +70,7 @@ namespace Top.Client.Models.Tests
         [Test]
         public async Task A_uri_whose_case_differs_from_the_stored_name_resolves()
         {
-            var download = await _provider.Request(ContentDownloadProvider.UriFor("Textures/Scene/010297.PNG"));
+            var download = await _provider.Request(ContentDownloadProvider.CreateUri("Textures/Scene/010297.PNG"));
 
             Assert.That(download.Success, Is.True);
             Assert.That(download.Data, Is.EqualTo(_png));
@@ -79,7 +79,7 @@ namespace Top.Client.Models.Tests
         [Test]
         public async Task A_path_the_content_does_not_hold_fails()
         {
-            var download = await _provider.Request(ContentDownloadProvider.UriFor("models/scene/absent.glb"));
+            var download = await _provider.Request(ContentDownloadProvider.CreateUri("models/scene/absent.glb"));
 
             Assert.That(download.Success, Is.False);
             Assert.That(download.Error, Is.Not.Null.And.Not.Empty);
@@ -100,7 +100,7 @@ namespace Top.Client.Models.Tests
         {
             var provider = new ContentDownloadProvider(new BrokenContent());
 
-            var download = await provider.Request(ContentDownloadProvider.UriFor(ModelPath));
+            var download = await provider.Request(ContentDownloadProvider.CreateUri(ModelPath));
 
             Assert.That(download.Success, Is.False);
             Assert.That(download.Error, Does.Contain("the disk went away"));
@@ -118,7 +118,7 @@ namespace Top.Client.Models.Tests
         [Test]
         public async Task A_json_model_comes_back_as_text()
         {
-            var download = await _provider.Request(ContentDownloadProvider.UriFor(JsonModelPath));
+            var download = await _provider.Request(ContentDownloadProvider.CreateUri(JsonModelPath));
 
             Assert.That(download.Text, Is.EqualTo(Json));
             Assert.That(download.IsBinary, Is.False);
@@ -127,7 +127,7 @@ namespace Top.Client.Models.Tests
         [Test]
         public async Task A_texture_request_decodes_the_png()
         {
-            var download = await _provider.RequestTexture(ContentDownloadProvider.UriFor(TexturePath), false);
+            var download = await _provider.RequestTexture(ContentDownloadProvider.CreateUri(TexturePath), false);
 
             Assert.That(download.Success, Is.True);
             Assert.That(download.Texture, Is.Not.Null);
@@ -139,13 +139,13 @@ namespace Top.Client.Models.Tests
         public async Task A_texture_the_content_does_not_hold_fails_without_a_texture()
         {
             var download = await _provider.RequestTexture(
-                ContentDownloadProvider.UriFor("textures/scene/absent.png"), false);
+                ContentDownloadProvider.CreateUri("textures/scene/absent.png"), false);
 
             Assert.That(download.Success, Is.False);
             Assert.That(download.Texture, Is.Null);
         }
 
-        private static byte[] Glb()
+        private static byte[] CreateGlb()
         {
             var bytes = new byte[12];
 
@@ -154,7 +154,7 @@ namespace Top.Client.Models.Tests
             return bytes;
         }
 
-        private static byte[] Png()
+        private static byte[] EncodePng()
         {
             var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
 

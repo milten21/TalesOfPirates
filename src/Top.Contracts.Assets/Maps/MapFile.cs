@@ -100,10 +100,10 @@ namespace Top.Contracts.Assets.Maps
                 WriteLayer(writer, tile.Layer3);
                 writer.Write(tile.Region);
                 writer.Write(tile.Island);
-                writer.Write(tile.Corner00);
-                writer.Write(tile.Corner10);
-                writer.Write(tile.Corner01);
-                writer.Write(tile.Corner11);
+                writer.Write(tile.Cell00);
+                writer.Write(tile.Cell10);
+                writer.Write(tile.Cell01);
+                writer.Write(tile.Cell11);
             }
 
             writer.Write(chunk.Placements.Count);
@@ -203,10 +203,10 @@ namespace Top.Contracts.Assets.Maps
                     Layer3 = ReadLayer(reader),
                     Region = reader.ReadUInt16(),
                     Island = reader.ReadByte(),
-                    Corner00 = reader.ReadByte(),
-                    Corner10 = reader.ReadByte(),
-                    Corner01 = reader.ReadByte(),
-                    Corner11 = reader.ReadByte(),
+                    Cell00 = reader.ReadByte(),
+                    Cell10 = reader.ReadByte(),
+                    Cell01 = reader.ReadByte(),
+                    Cell11 = reader.ReadByte(),
                 };
             }
 

@@ -146,10 +146,10 @@ namespace Top.Conversion.Pipeline.Maps
                 Layer3 = Layer(source.Texture3, source.Alpha3),
                 Region = (ushort)source.Region,
                 Island = source.Island,
-                Corner00 = source.Block[0],
-                Corner10 = source.Block[1],
-                Corner01 = source.Block[2],
-                Corner11 = source.Block[3],
+                Cell00 = source.Block[0],
+                Cell10 = source.Block[1],
+                Cell01 = source.Block[2],
+                Cell11 = source.Block[3],
             };
         }
 

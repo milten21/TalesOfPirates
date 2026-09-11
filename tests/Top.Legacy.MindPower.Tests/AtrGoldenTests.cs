@@ -10,9 +10,9 @@ namespace Top.Legacy.MindPower.Tests
         public void Parses_known_fixture()
         {
             // teampk.atr: SAttribFileHeader width=96 height=96 (TerrainAttrib.h:55), then 96*96
-            // STILE_ATTRIB cells row-major (TerrainAttrib.cpp:_seekTile:131). Every cell carries
+            // STILE_ATTRIB tiless row-major (TerrainAttrib.cpp:_seekTile:131). Every tiles carries
             // attrib bit 1 set (mask 0x0001) and island index 95 -- hand-decoded from the fixture
-            // bytes (cell[0] at offset 8 = 01 00 5f).
+            // bytes (tile[0] at offset 8 = 01 00 5f).
             using var stream = File.OpenRead(Fixtures.Path("atr/teampk.atr"));
             var file = AtrFile.Read(stream);
 
@@ -20,11 +20,11 @@ namespace Top.Legacy.MindPower.Tests
             Assert.That(file.Grid.Height, Is.EqualTo(96));
             Assert.That(file.Grid.Tiles.Length, Is.EqualTo(96 * 96));
 
-            // cell (0,0): attrib mask 0x0001 (Bit1), island 95.
+            // tile (0,0): attrib mask 0x0001 (Bit1), island 95.
             Assert.That(file.Grid[0, 0].Attrib, Is.EqualTo(TerrainAttribute.Bit1));
             Assert.That(file.Grid[0, 0].Island, Is.EqualTo((byte)95));
 
-            // a few interior cells confirm the uniform fill and row-major addressing.
+            // a few interior tiles confirm the uniform fill and row-major addressing.
             Assert.That(file.Grid[1, 0].Attrib, Is.EqualTo(TerrainAttribute.Bit1));
             Assert.That(file.Grid[0, 1].Island, Is.EqualTo((byte)95));
             Assert.That(file.Grid[50, 50].Attrib, Is.EqualTo(TerrainAttribute.Bit1));
@@ -32,9 +32,9 @@ namespace Top.Legacy.MindPower.Tests
         }
 
         [Test]
-        public void Cell_packs_attrib_bits_and_island()
+        public void Tile_packs_attrib_bits_and_island()
         {
-            // The fixture is uniform, so drive a synthetic cell through Write/Read to pin the
+            // The fixture is uniform, so drive a synthetic tile through Write/Read to pin the
             // ushort attribute-mask + byte island layout (STILE_ATTRIB, TerrainAttrib.h:63) and
             // multi-bit attribute flags (set via 1 << (bit-1), TerrainAttrib.cpp:339).
             var file = new AtrFile

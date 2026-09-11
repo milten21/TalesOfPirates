@@ -35,36 +35,36 @@ namespace Top.Client.Game.World
             var fx = x - tileX;
             var fy = y - tileY;
 
-            var h10 = VertexHeight(tileX + 1, tileY);
-            var h01 = VertexHeight(tileX, tileY + 1);
+            var h10 = VertexHeightAt(tileX + 1, tileY);
+            var h01 = VertexHeightAt(tileX, tileY + 1);
 
             if (fx + fy <= 1f)
             {
-                var h00 = VertexHeight(tileX, tileY);
+                var h00 = VertexHeightAt(tileX, tileY);
 
                 return h00 + (fx * (h10 - h00)) + (fy * (h01 - h00));
             }
 
-            var h11 = VertexHeight(tileX + 1, tileY + 1);
+            var h11 = VertexHeightAt(tileX + 1, tileY + 1);
 
             return h11 + ((1f - fx) * (h01 - h11)) + ((1f - fy) * (h10 - h11));
         }
 
-        public bool IsBlocked(int fineX, int fineY)
+        public bool IsBlocked(int cellX, int cellY)
         {
-            return !TryCorner(fineX, fineY, out var corner) || (corner & BlockedBit) != 0;
+            return !TryGetCell(cellX, cellY, out var cell) || (cell & BlockedBit) != 0;
         }
 
-        public float FineHeightAt(int fineX, int fineY)
+        public float CellHeightAt(int cellX, int cellY)
         {
-            if (!TryCorner(fineX, fineY, out var corner))
+            if (!TryGetCell(cellX, cellY, out var cell))
             {
                 return 0f;
             }
 
-            var height = (corner & LevelMask) * LevelStep;
+            var height = (cell & LevelMask) * LevelStep;
 
-            return (corner & SignBit) != 0 ? -height : height;
+            return (cell & SignBit) != 0 ? -height : height;
         }
 
         public Color32 ColorAt(int tileX, int tileY)
@@ -90,25 +90,30 @@ namespace Top.Client.Game.World
 
         public ushort RegionAt(int tileX, int tileY)
         {
-            return TryTile(tileX, tileY, out var tile) ? tile.Region : (ushort)0;
+            return TryGetTile(tileX, tileY, out var tile) ? tile.Region : (ushort)0;
         }
 
         public byte IslandAt(int tileX, int tileY)
         {
-            return TryTile(tileX, tileY, out var tile) ? tile.Island : (byte)0;
+            return TryGetTile(tileX, tileY, out var tile) ? tile.Island : (byte)0;
         }
 
         public bool HasChunk(int chunkX, int chunkY)
         {
-            return TryChunk(chunkX, chunkY, out _);
+            return TryGetChunk(chunkX, chunkY, out _);
         }
 
         public IReadOnlyList<MapPlacement> PlacementsAt(int chunkX, int chunkY)
         {
-            return TryChunk(chunkX, chunkY, out var chunk) ? chunk.Placements : NoPlacements;
+            return TryGetChunk(chunkX, chunkY, out var chunk) ? chunk.Placements : NoPlacements;
         }
 
-        private bool TryChunk(int chunkX, int chunkY, out MapChunk chunk)
+        public float GetPlacementHeight(MapPlacement placement)
+        {
+            return Mathf.Max(HeightAt(placement.X, placement.Y), 0f) + placement.HeightOffset;
+        }
+
+        private bool TryGetChunk(int chunkX, int chunkY, out MapChunk chunk)
         {
             chunk = null;
 
@@ -122,38 +127,38 @@ namespace Top.Client.Game.World
             return chunk != null;
         }
 
-        private bool TryCorner(int fineX, int fineY, out byte corner)
+        private bool TryGetCell(int cellX, int cellY, out byte cell)
         {
-            corner = 0;
+            cell = 0;
 
-            if (fineX < 0 || fineY < 0 || !TryTile(fineX / 2, fineY / 2, out var tile))
+            if (cellX < 0 || cellY < 0 || !TryGetTile(cellX / 2, cellY / 2, out var tile))
             {
                 return false;
             }
 
-            corner = fineX % 2 == 0
-                ? (fineY % 2 == 0 ? tile.Corner00 : tile.Corner01)
-                : (fineY % 2 == 0 ? tile.Corner10 : tile.Corner11);
+            cell = cellX % 2 == 0
+                ? (cellY % 2 == 0 ? tile.Cell00 : tile.Cell01)
+                : (cellY % 2 == 0 ? tile.Cell10 : tile.Cell11);
 
             return true;
         }
 
-        private float VertexHeight(int x, int y)
+        private float VertexHeightAt(int x, int y)
         {
             return TileAt(x, y).Height;
         }
 
         private MapTile TileAt(int x, int y)
         {
-            return TryTile(x, y, out var tile) ? tile : MapTile.Underwater;
+            return TryGetTile(x, y, out var tile) ? tile : MapTile.Underwater;
         }
 
-        private bool TryTile(int x, int y, out MapTile tile)
+        private bool TryGetTile(int x, int y, out MapTile tile)
         {
             tile = default;
 
             if (x < 0 || y < 0 || x >= Width || y >= Height
-                || !TryChunk(x / ChunkSize, y / ChunkSize, out var chunk))
+                || !TryGetChunk(x / ChunkSize, y / ChunkSize, out var chunk))
             {
                 return false;
             }
