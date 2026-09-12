@@ -18,7 +18,7 @@ namespace Top.Legacy.Protocol.Tests
         {
             Assert.That(
                 Cipher().Decrypt(PinnedEncryptedPacket()),
-                Is.EqualTo(Bytes(PacketHex)),
+                Is.EqualTo(Hex.Bytes(PacketHex)),
                 "AES-128-GCM with a 16-byte IV and a 12-byte tag, cross-checked against OpenSSL");
         }
 
@@ -26,7 +26,7 @@ namespace Top.Legacy.Protocol.Tests
         public void An_encrypted_packet_decrypts_back()
         {
             var cipher = Cipher();
-            var packet = Bytes(PacketHex);
+            var packet = Hex.Bytes(PacketHex);
 
             Assert.That(cipher.Decrypt(cipher.Encrypt(packet)), Is.EqualTo(packet));
         }
@@ -42,20 +42,20 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_encrypted_packet_is_base64_then_a_zero_byte_then_the_iv()
         {
-            var encrypted = Cipher().Encrypt(Bytes(PacketHex));
+            var encrypted = Cipher().Encrypt(Hex.Bytes(PacketHex));
             var textLength = encrypted.Length - PacketCipher.IvSize - 1;
 
             Assert.That(encrypted[textLength], Is.Zero);
             Assert.That(
                 Convert.FromBase64String(Encoding.ASCII.GetString(encrypted, 0, textLength)),
-                Has.Length.EqualTo(Bytes(PacketHex).Length + 12));
+                Has.Length.EqualTo(Hex.Bytes(PacketHex).Length + 12));
         }
 
         [Test]
         public void Each_encryption_draws_a_new_iv()
         {
             var cipher = Cipher();
-            var packet = Bytes(PacketHex);
+            var packet = Hex.Bytes(PacketHex);
 
             Assert.That(cipher.Encrypt(packet), Is.Not.EqualTo(cipher.Encrypt(packet)));
         }
@@ -90,7 +90,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void Another_key_fails_to_decrypt()
         {
-            var other = new PacketCipher(Bytes("0F0E0D0C0B0A09080706050403020100"));
+            var other = new PacketCipher(Hex.Bytes("0F0E0D0C0B0A09080706050403020100"));
 
             Assert.That(() => other.Decrypt(PinnedEncryptedPacket()), Throws.InstanceOf<InvalidDataException>());
         }
@@ -118,7 +118,7 @@ namespace Top.Legacy.Protocol.Tests
 
         private static PacketCipher Cipher()
         {
-            return new PacketCipher(Bytes(KeyHex));
+            return new PacketCipher(Hex.Bytes(KeyHex));
         }
 
         private static byte[] PinnedEncryptedPacket()
@@ -126,21 +126,9 @@ namespace Top.Legacy.Protocol.Tests
             var text = Encoding.ASCII.GetBytes(CiphertextBase64);
             var encrypted = new byte[text.Length + 1 + PacketCipher.IvSize];
             text.CopyTo(encrypted, 0);
-            Bytes(IvHex).CopyTo(encrypted, text.Length + 1);
+            Hex.Bytes(IvHex).CopyTo(encrypted, text.Length + 1);
 
             return encrypted;
-        }
-
-        private static byte[] Bytes(string hex)
-        {
-            var bytes = new byte[hex.Length / 2];
-
-            for (var i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            }
-
-            return bytes;
         }
     }
 }

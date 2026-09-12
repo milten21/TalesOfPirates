@@ -15,14 +15,14 @@ namespace Top.Legacy.Protocol.Transport
 
         private readonly string _host;
         private readonly int _port;
+        private readonly bool _isEncrypted;
         private readonly GateSettings _settings;
-        private readonly Action<ushort, PacketReader> _onReceived;
-        private readonly Action<CloseReason> _onClosed;
 
         private readonly BlockingCollection<PendingPacket> _pending = new BlockingCollection<PendingPacket>();
 
         private readonly object _lock = new object();
 
+        private IGateListener _listener;
         private TcpClient _socket;
         private FrameReader _frameReader;
         private FrameWriter _frameWriter;
@@ -31,22 +31,21 @@ namespace Top.Legacy.Protocol.Transport
         private bool _isOpened;
         private volatile bool _isClosed;
 
-        public GateConnection(
-            string host,
-            int port,
-            GateSettings settings,
-            Action<ushort, PacketReader> received,
-            Action<CloseReason> closed)
+        public GateConnection(string host, int port, bool isEncrypted, GateSettings settings)
         {
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _port = port;
+            _isEncrypted = isEncrypted;
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _onReceived = received ?? throw new ArgumentNullException(nameof(received));
-            _onClosed = closed ?? throw new ArgumentNullException(nameof(closed));
         }
 
-        public void Open()
+        public void Open(IGateListener listener)
         {
+            if (listener == null)
+            {
+                throw new ArgumentNullException(nameof(listener));
+            }
+
             lock (_lock)
             {
                 if (_isOpened || _isClosed)
@@ -55,6 +54,7 @@ namespace Top.Legacy.Protocol.Transport
                 }
 
                 _isOpened = true;
+                _listener = listener;
             }
 
             new Thread(Run) { IsBackground = true, Name = "gate receive" }.Start();
@@ -93,6 +93,7 @@ namespace Top.Legacy.Protocol.Transport
 
             new Thread(WritePackets) { IsBackground = true, Name = "gate send" }.Start();
 
+            ReportOpen();
             ReadPackets();
         }
 
@@ -135,7 +136,7 @@ namespace Top.Legacy.Protocol.Transport
 
         private bool ExchangeKeys()
         {
-            if (!_settings.IsEncrypted)
+            if (!_isEncrypted)
             {
                 return true;
             }
@@ -249,11 +250,28 @@ namespace Top.Legacy.Protocol.Transport
             }
         }
 
+        private void ReportOpen()
+        {
+            if (_isClosed)
+            {
+                return;
+            }
+
+            try
+            {
+                _listener.OnOpened();
+            }
+            catch (Exception failure)
+            {
+                Log.Error("the handler for an open connection failed", failure);
+            }
+        }
+
         private void Deliver(ushort opcode, PacketReader packet)
         {
             try
             {
-                _onReceived(opcode, packet);
+                _listener.OnReceived(opcode, packet);
             }
             catch (Exception failure)
             {
@@ -306,6 +324,7 @@ namespace Top.Legacy.Protocol.Transport
         private void Close(CloseReason reason)
         {
             TcpClient socket;
+            IGateListener listener;
 
             lock (_lock)
             {
@@ -316,14 +335,20 @@ namespace Top.Legacy.Protocol.Transport
 
                 _isClosed = true;
                 socket = _socket;
+                listener = _listener;
             }
 
             _pending.CompleteAdding();
             socket?.Dispose();
 
+            if (listener == null)
+            {
+                return;
+            }
+
             try
             {
-                _onClosed(reason);
+                listener.OnClosed(reason);
             }
             catch (Exception failure)
             {

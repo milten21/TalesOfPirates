@@ -29,7 +29,7 @@ namespace Top.Legacy.Protocol.Transport
 
             var length = _frameFormat.HeaderLength + packet.Length;
             var frame = new byte[length];
-            _frameFormat.WriteLength(frame, length);
+            _frameFormat.WriteHeader(frame, length);
             Array.Copy(packet, 0, frame, _frameFormat.HeaderLength, packet.Length);
             WriteFrame(frame);
         }

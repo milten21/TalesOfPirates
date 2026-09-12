@@ -10,10 +10,9 @@ namespace Top.Legacy.Protocol.Tests
         {
             var settings = new GateSettings();
 
-            Assert.That(settings.IdleInterval, Is.EqualTo(TimeSpan.FromSeconds(25)));
-            Assert.That(settings.ReadTimeout, Is.EqualTo(TimeSpan.FromSeconds(30)));
+            Assert.That(settings.IdleInterval, Is.EqualTo(TimeSpan.FromSeconds(2)), "TcpCommApp::BeforeSel of Comm.cpp");
+            Assert.That(settings.ReadTimeout, Is.EqualTo(TimeSpan.FromSeconds(30)), "m_nSendHeartbeat of GameConfig.cpp");
             Assert.That(settings.ClientVersion, Is.EqualTo(32125), "[Main] Version of GateServer.cfg");
-            Assert.That(settings.IsEncrypted, Is.True);
         }
 
         [Test]

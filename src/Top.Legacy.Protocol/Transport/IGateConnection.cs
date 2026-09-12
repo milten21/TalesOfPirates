@@ -5,7 +5,7 @@ namespace Top.Legacy.Protocol.Transport
 {
     public interface IGateConnection : IDisposable
     {
-        void Open();
+        void Open(IGateListener listener);
 
         void Send(ushort opcode, Action<PacketWriter> payload);
     }

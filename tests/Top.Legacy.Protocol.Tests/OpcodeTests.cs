@@ -7,6 +7,7 @@ namespace Top.Legacy.Protocol.Tests
     {
         [TestCase(Opcode.Login, 431)]
         [TestCase(Opcode.LoginReply, 931)]
+        [TestCase(Opcode.Logout, 432)]
         [TestCase(Opcode.BeginPlay, 433)]
         [TestCase(Opcode.BeginPlayReply, 933)]
         [TestCase(Opcode.EnterMap, 516)]

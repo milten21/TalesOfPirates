@@ -20,6 +20,7 @@ namespace Top.Legacy.Protocol.Tests
     {
         private const ushort ForwardedOpcode = Opcode.EnterMap;
         private const int WaitMilliseconds = 10 * 1000;
+        private const int QuietMilliseconds = 200;
 
         private AsymmetricCipherKeyPair _gateKeys;
         private byte[] _der;
@@ -28,6 +29,7 @@ namespace Top.Legacy.Protocol.Tests
         private GateConnection _connection;
         private BlockingCollection<ReceivedPacket> _received;
         private BlockingCollection<CloseReason> _reasons;
+        private BlockingCollection<bool> _opens;
         private ushort? _failingOpcode;
         private bool _failsOnClose;
 
@@ -46,6 +48,7 @@ namespace Top.Legacy.Protocol.Tests
             _gate = new LoopbackGate();
             _received = new BlockingCollection<ReceivedPacket>();
             _reasons = new BlockingCollection<CloseReason>();
+            _opens = new BlockingCollection<bool>();
             _failingOpcode = null;
             _failsOnClose = false;
         }
@@ -106,7 +109,7 @@ namespace Top.Legacy.Protocol.Tests
             Assert.That(packet.ReadUShort(), Is.EqualTo(ForwardedOpcode));
             Assert.That(packet.ReadUInt(), Is.Zero);
             Assert.That(packet.ReadUShort(), Is.EqualTo(7));
-            Assert.That(_reasons.TryTake(out _, 200), Is.False);
+            Assert.That(_reasons.TryTake(out _, QuietMilliseconds), Is.False);
         }
 
         [Test]
@@ -124,7 +127,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void The_public_key_is_answered_with_the_key_the_gate_unwraps()
         {
-            Connect(Settings(isEncrypted: true));
+            Connect(Settings(), isEncrypted: true);
             WritePublicKey();
 
             var packet = _gate.ReadPacket();
@@ -137,11 +140,11 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void Every_packet_after_the_key_exchange_is_encrypted()
         {
-            Connect(Settings(isEncrypted: true));
+            Connect(Settings(), isEncrypted: true);
             var cipher = ExchangeKeys();
 
             _connection.Send(ForwardedOpcode, writer => writer.WriteUShort(7));
-            var sent = new PacketReader(cipher.Decrypt(_gate.ReadFrame()));
+            var sent = new PacketReader(cipher.Decrypt(_gate.ReadPacketBytes()));
 
             Assert.That(sent.ReadUShort(), Is.EqualTo(ForwardedOpcode));
             Assert.That(sent.ReadUInt(), Is.EqualTo(1), "the wrapped key was the packet before it");
@@ -151,7 +154,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_encrypted_packet_from_the_gate_reaches_the_received_callback_opened()
         {
-            Connect(Settings(isEncrypted: true));
+            Connect(Settings(), isEncrypted: true);
             var cipher = ExchangeKeys();
 
             var writer = new PacketWriter(ForwardedOpcode);
@@ -167,7 +170,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_first_packet_that_is_not_the_public_key_fails_the_key_exchange()
         {
-            Connect(Settings(isEncrypted: true));
+            Connect(Settings(), isEncrypted: true);
             _gate.WritePacket(ForwardedOpcode, null);
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.HandshakeFailed));
@@ -207,7 +210,7 @@ namespace Top.Legacy.Protocol.Tests
             Assert.That(
                 new[] { reply.ReadUInt(), reply.ReadUInt(), reply.ReadUInt(), reply.ReadUInt(), reply.ReadUInt() },
                 Is.EqualTo(new uint[] { 1, 0, 0, 0, 0 }));
-            Assert.That(_reasons.TryTake(out _, 200), Is.False);
+            Assert.That(_reasons.TryTake(out _, QuietMilliseconds), Is.False);
         }
 
         [Test]
@@ -301,7 +304,7 @@ namespace Top.Legacy.Protocol.Tests
             _gate.WritePacket(Opcode.LoginReply, null);
 
             Assert.That(TakePacket().Opcode, Is.EqualTo(Opcode.LoginReply));
-            Assert.That(_reasons.TryTake(out _, 200), Is.False);
+            Assert.That(_reasons.TryTake(out _, QuietMilliseconds), Is.False);
         }
 
         [Test]
@@ -315,11 +318,42 @@ namespace Top.Legacy.Protocol.Tests
         }
 
         [Test]
+        public void An_open_connection_reaches_the_opened_callback_once()
+        {
+            Connect(Settings());
+
+            Assert.That(_opens.TryTake(out _, WaitMilliseconds), Is.True, "the connection never opened");
+            Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
+        }
+
+        [Test]
+        public void An_encrypted_connection_opens_only_after_the_key_exchange()
+        {
+            Connect(Settings(), isEncrypted: true);
+
+            Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False, "the connection opened before the key exchange");
+
+            ExchangeKeys();
+
+            Assert.That(_opens.TryTake(out _, WaitMilliseconds), Is.True, "the connection never opened");
+        }
+
+        [Test]
+        public void A_failed_key_exchange_never_opens()
+        {
+            Connect(Settings(), isEncrypted: true);
+            _gate.WritePacket(ForwardedOpcode, null);
+
+            Assert.That(TakeReason(), Is.EqualTo(CloseReason.HandshakeFailed));
+            Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
+        }
+
+        [Test]
         public void A_second_open_is_refused()
         {
             Connect(Settings());
 
-            Assert.Throws<InvalidOperationException>(() => _connection.Open());
+            Assert.Throws<InvalidOperationException>(() => _connection.Open(new RecordingListener(this)));
         }
 
         [Test]
@@ -328,7 +362,7 @@ namespace Top.Legacy.Protocol.Tests
             _connection = Build(_gate.Port, Settings());
             _connection.Dispose();
 
-            Assert.Throws<InvalidOperationException>(() => _connection.Open());
+            Assert.Throws<InvalidOperationException>(() => _connection.Open(new RecordingListener(this)));
         }
 
         [Test]
@@ -342,20 +376,15 @@ namespace Top.Legacy.Protocol.Tests
             }
 
             _connection = Build(port, Settings());
-            _connection.Open();
+            _connection.Open(new RecordingListener(this));
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.Unreachable));
+            Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
         }
 
-        private static GateSettings Settings(
-            TimeSpan? idleInterval = null,
-            TimeSpan? readTimeout = null,
-            bool isEncrypted = false)
+        private static GateSettings Settings(TimeSpan? idleInterval = null, TimeSpan? readTimeout = null)
         {
-            return new GateSettings(
-                idleInterval: idleInterval,
-                readTimeout: readTimeout,
-                isEncrypted: isEncrypted);
+            return new GateSettings(idleInterval: idleInterval, readTimeout: readTimeout);
         }
 
         private static uint CountOf(PacketReader packet)
@@ -365,36 +394,15 @@ namespace Top.Legacy.Protocol.Tests
             return packet.ReadUInt();
         }
 
-        private GateConnection Build(int port, GateSettings settings)
+        private GateConnection Build(int port, GateSettings settings, bool isEncrypted = false)
         {
-            return new GateConnection(
-                "127.0.0.1",
-                port,
-                settings,
-                (opcode, packet) =>
-                {
-                    if (opcode == _failingOpcode)
-                    {
-                        throw new InvalidOperationException("the handler failed");
-                    }
-
-                    _received.Add(new ReceivedPacket(opcode, packet));
-                },
-                reason =>
-                {
-                    _reasons.Add(reason);
-
-                    if (_failsOnClose)
-                    {
-                        throw new InvalidOperationException("the close handler failed");
-                    }
-                });
+            return new GateConnection("127.0.0.1", port, isEncrypted, settings);
         }
 
-        private void Connect(GateSettings settings)
+        private void Connect(GateSettings settings, bool isEncrypted = false)
         {
-            _connection = Build(_gate.Port, settings);
-            _connection.Open();
+            _connection = Build(_gate.Port, settings, isEncrypted);
+            _connection.Open(new RecordingListener(this));
             _gate.Accept();
         }
 
@@ -438,6 +446,41 @@ namespace Top.Legacy.Protocol.Tests
             oaep.Init(false, _gateKeys.Private);
 
             return oaep.ProcessBlock(wrapped, 0, wrapped.Length);
+        }
+
+        private class RecordingListener : IGateListener
+        {
+            private readonly GateConnectionTests _tests;
+
+            public RecordingListener(GateConnectionTests tests)
+            {
+                _tests = tests;
+            }
+
+            public void OnOpened()
+            {
+                _tests._opens.Add(true);
+            }
+
+            public void OnReceived(ushort opcode, PacketReader packet)
+            {
+                if (opcode == _tests._failingOpcode)
+                {
+                    throw new InvalidOperationException("the handler failed");
+                }
+
+                _tests._received.Add(new ReceivedPacket(opcode, packet));
+            }
+
+            public void OnClosed(CloseReason reason)
+            {
+                _tests._reasons.Add(reason);
+
+                if (_tests._failsOnClose)
+                {
+                    throw new InvalidOperationException("the close handler failed");
+                }
+            }
         }
 
         private class ReceivedPacket

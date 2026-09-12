@@ -119,6 +119,25 @@ namespace Top.Legacy.Protocol.Tests
         }
 
         [Test]
+        public void A_peek_reads_the_next_two_bytes_without_passing_them()
+        {
+            var reader = new PacketReader(new byte[] { 0x01, 0xAF, 0x00, 0x2A });
+
+            Assert.That(reader.PeekUShort(), Is.EqualTo(Opcode.Login));
+            Assert.That(reader.PeekUShort(), Is.EqualTo(Opcode.Login));
+            Assert.That(reader.ReadUShort(), Is.EqualTo(Opcode.Login));
+            Assert.That(reader.PeekUShort(), Is.EqualTo(42));
+        }
+
+        [Test]
+        public void A_peek_past_the_end_is_refused()
+        {
+            var reader = new PacketReader(new byte[] { 0x00 });
+
+            Assert.Throws<InvalidDataException>(() => reader.PeekUShort());
+        }
+
+        [Test]
         public void A_read_past_the_end_is_refused()
         {
             var reader = new PacketReader(new byte[] { 0x00 });

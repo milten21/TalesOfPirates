@@ -15,8 +15,9 @@ namespace Top.Legacy.Protocol.Tests
 
             Assert.That(
                 stream.ToArray(),
-                Is.EqualTo(new byte[] { 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0xAF }),
-                "a length of eight over the two length bytes, the four session id bytes and the packet");
+                Is.EqualTo(new byte[] { 0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x01, 0xAF }),
+                "a length of eight over the two length bytes, the four session id bytes and the packet, "
+                + "and a session id the gate reads as a plain packet that wants no reply");
         }
 
         [Test]

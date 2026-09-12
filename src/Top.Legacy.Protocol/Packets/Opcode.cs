@@ -15,6 +15,7 @@ namespace Top.Legacy.Protocol.Packets
 
         public const ushort Login = CharacterToGame + 1;
         public const ushort LoginReply = CharacterToClient + 1;
+        public const ushort Logout = CharacterToGame + 2;
 
         public const ushort BeginPlay = CharacterToGame + 3;
         public const ushort BeginPlayReply = CharacterToClient + 3;

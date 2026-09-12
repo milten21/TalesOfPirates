@@ -40,11 +40,17 @@ namespace Top.Legacy.Protocol.Packets
 
         public ushort ReadUShort()
         {
-            Require(sizeof(ushort));
-            var value = (ushort)((_packet[_at] << 8) | _packet[_at + 1]);
+            var value = PeekUShort();
             _at += sizeof(ushort);
 
             return value;
+        }
+
+        public ushort PeekUShort()
+        {
+            Require(sizeof(ushort));
+
+            return (ushort)((_packet[_at] << 8) | _packet[_at + 1]);
         }
 
         public uint ReadUInt()

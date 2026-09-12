@@ -9,14 +9,12 @@ namespace Top.Legacy.Protocol
             FrameFormat frameFormat = null,
             TimeSpan? idleInterval = null,
             TimeSpan? readTimeout = null,
-            ushort clientVersion = 32125,
-            bool isEncrypted = true)
+            ushort clientVersion = 32125)
         {
             FrameFormat = frameFormat ?? new FrameFormat();
-            IdleInterval = idleInterval ?? TimeSpan.FromSeconds(25);
+            IdleInterval = idleInterval ?? TimeSpan.FromSeconds(2);
             ReadTimeout = readTimeout ?? TimeSpan.FromSeconds(30);
             ClientVersion = clientVersion;
-            IsEncrypted = isEncrypted;
 
             RequireInterval(IdleInterval, nameof(idleInterval));
             RequireInterval(ReadTimeout, nameof(readTimeout));
@@ -29,8 +27,6 @@ namespace Top.Legacy.Protocol
         public TimeSpan ReadTimeout { get; }
 
         public ushort ClientVersion { get; }
-
-        public bool IsEncrypted { get; }
 
         private static void RequireInterval(TimeSpan interval, string parameterName)
         {

@@ -68,7 +68,7 @@ namespace Top.Legacy.Protocol.Tests
             return packet;
         }
 
-        public PacketReader ReadPacket()
+        public byte[] ReadPacketBytes()
         {
             byte[] packet;
 
@@ -78,7 +78,12 @@ namespace Top.Legacy.Protocol.Tests
             }
             while (packet == null);
 
-            return new PacketReader(packet);
+            return packet;
+        }
+
+        public PacketReader ReadPacket()
+        {
+            return new PacketReader(ReadPacketBytes());
         }
 
         public void Dispose()
