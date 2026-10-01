@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "godot-ai": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "godot-ai==4.2.3",
+        "godot-ai",
+        "attach",
+        "--port",
+        "8001",
+        "--ws-port",
+        "8002"
+      ],
+      "env": {}
+    }
+  }
+}
