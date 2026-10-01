@@ -21,6 +21,9 @@ namespace Top.Legacy.Protocol.Tests
         private const ushort ForwardedOpcode = Opcode.EnterMap;
         private const int WaitMilliseconds = 10 * 1000;
         private const int QuietMilliseconds = 200;
+        private const string LoopbackHost = "127.0.0.1";
+        private const string SilentHost = "192.0.2.1";
+        private const int SilentPort = 1973;
 
         private AsymmetricCipherKeyPair _gateKeys;
         private byte[] _der;
@@ -64,7 +67,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_sent_packet_carries_its_opcode_and_the_count_of_the_packets_before_it()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _connection.Send(ForwardedOpcode, writer => writer.WriteUShort(7));
 
             var packet = _gate.ReadPacket();
@@ -77,7 +80,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_payload_is_written_before_send_returns()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             var written = false;
 
             _connection.Send(ForwardedOpcode, writer => written = true);
@@ -88,7 +91,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void The_packet_count_rises_by_one_for_each_packet()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _connection.Send(ForwardedOpcode, null);
             _connection.Send(ForwardedOpcode, null);
             _connection.Send(ForwardedOpcode, null);
@@ -100,7 +103,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_packet_the_gate_cannot_read_is_dropped_and_spends_no_count()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _connection.Send(ForwardedOpcode, writer => writer.WriteRaw(new byte[16 * 1024]));
             _connection.Send(ForwardedOpcode, writer => writer.WriteUShort(7));
 
@@ -115,7 +118,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_packet_the_gate_sends_reaches_the_received_callback()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(ForwardedOpcode, writer => writer.WriteString("garner"));
 
             var received = TakePacket();
@@ -127,7 +130,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void The_public_key_is_answered_with_the_key_the_gate_unwraps()
         {
-            Connect(Settings(), isEncrypted: true);
+            Connect(BuildSettings(), isEncrypted: true);
             WritePublicKey();
 
             var packet = _gate.ReadPacket();
@@ -140,7 +143,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void Every_packet_after_the_key_exchange_is_encrypted()
         {
-            Connect(Settings(), isEncrypted: true);
+            Connect(BuildSettings(), isEncrypted: true);
             var cipher = ExchangeKeys();
 
             _connection.Send(ForwardedOpcode, writer => writer.WriteUShort(7));
@@ -154,7 +157,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_encrypted_packet_from_the_gate_reaches_the_received_callback_opened()
         {
-            Connect(Settings(), isEncrypted: true);
+            Connect(BuildSettings(), isEncrypted: true);
             var cipher = ExchangeKeys();
 
             var writer = new PacketWriter(ForwardedOpcode);
@@ -170,7 +173,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_first_packet_that_is_not_the_public_key_fails_the_key_exchange()
         {
-            Connect(Settings(), isEncrypted: true);
+            Connect(BuildSettings(), isEncrypted: true);
             _gate.WritePacket(ForwardedOpcode, null);
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.HandshakeFailed));
@@ -179,7 +182,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void The_ping_is_answered_with_the_five_fields_it_carried()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(Opcode.Ping, writer =>
             {
                 for (uint field = 1; field <= 5; field++)
@@ -200,7 +203,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_ping_short_of_fields_is_answered_with_zeros_and_leaves_the_connection_open()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(Opcode.Ping, writer => writer.WriteUInt(1));
 
             var reply = _gate.ReadPacket();
@@ -216,7 +219,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void The_check_ping_is_answered_with_the_opcode_alone()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(Opcode.CheckPing, writer => writer.WriteUInt(9));
 
             var reply = _gate.ReadPacket();
@@ -229,7 +232,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void The_group_ping_is_answered_with_the_opcode_alone()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(Opcode.GroupPing, null);
 
             var reply = _gate.ReadPacket();
@@ -242,7 +245,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_ping_does_not_reach_the_received_callback()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(Opcode.CheckPing, null);
             _gate.WritePacket(ForwardedOpcode, null);
 
@@ -252,7 +255,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_empty_frame_arrives_when_the_idle_interval_passes_with_nothing_to_send()
         {
-            Connect(Settings(idleInterval: TimeSpan.FromMilliseconds(50)));
+            Connect(BuildSettings(idleInterval: TimeSpan.FromMilliseconds(50)));
 
             Assert.That(_gate.ReadFrame(), Is.Null);
         }
@@ -260,7 +263,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_gate_that_closes_the_socket_ends_the_connection()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.Dispose();
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.GateClosed));
@@ -269,7 +272,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_gate_that_sends_nothing_for_the_read_timeout_ends_the_connection()
         {
-            Connect(Settings(readTimeout: TimeSpan.FromMilliseconds(300)));
+            Connect(BuildSettings(readTimeout: TimeSpan.FromMilliseconds(300)));
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.TimedOut));
         }
@@ -277,7 +280,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void Disposing_ends_the_connection()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _connection.Dispose();
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.CallerClosed));
@@ -286,7 +289,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void One_reason_is_reported_however_many_ways_the_connection_ends()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.Dispose();
             TakeReason();
 
@@ -299,7 +302,7 @@ namespace Top.Legacy.Protocol.Tests
         public void A_received_handler_that_fails_leaves_the_connection_open()
         {
             _failingOpcode = ForwardedOpcode;
-            Connect(Settings());
+            Connect(BuildSettings());
             _gate.WritePacket(ForwardedOpcode, null);
             _gate.WritePacket(Opcode.LoginReply, null);
 
@@ -311,7 +314,7 @@ namespace Top.Legacy.Protocol.Tests
         public void A_close_handler_that_fails_does_not_reach_the_caller()
         {
             _failsOnClose = true;
-            Connect(Settings());
+            Connect(BuildSettings());
 
             Assert.DoesNotThrow(() => _connection.Dispose());
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.CallerClosed));
@@ -320,7 +323,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_open_connection_reaches_the_opened_callback_once()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
 
             Assert.That(_opens.TryTake(out _, WaitMilliseconds), Is.True, "the connection never opened");
             Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
@@ -329,7 +332,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_encrypted_connection_opens_only_after_the_key_exchange()
         {
-            Connect(Settings(), isEncrypted: true);
+            Connect(BuildSettings(), isEncrypted: true);
 
             Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False, "the connection opened before the key exchange");
 
@@ -341,7 +344,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_failed_key_exchange_never_opens()
         {
-            Connect(Settings(), isEncrypted: true);
+            Connect(BuildSettings(), isEncrypted: true);
             _gate.WritePacket(ForwardedOpcode, null);
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.HandshakeFailed));
@@ -351,7 +354,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_second_open_is_refused()
         {
-            Connect(Settings());
+            Connect(BuildSettings());
 
             Assert.Throws<InvalidOperationException>(() => _connection.Open(new RecordingListener(this)));
         }
@@ -359,7 +362,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void An_open_after_the_connection_ended_is_refused()
         {
-            _connection = Build(_gate.Port, Settings());
+            _connection = Build(LoopbackHost, _gate.Port, BuildSettings());
             _connection.Dispose();
 
             Assert.Throws<InvalidOperationException>(() => _connection.Open(new RecordingListener(this)));
@@ -375,16 +378,60 @@ namespace Top.Legacy.Protocol.Tests
                 port = quiet.Port;
             }
 
-            _connection = Build(port, Settings());
+            _connection = Build(LoopbackHost, port, BuildSettings());
             _connection.Open(new RecordingListener(this));
 
             Assert.That(TakeReason(), Is.EqualTo(CloseReason.Unreachable));
             Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
         }
 
-        private static GateSettings Settings(TimeSpan? idleInterval = null, TimeSpan? readTimeout = null)
+        [Test]
+        public void A_gate_that_never_answers_is_unreachable_once_the_connect_timeout_passes()
         {
-            return new GateSettings(idleInterval: idleInterval, readTimeout: readTimeout);
+            _connection = Build(SilentHost, SilentPort, BuildSettings(connectTimeout: TimeSpan.FromMilliseconds(300)));
+            _connection.Open(new RecordingListener(this));
+
+            Assert.That(
+                _reasons.TryTake(out var reason, 2 * 1000), Is.True,
+                "the attempt waited on the operating system, not on its connect timeout of 300 milliseconds");
+            Assert.That(
+                reason, Is.EqualTo(CloseReason.Unreachable),
+                "192.0.2.1 is TEST-NET-1 of RFC 5737, which answers nothing");
+            Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
+        }
+
+        [Test]
+        public void A_connection_closed_while_it_connects_ends_the_attempt()
+        {
+            _connection = Build(SilentHost, SilentPort, BuildSettings());
+            _connection.Open(new RecordingListener(this));
+
+            Assert.That(
+                _reasons.TryTake(out _, QuietMilliseconds), Is.False, "the attempt ended before it was closed");
+
+            _connection.Dispose();
+
+            Assert.That(TakeReason(), Is.EqualTo(CloseReason.CallerClosed));
+            Assert.That(_opens.TryTake(out _, QuietMilliseconds), Is.False);
+        }
+
+        [Test]
+        public void A_packet_sent_after_the_connection_ended_is_dropped()
+        {
+            Connect(BuildSettings());
+            _connection.Dispose();
+            TakeReason();
+
+            Assert.DoesNotThrow(() => _connection.Send(ForwardedOpcode, writer => writer.WriteUShort(7)));
+        }
+
+        private static GateSettings BuildSettings(
+            TimeSpan? idleInterval = null,
+            TimeSpan? readTimeout = null,
+            TimeSpan? connectTimeout = null)
+        {
+            return new GateSettings(
+                idleInterval: idleInterval, readTimeout: readTimeout, connectTimeout: connectTimeout);
         }
 
         private static uint CountOf(PacketReader packet)
@@ -394,14 +441,14 @@ namespace Top.Legacy.Protocol.Tests
             return packet.ReadUInt();
         }
 
-        private GateConnection Build(int port, GateSettings settings, bool isEncrypted = false)
+        private static GateConnection Build(string host, int port, GateSettings settings, bool isEncrypted = false)
         {
-            return new GateConnection("127.0.0.1", port, isEncrypted, settings);
+            return new GateConnection(host, port, isEncrypted, settings);
         }
 
         private void Connect(GateSettings settings, bool isEncrypted = false)
         {
-            _connection = Build(_gate.Port, settings, isEncrypted);
+            _connection = Build(LoopbackHost, _gate.Port, settings, isEncrypted);
             _connection.Open(new RecordingListener(this));
             _gate.Accept();
         }

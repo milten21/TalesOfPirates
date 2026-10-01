@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://bm26dyoa52p8h"]
+
+[ext_resource type="Script" uid="uid://bg05rl6cl734d" path="res://Features/Maps/Map.cs" id="1_world"]
+[ext_resource type="Script" uid="uid://cvxaqend1hshc" path="res://Features/Maps/Terrain/TerrainLoader.cs" id="2_terrain"]
+[ext_resource type="Script" uid="uid://cytdx1nt12m7r" path="res://Features/Maps/Water/WaterLoader.cs" id="3_water"]
+[ext_resource type="Script" uid="uid://d0or5plh5fh80" path="res://Features/Maps/SceneObjects/SceneObjectLoader.cs" id="4_objects"]
+
+[node name="Map" type="Node3D" unique_id=2083747180 node_paths=PackedStringArray("Terrain", "Water", "SceneObjects", "Sun")]
+script = ExtResource("1_world")
+Terrain = NodePath("Terrain")
+Water = NodePath("Water")
+SceneObjects = NodePath("SceneObjects")
+Sun = NodePath("Sun")
+
+[node name="Terrain" type="Node3D" parent="." unique_id=1289957093]
+script = ExtResource("2_terrain")
+
+[node name="Water" type="Node3D" parent="." unique_id=448237638]
+script = ExtResource("3_water")
+
+[node name="SceneObjects" type="Node3D" parent="." unique_id=1358361333]
+script = ExtResource("4_objects")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=299724369]
+shadow_enabled = true
+shadow_blur = 0.2
+directional_shadow_split_1 = 0.18
+directional_shadow_split_2 = 0.29
+directional_shadow_split_3 = 0.54
+directional_shadow_blend_splits = true
+directional_shadow_fade_start = 0.9
+directional_shadow_max_distance = 70.0

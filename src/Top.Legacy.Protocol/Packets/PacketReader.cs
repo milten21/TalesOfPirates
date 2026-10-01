@@ -53,6 +53,11 @@ namespace Top.Legacy.Protocol.Packets
             return (ushort)((_packet[_at] << 8) | _packet[_at + 1]);
         }
 
+        public short ReadShort()
+        {
+            return unchecked((short)ReadUShort());
+        }
+
         public uint ReadUInt()
         {
             Require(sizeof(uint));
@@ -63,6 +68,11 @@ namespace Top.Legacy.Protocol.Packets
             _at += sizeof(uint);
 
             return value;
+        }
+
+        public int ReadInt()
+        {
+            return unchecked((int)ReadUInt());
         }
 
         public string ReadString()

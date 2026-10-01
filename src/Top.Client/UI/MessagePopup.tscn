@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/MessagePopup.cs" id="1_message"]
+
+[node name="MessagePopup" type="PopupPanel" node_paths=PackedStringArray("TitleLabel", "MessageLabel", "CodeLabel", "OkButton")]
+transparent_bg = true
+visible = false
+transparent = true
+exclusive = true
+theme_type_variation = &"ModalPopup"
+script = ExtResource("1_message")
+TitleLabel = NodePath("Center/Window/Layout/TitleBar/Title")
+MessageLabel = NodePath("Center/Window/Layout/Body/Layout/Texts/Message")
+CodeLabel = NodePath("Center/Window/Layout/Body/Layout/Texts/Code")
+OkButton = NodePath("Center/Window/Layout/Body/Layout/Buttons/Ok")
+
+[node name="Scrim" type="Panel" parent="."]
+mouse_filter = 2
+theme_type_variation = &"ModalScrim"
+
+[node name="Center" type="CenterContainer" parent="."]
+
+[node name="Window" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+theme_type_variation = &"WindowPanel"
+
+[node name="Layout" type="VBoxContainer" parent="Center/Window"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TitleBar" type="PanelContainer" parent="Center/Window/Layout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"TitleBar"
+
+[node name="Title" type="Label" parent="Center/Window/Layout/TitleBar"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+vertical_alignment = 1
+
+[node name="Body" type="MarginContainer" parent="Center/Window/Layout"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Layout" type="VBoxContainer" parent="Center/Window/Layout/Body"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Texts" type="VBoxContainer" parent="Center/Window/Layout/Body/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Message" type="Label" parent="Center/Window/Layout/Body/Layout/Texts"]
+custom_minimum_size = Vector2(438, 0)
+layout_mode = 2
+theme_type_variation = &"WindowText"
+autowrap_mode = 3
+
+[node name="Code" type="Label" parent="Center/Window/Layout/Body/Layout/Texts"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"WindowCode"
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Window/Layout/Body/Layout"]
+layout_mode = 2
+alignment = 2
+
+[node name="Ok" type="Button" parent="Center/Window/Layout/Body/Layout/Buttons"]
+custom_minimum_size = Vector2(104, 34)
+layout_mode = 2
+theme_type_variation = &"GoldPill"
+text = "OK"

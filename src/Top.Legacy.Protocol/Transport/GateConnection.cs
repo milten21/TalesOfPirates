@@ -101,19 +101,6 @@ namespace Top.Legacy.Protocol.Transport
         {
             var socket = new TcpClient { NoDelay = true };
 
-            try
-            {
-                socket.Connect(_host, _port);
-            }
-            catch (Exception failure)
-            {
-                socket.Dispose();
-                Log.Warning($"the gate at {_host}:{_port} did not answer", failure);
-                Close(CloseReason.Unreachable);
-
-                return false;
-            }
-
             lock (_lock)
             {
                 if (_isClosed)
@@ -124,6 +111,19 @@ namespace Top.Legacy.Protocol.Transport
                 }
 
                 _socket = socket;
+            }
+
+            if (!ConnectSocket(socket))
+            {
+                return false;
+            }
+
+            lock (_lock)
+            {
+                if (_isClosed)
+                {
+                    return false;
+                }
 
                 var stream = socket.GetStream();
                 stream.ReadTimeout = (int)_settings.ReadTimeout.TotalMilliseconds;
@@ -132,6 +132,36 @@ namespace Top.Legacy.Protocol.Transport
             }
 
             return true;
+        }
+
+        private bool ConnectSocket(TcpClient socket)
+        {
+            try
+            {
+                if (socket.ConnectAsync(_host, _port).Wait((int)_settings.ConnectTimeout.TotalMilliseconds))
+                {
+                    return true;
+                }
+
+                ReportUnreachable(new TimeoutException(
+                    $"The gate did not answer inside {_settings.ConnectTimeout.TotalSeconds} seconds."));
+            }
+            catch (Exception failure)
+            {
+                ReportUnreachable((failure as AggregateException)?.InnerException ?? failure);
+            }
+
+            return false;
+        }
+
+        private void ReportUnreachable(Exception failure)
+        {
+            if (!_isClosed)
+            {
+                Log.Warning($"the gate at {_host}:{_port} did not answer", failure);
+            }
+
+            Close(CloseReason.Unreachable);
         }
 
         private bool ExchangeKeys()
@@ -225,13 +255,13 @@ namespace Top.Legacy.Protocol.Transport
 
             try
             {
-                while (!_pending.IsAddingCompleted)
+                while (!_isClosed)
                 {
                     if (_pending.TryTake(out var pending, idle))
                     {
                         WriteToGate(pending.Opcode, pending.Payload);
                     }
-                    else if (!_pending.IsAddingCompleted)
+                    else if (!_isClosed)
                     {
                         _frameWriter.WriteIdleFrame();
                     }
@@ -339,6 +369,7 @@ namespace Top.Legacy.Protocol.Transport
             }
 
             _pending.CompleteAdding();
+            _pending.Dispose();
             socket?.Dispose();
 
             if (listener == null)

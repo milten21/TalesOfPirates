@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://c22uouc7xd2va"]
+
+[ext_resource type="Script" uid="uid://bt4hxu8n628b1" path="res://Tools/MapViewer.cs" id="1_viewer"]
+[ext_resource type="Script" uid="uid://pfpqnjcwmowq" path="res://Tools/FlyCamera.cs" id="2_camera"]
+[ext_resource type="PackedScene" uid="uid://bm26dyoa52p8h" path="res://Features/Maps/Map.tscn" id="3_world"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_horizon_color = Color(0.66, 0.67, 0.69, 1)
+ground_horizon_color = Color(0.66, 0.67, 0.69, 1)
+
+[sub_resource type="Sky" id="Sky_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 2
+sky = SubResource("Sky_sky")
+
+[node name="MapViewer" type="Node3D" unique_id=1721771043 node_paths=PackedStringArray("Camera", "Map")]
+script = ExtResource("1_viewer")
+Camera = NodePath("FlyCamera")
+Map = NodePath("Map")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=936709204]
+environment = SubResource("Environment_world")
+
+[node name="Map" parent="." unique_id=1388493290 instance=ExtResource("3_world")]
+
+[node name="FlyCamera" type="Camera3D" parent="." unique_id=895649002]
+far = 3000.0
+script = ExtResource("2_camera")

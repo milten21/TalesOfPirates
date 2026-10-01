@@ -24,12 +24,15 @@ namespace Top.Conversion.Models.Gltf
         private readonly GltfBuilder _gltf;
         private readonly string _modelName;
         private readonly string _textureUriPrefix;
+        private readonly Func<TextureStage, float, bool> _isTextureTranslucent;
 
-        public MaterialWriter(GltfBuilder gltf, string modelName, string textureUriPrefix)
+        public MaterialWriter(GltfBuilder gltf, string modelName, string textureUriPrefix,
+            Func<TextureStage, float, bool> isTextureTranslucent = null)
         {
             _gltf = gltf;
             _modelName = modelName;
             _textureUriPrefix = textureUriPrefix;
+            _isTextureTranslucent = isTextureTranslucent;
         }
 
         public static MaterialExtras Extras(GeometryObject obj, int materialIndex, RenderState state,
@@ -51,7 +54,7 @@ namespace Top.Conversion.Models.Gltf
                 return null;
             }
 
-            var state = RenderStateResolver.Resolve(obj, materialIndex);
+            var state = RenderStateResolver.Resolve(obj, materialIndex, _isTextureTranslucent);
             var fileName = state.TextureFile;
             var material = _gltf.AddMaterial(Naming.Material(_modelName, obj.Id, materialIndex))
                 .WithDoubleSided(state.Cull == FaceCulling.None);

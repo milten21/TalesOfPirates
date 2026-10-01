@@ -1,7 +1,0 @@
-{
-  "name": "com.top.logging",
-  "version": "0.1.0",
-  "displayName": "Top.Logging",
-  "description": "Static log facade over a swappable writer.",
-  "unity": "6000.0"
-}

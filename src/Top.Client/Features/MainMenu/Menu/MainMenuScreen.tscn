@@ -1,0 +1,124 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/MainMenu/Menu/MainMenuScreen.cs" id="1_screen"]
+[ext_resource type="PackedScene" path="res://UI/MenuItem.tscn" id="2_item"]
+[ext_resource type="Script" path="res://Features/MainMenu/Menu/ContinuePill.cs" id="3_continue"]
+
+[node name="MainMenuScreen" type="Control" node_paths=PackedStringArray("ContinuePill", "OnlineItem", "SettingsItem", "ExitItem")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_screen")
+ContinuePill = NodePath("Block/Continue")
+OnlineItem = NodePath("Block/Items/Online")
+SettingsItem = NodePath("Block/Items/Settings")
+ExitItem = NodePath("Block/Items/Exit")
+
+[node name="Block" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -120.0
+offset_bottom = -120.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 44
+
+[node name="Wordmark" type="VBoxContainer" parent="Block"]
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Caption" type="Label" parent="Block/Wordmark"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"WordmarkCaption"
+text = "TALES OF"
+
+[node name="Title" type="Label" parent="Block/Wordmark"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"WordmarkTitle"
+text = "Pirates"
+
+[node name="Continue" type="Button" parent="Block" node_paths=PackedStringArray("Layout", "Detail")]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"GoldPillScene"
+script = ExtResource("3_continue")
+Layout = NodePath("Layout")
+Detail = NodePath("Layout/Row/Detail")
+
+[node name="Layout" type="MarginContainer" parent="Block/Continue"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 28
+
+[node name="Row" type="HBoxContainer" parent="Block/Continue/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Icon" type="Label" parent="Block/Continue/Layout/Row"]
+layout_mode = 2
+theme_type_variation = &"ContinueIcon"
+text = "play_arrow"
+vertical_alignment = 1
+
+[node name="Caption" type="Label" parent="Block/Continue/Layout/Row"]
+layout_mode = 2
+theme_type_variation = &"ContinueCaption"
+text = "CONTINUE"
+vertical_alignment = 1
+
+[node name="Detail" type="Label" parent="Block/Continue/Layout/Row"]
+layout_mode = 2
+theme_type_variation = &"ContinueDetail"
+vertical_alignment = 1
+
+[node name="Items" type="VBoxContainer" parent="Block"]
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Online" parent="Block/Items" instance=ExtResource("2_item")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Caption" parent="Block/Items/Online/Layout" index="0"]
+text = "ONLINE"
+
+[node name="Settings" parent="Block/Items" instance=ExtResource("2_item")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Caption" parent="Block/Items/Settings/Layout" index="0"]
+text = "SETTINGS"
+
+[node name="Exit" parent="Block/Items" instance=ExtResource("2_item")]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"MenuItemQuiet"
+
+[node name="Caption" parent="Block/Items/Exit/Layout" index="0"]
+text = "EXIT"
+
+[node name="Diamond" parent="Block/Items/Exit/Layout/DiamondSlot" index="0"]
+theme_type_variation = &"DiamondQuiet"

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Top.Conversion.Pipeline;
+using Top.Conversion.Pipeline.Maps;
 
 namespace Top.Conversion.Tests.Pipeline
 {
@@ -7,6 +8,20 @@ namespace Top.Conversion.Tests.Pipeline
     {
         private static readonly ConversionSettings Settings =
             new ConversionSettings("C:/client/assets", "C:/project/Assets/Content");
+
+        [Test]
+        public void The_map_chunk_size_defaults_to_the_map_builder_default()
+        {
+            Assert.That(Settings.MapChunkSize, Is.EqualTo(MapBuilder.DefaultChunkSize));
+        }
+
+        [Test]
+        public void The_map_chunk_size_can_be_set_explicitly()
+        {
+            var settings = new ConversionSettings("C:/client/assets", "C:/project/Assets/Content", mapChunkSize: 32);
+
+            Assert.That(settings.MapChunkSize, Is.EqualTo(32));
+        }
 
         private static string Slashed(string path) => path.Replace('\\', '/');
 

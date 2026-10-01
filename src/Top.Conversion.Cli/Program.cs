@@ -44,7 +44,8 @@ namespace Top.Conversion.Cli
 
         private static IReadOnlyList<KindRun> Convert(Arguments arguments)
         {
-            var settings = new ConversionSettings(arguments.Source, arguments.Output, overwrite: true);
+            var settings = new ConversionSettings(arguments.Source, arguments.Output, overwrite: true,
+                arguments.MapChunkSize);
             var pipeline = new ConversionPipeline(settings);
             var runs = new List<KindRun>();
 

@@ -154,18 +154,6 @@ namespace Top.Conversion.Models
             }
         }
 
-        private static string ResolveTexture(string searchDir, string fileName)
-        {
-            return new[]
-                {
-                    Path.ChangeExtension(fileName, ".dds"),
-                    fileName,
-                    Path.ChangeExtension(fileName, ".tga"),
-                }
-                .Select(candidate => Path.Combine(searchDir, candidate))
-                .FirstOrDefault(File.Exists);
-        }
-
         private string WriteModel(GltfFile file, out string binPath)
         {
             binPath = null;
@@ -220,7 +208,7 @@ namespace Top.Conversion.Models
                     continue;
                 }
 
-                var sourcePath = ResolveTexture(searchDir, fileName);
+                var sourcePath = TextureConversion.FindSource(searchDir, fileName);
 
                 if (sourcePath == null)
                 {

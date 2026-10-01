@@ -1,0 +1,128 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/World/GameMenu.cs" id="1_menu"]
+[ext_resource type="Script" path="res://UI/ActionArea.cs" id="2_action_area"]
+[ext_resource type="PackedScene" path="res://UI/MenuItem.tscn" id="3_item"]
+[ext_resource type="Script" path="res://UI/InlineConfirm.cs" id="4_confirm"]
+
+[node name="GameMenu" type="Control" node_paths=PackedStringArray("ActionArea", "Items", "SwitchCharacterItem", "LogOutItem", "ExitItem", "Confirm", "ConfirmTitle")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_menu")
+ActionArea = NodePath("ActionArea")
+Items = NodePath("ActionArea/Items")
+SwitchCharacterItem = NodePath("ActionArea/Items/SwitchCharacter")
+LogOutItem = NodePath("ActionArea/Items/LogOut")
+ExitItem = NodePath("ActionArea/Items/Exit")
+Confirm = NodePath("ActionArea/Confirm")
+ConfirmTitle = NodePath("ActionArea/Confirm/Layout/Title")
+
+[node name="Dim" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"GameMenuDim"
+
+[node name="ActionArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -120.0
+offset_bottom = -130.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("2_action_area")
+
+[node name="Items" type="VBoxContainer" parent="ActionArea"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="SwitchCharacter" parent="ActionArea/Items" instance=ExtResource("3_item")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Caption" parent="ActionArea/Items/SwitchCharacter/Layout" index="0"]
+text = "SWITCH CHARACTER"
+
+[node name="LogOut" parent="ActionArea/Items" instance=ExtResource("3_item")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Caption" parent="ActionArea/Items/LogOut/Layout" index="0"]
+text = "LOG OUT"
+
+[node name="Exit" parent="ActionArea/Items" instance=ExtResource("3_item")]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"MenuItemQuiet"
+
+[node name="Caption" parent="ActionArea/Items/Exit/Layout" index="0"]
+text = "EXIT"
+
+[node name="Diamond" parent="ActionArea/Items/Exit/Layout/DiamondSlot" index="0"]
+theme_type_variation = &"DiamondQuiet"
+
+[node name="Confirm" type="MarginContainer" parent="ActionArea" node_paths=PackedStringArray("QuestionLabel", "ConfirmButton", "KeepButton")]
+visible = false
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+mouse_filter = 2
+script = ExtResource("4_confirm")
+QuestionLabel = NodePath("Layout/Question")
+ConfirmButton = NodePath("Layout/Buttons/Pill")
+KeepButton = NodePath("Layout/Buttons/Cancel")
+
+[node name="Layout" type="VBoxContainer" parent="ActionArea/Confirm"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="ActionArea/Confirm/Layout"]
+layout_mode = 2
+theme_type_variation = &"SceneConfirmTitle"
+horizontal_alignment = 2
+
+[node name="Question" type="Label" parent="ActionArea/Confirm/Layout"]
+layout_mode = 2
+theme_type_variation = &"SceneConfirmText"
+horizontal_alignment = 2
+autowrap_mode = 3
+
+[node name="Gap" type="Control" parent="ActionArea/Confirm/Layout"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Buttons" type="HBoxContainer" parent="ActionArea/Confirm/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Cancel" type="Button" parent="ActionArea/Confirm/Layout/Buttons"]
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+theme_type_variation = &"GhostButtonScene"
+text = "CANCEL"
+
+[node name="Pill" type="Button" parent="ActionArea/Confirm/Layout/Buttons"]
+custom_minimum_size = Vector2(104, 40)
+layout_mode = 2
+theme_type_variation = &"GoldPill"

@@ -1,0 +1,16 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Top.Client.LegacyBridge\Top.Client.LegacyBridge.csproj" />
+    <ProjectReference Include="..\Top.Client.Messages\Top.Client.Messages.csproj" />
+    <ProjectReference Include="..\Top.Content\Top.Content.csproj" />
+    <ProjectReference Include="..\Top.Contracts\Top.Contracts.csproj" />
+    <ProjectReference Include="..\Top.Contracts.Assets\Top.Contracts.Assets.csproj" />
+    <ProjectReference Include="..\Top.Contracts.Tables\Top.Contracts.Tables.csproj" />
+    <ProjectReference Include="..\Top.Logging\Top.Logging.csproj" />
+  </ItemGroup>
+</Project>

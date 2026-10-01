@@ -32,11 +32,13 @@ namespace Top.Conversion.Models.Gltf
         private GltfSkinRef _skin;
         private int _helperIndex;
 
-        public ModelGltfBuilder(string name, string textureUriPrefix = null, int? litSubset = null)
+        public ModelGltfBuilder(string name, string textureUriPrefix = null, int? litSubset = null,
+            Func<TextureStage, float, bool> isTextureTranslucent = null)
         {
             _gltf = new GltfBuilder(name, Generator);
             _name = name;
-            _meshes = new MeshWriter(_gltf, new MaterialWriter(_gltf, name, textureUriPrefix), litSubset);
+            _meshes = new MeshWriter(_gltf,
+                new MaterialWriter(_gltf, name, textureUriPrefix, isTextureTranslucent), litSubset);
             _skeletons = new SkeletonWriter(_gltf);
         }
 
@@ -63,6 +65,22 @@ namespace Top.Conversion.Models.Gltf
             }
         }
 
+        public void AddRig(BoneAnimation skeleton)
+        {
+            var boneNodes = _skeletons.AddSkeleton(skeleton);
+
+            _skeletons.AddDummies(skeleton, boneNodes);
+            _skeletons.AddSkin(skeleton, boneNodes, _name);
+        }
+
+        public void AddClip(BoneAnimation skeleton, Matrix4x4[][] keys, int startFrame, int endFrame)
+        {
+            var boneNodes = _skeletons.AddSkeleton(skeleton);
+
+            _skeletons.AddSkin(skeleton, boneNodes, _name);
+            _skeletons.AddBoneAnimation(skeleton, boneNodes, keys, startFrame, endFrame, _name);
+        }
+
         public void AddRiggedObject(GeometryObject obj, BoneAnimation skeleton)
         {
             var boneNodes = _skeletons.AddSkeleton(skeleton);
@@ -74,6 +92,30 @@ namespace Top.Conversion.Models.Gltf
         public void AddObject(GeometryObject obj)
         {
             AddObjects(new[] { obj }, HelpersOf(obj));
+        }
+
+        public void AddRigidPart(GeometryObject part, IReadOnlyList<ClipRange> clips)
+        {
+            var node = AddGeometry(new[] { part })[0].AsRoot();
+
+            AddHelpers(HelpersOf(part));
+
+            if (DecomposeMatrixFrames(part) is not { } track)
+            {
+                return;
+            }
+
+            if (clips.Count == 0)
+            {
+                AddMatrixAnimation(track, node, 0, track.Length - 1, node.Name);
+
+                return;
+            }
+
+            foreach (var clip in clips)
+            {
+                AddMatrixAnimation(track, node, clip.StartFrame, clip.EndFrame, clip.Name);
+            }
         }
 
         public void AddObjects(GeometryObject[] objects, Helper[] helpers)
@@ -203,18 +245,16 @@ namespace Top.Conversion.Models.Gltf
             }
         }
 
-        private void AddMatrixAnimation(GeometryObject obj, GltfNodeRef node)
+        private static MatrixTrack DecomposeMatrixFrames(GeometryObject obj)
         {
             var frames = MatrixFrames(obj);
 
             if (frames == null)
             {
-                return;
+                return null;
             }
 
-            var translations = new Vector3[frames.Length];
-            var rotations = new Vector4[frames.Length];
-            var scales = new Vector3[frames.Length];
+            var track = new MatrixTrack(frames.Length);
             var previous = Quaternion.Identity;
 
             for (var i = 0; i < frames.Length; i++)
@@ -224,7 +264,7 @@ namespace Top.Conversion.Models.Gltf
                 {
                     Log.Warning($"matrix animation on object {obj.Id} is not TRS-decomposable, skipped");
 
-                    return;
+                    return null;
                 }
 
                 if (i > 0 && Quaternion.Dot(previous, rotation) < 0)
@@ -233,20 +273,49 @@ namespace Top.Conversion.Models.Gltf
                 }
 
                 previous = rotation;
-                translations[i] = translation;
-                rotations[i] = new Vector4(rotation.X, rotation.Y, rotation.Z, rotation.W);
-                scales[i] = scale;
+                track.Translations[i] = translation;
+                track.Rotations[i] = new Vector4(rotation.X, rotation.Y, rotation.Z, rotation.W);
+                track.Scales[i] = scale;
             }
 
-            var input = _gltf.Buffer.AddScalars(Timeline.Seconds(frames.Length), withMinMax: true);
+            return track;
+        }
+
+        private void AddMatrixAnimation(GeometryObject obj, GltfNodeRef node)
+        {
+            if (DecomposeMatrixFrames(obj) is { } track)
+            {
+                AddMatrixAnimation(track, node, 0, track.Length - 1, node.Name);
+            }
+        }
+
+        private void AddMatrixAnimation(MatrixTrack track, GltfNodeRef node, int startFrame, int endFrame,
+            string name)
+        {
+            var start = Math.Max(startFrame, 0);
+            var end = Math.Min(endFrame, track.Length - 1);
+
+            if (start != startFrame || end != endFrame)
+            {
+                Log.Warning($"clip {name} range {startFrame}..{endFrame} clamped to 0..{track.Length - 1}");
+            }
+
+            if (end < start)
+            {
+                Log.Warning($"clip {name} has an empty range, skipped");
+
+                return;
+            }
+
+            var input = _gltf.Buffer.AddScalars(Timeline.Seconds(end - start + 1), withMinMax: true);
 
             _gltf
-                .AddAnimation(node.Name)
-                .AddChannel(input, _gltf.Buffer.AddVec3(translations, withMinMax: false, vertexData: false),
-                    node, "translation")
-                .AddChannel(input, _gltf.Buffer.AddVec4(rotations), node, "rotation")
-                .AddChannel(input, _gltf.Buffer.AddVec3(scales, withMinMax: false, vertexData: false),
-                    node, "scale");
+                .AddAnimation(name)
+                .AddChannel(input, _gltf.Buffer.AddVec3(track.Translations[start..(end + 1)], withMinMax: false,
+                    vertexData: false), node, "translation")
+                .AddChannel(input, _gltf.Buffer.AddVec4(track.Rotations[start..(end + 1)]), node, "rotation")
+                .AddChannel(input, _gltf.Buffer.AddVec3(track.Scales[start..(end + 1)], withMinMax: false,
+                    vertexData: false), node, "scale");
         }
 
         private GltfNodeRef AddPart(GeometryObject part, BoneAnimation skeleton, GltfNodeRef[] boneNodes)
@@ -348,6 +417,24 @@ namespace Top.Conversion.Models.Gltf
                     nodes[i].AsRoot();
                 }
             }
+        }
+
+        private class MatrixTrack
+        {
+            public MatrixTrack(int length)
+            {
+                Translations = new Vector3[length];
+                Rotations = new Vector4[length];
+                Scales = new Vector3[length];
+            }
+
+            public int Length => Translations.Length;
+
+            public Vector3[] Translations { get; }
+
+            public Vector4[] Rotations { get; }
+
+            public Vector3[] Scales { get; }
         }
 
         private class SkinnedObject

@@ -1,3 +1,4 @@
+using System;
 using Top.Contracts.Assets.Models.Materials;
 using Top.Logging;
 using Top.Legacy.MindPower.Geometry;
@@ -8,7 +9,9 @@ namespace Top.Conversion.Models.Materials
     /// Turns one material's MindPower render-state atoms into the contract's
     /// <see cref="RenderState"/>: the D3D flags map straight across, the
     /// transparency mode supplies default blend factors, and alpha-test cutoff
-    /// falls out of the material's opacity times the device alpha ref.
+    /// falls out of the material's opacity times the device alpha ref. A
+    /// Filter material blends only when its texture keeps a translucent texel
+    /// past that cutoff.
     /// </summary>
     public static class RenderStateResolver
     {
@@ -16,7 +19,8 @@ namespace Top.Conversion.Models.Materials
         private const uint AlphaFuncGreater = 5;
         private const uint DeviceAlphaRef = 129;
 
-        public static RenderState Resolve(GeometryObject obj, int materialIndex)
+        public static RenderState Resolve(GeometryObject obj, int materialIndex,
+            Func<TextureStage, float, bool> isTextureTranslucent = null)
         {
             var material = obj.Materials[materialIndex];
             var context = $"obj {obj.Id} material {materialIndex}";
@@ -25,6 +29,18 @@ namespace Top.Conversion.Models.Materials
                 UvAnimated = HasUvAnimation(obj, materialIndex),
                 OpacityAnimated = HasOpacityAnimation(obj, materialIndex),
             };
+
+            var stage0 = material.Stages != null && material.Stages.Length > 0
+                ? material.Stages[0]
+                : null;
+            var cutoff = (EffectiveAlphaRef(material.Opacity) + 1) / 255f;
+
+            if (material.Transparency == TransparencyType.Filter
+                && isTextureTranslucent != null
+                && isTextureTranslucent(stage0, HasAlphaTest(material) ? cutoff : 0f))
+            {
+                SetBlend(state, BlendFactor.SrcAlpha, BlendFactor.OneMinusSrcAlpha);
+            }
 
             uint alphaFunc = AlphaFuncGreater;
 
@@ -84,17 +100,32 @@ namespace Top.Conversion.Models.Materials
                     Log.Warning($"{context}: unsupported alpha func {alphaFunc}");
                 }
 
-                state.Cutoff = (EffectiveAlphaRef(state.Opacity) + 1) / 255f;
+                state.Cutoff = cutoff;
             }
 
-            var stage0 = material.Stages != null && material.Stages.Length > 0
-                ? material.Stages[0]
-                : null;
             state.TextureFile = stage0 != null && !string.IsNullOrEmpty(stage0.FileName)
                 ? stage0.FileName
                 : null;
 
             return state;
+        }
+
+        private static bool HasAlphaTest(MaterialTexture material)
+        {
+            var alphaTest = false;
+
+            if (material.RenderStates != null)
+            {
+                foreach (var atom in material.RenderStates)
+                {
+                    if (atom.State == D3DRenderState.AlphaTestEnable)
+                    {
+                        alphaTest = atom.Value0 != 0;
+                    }
+                }
+            }
+
+            return alphaTest;
         }
 
         private static bool HasUvAnimation(GeometryObject obj, int materialIndex)

@@ -24,6 +24,12 @@ namespace Top.Conversion.Pipeline
 
         public string CharacterAction => Path.Combine(_root, "scripts", "txt", "CharacterAction.tx");
 
+        public string Tips => Path.Combine(_root, "scripts", "txt", "tips.tx");
+
+        public string ClientAttributes => Path.Combine(_root, "scripts", "lua", "CharacterConf.clu");
+
+        public string GemHints => Path.Combine(_root, "scripts", "lua", "table", "scripts.lua");
+
         public string Model(string folder, string fileName) => Path.Combine(Models, folder, fileName);
 
         public string MapTerrain(string name) => Path.Combine(Maps, name + ".map");

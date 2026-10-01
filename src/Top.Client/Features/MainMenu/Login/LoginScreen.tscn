@@ -1,0 +1,126 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/MainMenu/Login/LoginScreen.cs" id="1_screen"]
+[ext_resource type="PackedScene" path="res://UI/MessagePopup.tscn" id="2_message_popup"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/StepBlock.tscn" id="3_block"]
+[ext_resource type="PackedScene" path="res://UI/AddRow.tscn" id="4_add_row"]
+[ext_resource type="PackedScene" path="res://UI/PulsingDiamond.tscn" id="5_diamond"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/StepPage.tscn" id="6_page"]
+
+[node name="LoginScreen" type="Control" node_paths=PackedStringArray("Block", "FormPage", "AccountEdit", "PasswordEdit", "CreateAccountRow", "LogInButton", "BackButton", "ConnectingPage", "ConnectingLabel", "CancelButton", "MessagePopup")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_screen")
+Block = NodePath("Block")
+FormPage = NodePath("Block/Pages/Form")
+AccountEdit = NodePath("Block/Pages/Form/Body/Fields/Account/Edit")
+PasswordEdit = NodePath("Block/Pages/Form/Body/Fields/Password/Edit")
+CreateAccountRow = NodePath("Block/Pages/Form/Body/Fields/CreateAccount")
+LogInButton = NodePath("Block/Pages/Form/Actions/LogIn")
+BackButton = NodePath("Block/Pages/Form/Actions/Back")
+ConnectingPage = NodePath("Block/Pages/Connecting")
+ConnectingLabel = NodePath("Block/Pages/Connecting/Body/Line/Text")
+CancelButton = NodePath("Block/Pages/Connecting/Actions/Cancel")
+MessagePopup = NodePath("MessagePopup")
+
+[node name="Block" parent="." instance=ExtResource("3_block")]
+layout_mode = 1
+
+[node name="Title" parent="Block/Header" index="1"]
+text = "Log in"
+
+[node name="Form" parent="Block/Pages" instance=ExtResource("6_page")]
+layout_mode = 1
+
+[node name="Fields" type="VBoxContainer" parent="Block/Pages/Form/Body" index="0"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 18
+
+[node name="Account" type="VBoxContainer" parent="Block/Pages/Form/Body/Fields"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Block/Pages/Form/Body/Fields/Account"]
+layout_mode = 2
+theme_type_variation = &"SceneFieldLabel"
+text = "ACCOUNT"
+
+[node name="Edit" type="LineEdit" parent="Block/Pages/Form/Body/Fields/Account"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"SceneField"
+
+[node name="Password" type="VBoxContainer" parent="Block/Pages/Form/Body/Fields"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Block/Pages/Form/Body/Fields/Password"]
+layout_mode = 2
+theme_type_variation = &"SceneFieldLabel"
+text = "PASSWORD"
+
+[node name="Edit" type="LineEdit" parent="Block/Pages/Form/Body/Fields/Password"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"SceneField"
+secret = true
+
+[node name="CreateAccount" parent="Block/Pages/Form/Body/Fields" instance=ExtResource("4_add_row")]
+layout_mode = 2
+
+[node name="Icon" parent="Block/Pages/Form/Body/Fields/CreateAccount/Layout" index="0"]
+text = "person_add"
+
+[node name="Caption" parent="Block/Pages/Form/Body/Fields/CreateAccount/Layout" index="1"]
+text = "CREATE ACCOUNT"
+
+[node name="Back" type="Button" parent="Block/Pages/Form/Actions" index="0"]
+layout_mode = 2
+theme_type_variation = &"SceneAction"
+text = "BACK"
+
+[node name="LogIn" type="Button" parent="Block/Pages/Form/Actions" index="1"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"GoldPillScene"
+disabled = true
+text = "LOG IN"
+
+[node name="Connecting" parent="Block/Pages" instance=ExtResource("6_page")]
+visible = false
+layout_mode = 1
+
+[node name="Line" type="HBoxContainer" parent="Block/Pages/Connecting/Body" index="0"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+alignment = 2
+
+[node name="Diamond" parent="Block/Pages/Connecting/Body/Line" instance=ExtResource("5_diamond")]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Text" type="Label" parent="Block/Pages/Connecting/Body/Line"]
+layout_mode = 2
+theme_type_variation = &"StepMessage"
+
+[node name="Cancel" type="Button" parent="Block/Pages/Connecting/Actions" index="0"]
+layout_mode = 2
+theme_type_variation = &"SceneAction"
+text = "CANCEL"
+
+[node name="MessagePopup" parent="." instance=ExtResource("2_message_popup")]
+visible = false
+
+[editable path="Block"]
+[editable path="Block/Pages/Form"]
+[editable path="Block/Pages/Form/Body/Fields/CreateAccount"]
+[editable path="Block/Pages/Connecting"]

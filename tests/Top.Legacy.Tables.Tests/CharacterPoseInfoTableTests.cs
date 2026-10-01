@@ -17,5 +17,25 @@ namespace Top.Legacy.Tables.Tests
             Assert.That(record.Name, Is.EqualTo("Normal Wait"));
             Assert.That(record.RealPoseIds, Is.EqualTo(new[] { 1, 55, 109, 163, 217, 271, 325 }));
         }
+
+        [Test]
+        public void Pose_grid_is_regular_across_every_action_and_stance()
+        {
+            using var stream = File.OpenRead(Fixtures.Path("tables/characterposeinfo.txt"));
+            var table = TableFile.Read<CharacterPoseInfoRecord>(stream);
+
+            Assert.That(table.Count, Is.EqualTo(54));
+
+            foreach (var record in table)
+            {
+                Assert.That(record.RealPoseIds.Length, Is.EqualTo(7));
+
+                for (var stance = 0; stance < 7; stance++)
+                {
+                    Assert.That(record.RealPoseIds[stance], Is.EqualTo(record.Id + 54 * stance),
+                        $"action {record.Id}, stance {stance}");
+                }
+            }
+        }
     }
 }

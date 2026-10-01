@@ -1,0 +1,437 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Inventory/Bag/InventoryWindow.cs" id="1_window"]
+[ext_resource type="PackedScene" path="res://Features/Inventory/ItemCell.tscn" id="2_item_cell"]
+[ext_resource type="Texture2D" path="res://Features/Inventory/Assets/Gold.svg" id="3_gold"]
+[ext_resource type="PackedScene" path="res://Features/Inventory/Tooltip/ItemTooltipGroup.tscn" id="4_item_tooltip_group"]
+[ext_resource type="Script" path="res://UI/IconAction.cs" id="5_icon_action"]
+[ext_resource type="PackedScene" path="res://Features/Inventory/Bag/BagUnlockForm.tscn" id="6_bag_unlock_form"]
+[ext_resource type="PackedScene" path="res://UI/QuantityPopup.tscn" id="7_quantity_popup"]
+[ext_resource type="PackedScene" uid="uid://dbk3tqpjfyl0g" path="res://UI/ConfirmPopup.tscn" id="8_confirm_popup"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_tabs"]
+
+[node name="InventoryWindow" type="PanelContainer" node_paths=PackedStringArray("TitleBar", "CloseButton", "GearTab", "ApparelTab", "LeftColumn", "RightColumn", "CompanionRow", "BagGrid", "BagCount", "TemporaryBagGrid", "TemporaryBagCount", "GoldAmount", "Tooltip", "LockButton", "LockIcon", "LockCaption", "UnlockForm", "QuantityPopup", "ConfirmPopup", "DropRing", "TakeAllButton", "SortButton", "SortMenu", "SortByTypeButton", "SortByRarityButton", "SortByNameButton", "ItemMenu", "MenuUseButton", "MenuEquipButton", "MenuDeleteButton", "MenuThrowButton", "MenuLockButton", "MenuUnlockButton")]
+theme_type_variation = &"GameWindow"
+script = ExtResource("1_window")
+TitleBar = NodePath("Layout/TitleBar")
+CloseButton = NodePath("Layout/TitleBar/Row/Actions/Close")
+GearTab = NodePath("Layout/TitleBar/Row/Tabs/Gear")
+ApparelTab = NodePath("Layout/TitleBar/Row/Tabs/Apparel")
+LeftColumn = NodePath("Layout/Body/Columns/Gear/Slots/LeftColumn")
+RightColumn = NodePath("Layout/Body/Columns/Gear/Slots/RightColumn")
+CompanionRow = NodePath("Layout/Body/Columns/Gear/Slots/Centre/CompanionRow")
+BagGrid = NodePath("Layout/Body/Columns/Bags/BagGrid")
+BagCount = NodePath("Layout/Body/Columns/Bags/BagHeader/Count")
+TemporaryBagGrid = NodePath("Layout/Body/Columns/Bags/TemporaryBagGrid")
+TemporaryBagCount = NodePath("Layout/Body/Columns/Bags/TemporaryBagHeaderMargin/TemporaryBagHeader/Count")
+TakeAllButton = NodePath("Layout/Body/Columns/Bags/TemporaryBagHeaderMargin/TemporaryBagHeader/TakeAll")
+SortButton = NodePath("Layout/Body/Columns/Bags/BagHeader/Sort")
+SortMenu = NodePath("SortMenu")
+SortByTypeButton = NodePath("SortMenu/Items/ByType")
+SortByRarityButton = NodePath("SortMenu/Items/ByRarity")
+SortByNameButton = NodePath("SortMenu/Items/ByName")
+ItemMenu = NodePath("ItemMenu")
+MenuUseButton = NodePath("ItemMenu/Items/Use")
+MenuEquipButton = NodePath("ItemMenu/Items/Equip")
+MenuDeleteButton = NodePath("ItemMenu/Items/Delete")
+MenuThrowButton = NodePath("ItemMenu/Items/Throw")
+MenuLockButton = NodePath("ItemMenu/Items/Lock")
+MenuUnlockButton = NodePath("ItemMenu/Items/Unlock")
+GoldAmount = NodePath("Layout/Body/Columns/Gear/Currency/Row/Gold/Amount")
+Tooltip = NodePath("ItemTooltipGroup")
+LockButton = NodePath("Layout/TitleBar/Row/Actions/Lock")
+LockIcon = NodePath("Layout/TitleBar/Row/Actions/Lock/Layout/Row/Icon")
+LockCaption = NodePath("Layout/TitleBar/Row/Actions/Lock/Layout/Row/Caption")
+UnlockForm = NodePath("Layout/UnlockForm")
+QuantityPopup = NodePath("QuantityPopup")
+ConfirmPopup = NodePath("ConfirmPopup")
+DropRing = NodePath("DropRing")
+ItemCellScene = ExtResource("2_item_cell")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TitleBar" type="PanelContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"GameWindowTitleBar"
+
+[node name="Row" type="HBoxContainer" parent="Layout/TitleBar"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+
+[node name="Title" type="Label" parent="Layout/TitleBar/Row"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Inventory"
+vertical_alignment = 1
+
+[node name="Tabs" type="HBoxContainer" parent="Layout/TitleBar/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="Gear" type="Button" parent="Layout/TitleBar/Row/Tabs"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_type_variation = &"TitleTab"
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Gear"
+
+[node name="Apparel" type="Button" parent="Layout/TitleBar/Row/Tabs"]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_type_variation = &"TitleTab"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Apparel"
+
+[node name="Actions" type="HBoxContainer" parent="Layout/TitleBar/Row"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Lock" type="Button" parent="Layout/TitleBar/Row/Actions" node_paths=PackedStringArray("Layout", "IconLabel", "Caption")]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_type_variation = &"WindowAction"
+script = ExtResource("5_icon_action")
+Layout = NodePath("Layout")
+IconLabel = NodePath("Layout/Row/Icon")
+Caption = NodePath("Layout/Row/Caption")
+
+[node name="Layout" type="MarginContainer" parent="Layout/TitleBar/Row/Actions/Lock"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 10
+
+[node name="Row" type="HBoxContainer" parent="Layout/TitleBar/Row/Actions/Lock/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="Icon" type="Label" parent="Layout/TitleBar/Row/Actions/Lock/Layout/Row"]
+layout_mode = 2
+theme_type_variation = &"WindowActionIcon"
+text = "lock_open"
+vertical_alignment = 1
+
+[node name="Caption" type="Label" parent="Layout/TitleBar/Row/Actions/Lock/Layout/Row"]
+layout_mode = 2
+text = "Lock"
+vertical_alignment = 1
+
+[node name="Close" type="Button" parent="Layout/TitleBar/Row/Actions"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"WindowIconButton"
+text = "close"
+
+[node name="UnlockForm" parent="Layout" instance=ExtResource("6_bag_unlock_form")]
+visible = false
+layout_mode = 2
+
+[node name="Body" type="MarginContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Columns" type="HBoxContainer" parent="Layout/Body"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Gear" type="VBoxContainer" parent="Layout/Body/Columns"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Slots" type="HBoxContainer" parent="Layout/Body/Columns/Gear"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="LeftColumn" type="VBoxContainer" parent="Layout/Body/Columns/Gear/Slots"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Centre" type="VBoxContainer" parent="Layout/Body/Columns/Gear/Slots"]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Preview" type="Panel" parent="Layout/Body/Columns/Gear/Slots/Centre"]
+custom_minimum_size = Vector2(0, 284)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"CharacterPreview"
+
+[node name="CompanionRow" type="HBoxContainer" parent="Layout/Body/Columns/Gear/Slots/Centre"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="RightColumn" type="VBoxContainer" parent="Layout/Body/Columns/Gear/Slots"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Spacer" type="Control" parent="Layout/Body/Columns/Gear"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Currency" type="PanelContainer" parent="Layout/Body/Columns/Gear"]
+layout_mode = 2
+theme_type_variation = &"CurrencyRow"
+
+[node name="Row" type="HBoxContainer" parent="Layout/Body/Columns/Gear/Currency"]
+layout_mode = 2
+
+[node name="Gold" type="HBoxContainer" parent="Layout/Body/Columns/Gear/Currency/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="Layout/Body/Columns/Gear/Currency/Row/Gold"]
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3_gold")
+
+[node name="Amount" type="Label" parent="Layout/Body/Columns/Gear/Currency/Row/Gold"]
+layout_mode = 2
+theme_type_variation = &"CurrencyAmount"
+text = "0"
+
+[node name="Divider" type="Panel" parent="Layout/Body/Columns"]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"WindowDivider"
+
+[node name="Bags" type="VBoxContainer" parent="Layout/Body/Columns"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BagHeader" type="HBoxContainer" parent="Layout/Body/Columns/Bags"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Layout/Body/Columns/Bags/BagHeader"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SectionLabel"
+text = "BAG"
+
+[node name="Count" type="Label" parent="Layout/Body/Columns/Bags/BagHeader"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"CountLabel"
+
+[node name="Spacer" type="Control" parent="Layout/Body/Columns/Bags/BagHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Sort" type="Button" parent="Layout/Body/Columns/Bags/BagHeader" node_paths=PackedStringArray("Layout", "IconLabel", "Caption")]
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+script = ExtResource("5_icon_action")
+Layout = NodePath("Layout")
+IconLabel = NodePath("Layout/Row/Icon")
+Caption = NodePath("Layout/Row/Caption")
+
+[node name="Layout" type="MarginContainer" parent="Layout/Body/Columns/Bags/BagHeader/Sort"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 12
+
+[node name="Row" type="HBoxContainer" parent="Layout/Body/Columns/Bags/BagHeader/Sort/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Icon" type="Label" parent="Layout/Body/Columns/Bags/BagHeader/Sort/Layout/Row"]
+layout_mode = 2
+theme_type_variation = &"WindowControlIcon"
+text = "swap_vert"
+vertical_alignment = 1
+
+[node name="Caption" type="Label" parent="Layout/Body/Columns/Bags/BagHeader/Sort/Layout/Row"]
+layout_mode = 2
+text = "Sort"
+vertical_alignment = 1
+
+[node name="BagGrid" type="GridContainer" parent="Layout/Body/Columns/Bags"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 8
+
+[node name="TemporaryBagHeaderMargin" type="MarginContainer" parent="Layout/Body/Columns/Bags"]
+layout_mode = 2
+theme_override_constants/margin_top = 6
+
+[node name="TemporaryBagHeader" type="HBoxContainer" parent="Layout/Body/Columns/Bags/TemporaryBagHeaderMargin"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Layout/Body/Columns/Bags/TemporaryBagHeaderMargin/TemporaryBagHeader"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SectionLabel"
+text = "TEMPORARY BAG"
+
+[node name="Count" type="Label" parent="Layout/Body/Columns/Bags/TemporaryBagHeaderMargin/TemporaryBagHeader"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"CountLabel"
+
+[node name="Spacer" type="Control" parent="Layout/Body/Columns/Bags/TemporaryBagHeaderMargin/TemporaryBagHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="TakeAll" type="Button" parent="Layout/Body/Columns/Bags/TemporaryBagHeaderMargin/TemporaryBagHeader"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"WindowGoldPill"
+disabled = true
+text = "Take all"
+
+[node name="TemporaryBagGrid" type="GridContainer" parent="Layout/Body/Columns/Bags"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 8
+
+[node name="ItemTooltipGroup" parent="." instance=ExtResource("4_item_tooltip_group")]
+layout_mode = 2
+
+[node name="DropRing" type="Panel" parent="."]
+visible = false
+top_level = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"ItemDropRing"
+
+[node name="QuantityPopup" parent="." instance=ExtResource("7_quantity_popup")]
+
+[node name="ConfirmPopup" parent="." instance=ExtResource("8_confirm_popup")]
+
+[node name="SortMenu" type="PanelContainer" parent="."]
+visible = false
+top_level = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_type_variation = &"WindowMenu"
+
+[node name="Items" type="VBoxContainer" parent="SortMenu"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ByType" type="Button" parent="SortMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "By type"
+alignment = 0
+
+[node name="ByRarity" type="Button" parent="SortMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "By rarity"
+alignment = 0
+
+[node name="ByName" type="Button" parent="SortMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "By name"
+alignment = 0
+
+[node name="ItemMenu" type="PanelContainer" parent="."]
+visible = false
+top_level = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_type_variation = &"WindowMenu"
+
+[node name="Items" type="VBoxContainer" parent="ItemMenu"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Use" type="Button" parent="ItemMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "Use"
+alignment = 0
+
+[node name="Equip" type="Button" parent="ItemMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "Equip"
+alignment = 0
+
+[node name="Delete" type="Button" parent="ItemMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "Delete"
+alignment = 0
+
+[node name="Throw" type="Button" parent="ItemMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "Throw"
+alignment = 0
+
+[node name="Lock" type="Button" parent="ItemMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "Lock"
+alignment = 0
+
+[node name="Unlock" type="Button" parent="ItemMenu/Items"]
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"WindowMenuItem"
+text = "Unlock"
+alignment = 0

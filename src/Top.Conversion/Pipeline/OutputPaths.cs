@@ -5,8 +5,8 @@ namespace Top.Conversion.Pipeline
 {
     /// <summary>
     /// The converted tree. One glTF file per model under its kind, rigs of
-    /// their own, textures shared by every model of a kind. Every segment
-    /// below the root is written lowercase.
+    /// their own, a folder of clips per rig, textures shared by every model of
+    /// a kind. Every segment below the root is written lowercase.
     /// </summary>
     public class OutputPaths(string root)
     {
@@ -17,7 +17,14 @@ namespace Top.Conversion.Pipeline
 
         public static string ModelContentPath(string kind, string name) => $"models/{Lower(kind)}/{Lower(name)}.glb";
 
-        public string Rig(string name) => Path.Combine(root, "rigs", Lower(name) + ".glb");
+        public string Rig(string name) => At(RigContentPath(name));
+
+        public static string RigContentPath(string name) => $"rigs/{Lower(name)}.glb";
+
+        public string Clip(string rigName, string clipName) => At(ClipContentPath(rigName, clipName));
+
+        public static string ClipContentPath(string rigName, string clipName) =>
+            $"animations/{Lower(rigName)}/{Lower(clipName)}.glb";
 
         public string Map(string name) => At(MapContentPath(name));
 

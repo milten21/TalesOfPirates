@@ -261,9 +261,115 @@ namespace Top.Conversion.Tests
             Assert.That(state.OpacityAnimated, Is.False);
         }
 
+        [Test]
+        public void A_filter_material_blends_when_its_texture_is_translucent()
+        {
+            var state = RenderStateResolver.Resolve(TexturedObject(), 0, (_, _) => true);
+
+            Assert.That(state.SrcBlend, Is.EqualTo(BlendFactor.SrcAlpha));
+            Assert.That(state.DstBlend, Is.EqualTo(BlendFactor.OneMinusSrcAlpha));
+            Assert.That(state.BlendEnabled, Is.True,
+                "the client turns alpha blending on for the whole scene-object pass");
+            Assert.That(state.ZWrite, Is.True, "the same pass leaves depth write on");
+        }
+
+        [Test]
+        public void A_filter_material_stays_opaque_when_its_texture_is_opaque()
+        {
+            Assert.That(RenderStateResolver.Resolve(TexturedObject(), 0, (_, _) => false).BlendEnabled,
+                Is.False, "a texture that is opaque everywhere blends to the same pixels");
+        }
+
+        [Test]
+        public void The_texture_of_a_filter_material_reaches_the_test()
+        {
+            TextureStage asked = null;
+
+            RenderStateResolver.Resolve(TexturedObject(), 0, (stage, _) =>
+            {
+                asked = stage;
+
+                return false;
+            });
+
+            Assert.That(asked?.FileName, Is.EqualTo("login100.dds"));
+        }
+
+        [Test]
+        public void An_alpha_tested_filter_material_asks_from_its_cutoff()
+        {
+            var askedCutoff = -1f;
+            var obj = AlphaTestedObject();
+
+            obj.Materials[0].Stages = [new TextureStage { FileName = "login100.dds" }];
+
+            var state = RenderStateResolver.Resolve(obj, 0, (_, cutoff) =>
+            {
+                askedCutoff = cutoff;
+
+                return false;
+            });
+
+            Assert.That(askedCutoff, Is.EqualTo(state.Cutoff),
+                "a texel the alpha test discards cannot show the blend");
+            Assert.That(state.BlendEnabled, Is.False);
+        }
+
+        [Test]
+        public void A_filter_material_without_alpha_test_asks_from_zero()
+        {
+            var askedCutoff = -1f;
+
+            RenderStateResolver.Resolve(TexturedObject(), 0, (_, cutoff) =>
+            {
+                askedCutoff = cutoff;
+
+                return false;
+            });
+
+            Assert.That(askedCutoff, Is.Zero, "every texel below full alpha shows the blend");
+        }
+
+        [Test]
+        public void A_translucent_texture_does_not_blend_a_non_filter_material()
+        {
+            var state = RenderStateResolver.Resolve(Object(new MaterialTexture
+            {
+                Transparency = TransparencyType.Additive,
+                Stages = [new TextureStage { FileName = "login123.dds" }],
+            }), 0, (_, _) => true);
+
+            Assert.That(state.SrcBlend, Is.EqualTo(BlendFactor.One));
+            Assert.That(state.DstBlend, Is.EqualTo(BlendFactor.One),
+                "the transparency type still owns the blend factors");
+        }
+
+        [Test]
+        public void A_blend_atom_overrides_the_pass_baseline()
+        {
+            var state = RenderStateResolver.Resolve(Object(new MaterialTexture
+            {
+                Transparency = TransparencyType.Filter,
+                Stages = [new TextureStage { FileName = "login100.dds" }],
+                RenderStates = [new RenderStateAtom { State = 27, Value0 = 0 }],
+            }), 0, (_, _) => true);
+
+            Assert.That(state.BlendEnabled, Is.False,
+                "a material's atoms are an overlay on the pass state, so they win");
+        }
+
         private static GeometryObject Object(MaterialTexture material)
         {
             return new GeometryObject { Materials = [material] };
+        }
+
+        private static GeometryObject TexturedObject()
+        {
+            return Object(new MaterialTexture
+            {
+                Transparency = TransparencyType.Filter,
+                Stages = [new TextureStage { FileName = "login100.dds" }],
+            });
         }
 
         private static GeometryObject AlphaTestedObject(uint func = 5, float opacity = 1f)

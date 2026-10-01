@@ -1,0 +1,80 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/MainMenu/Servers/ServerForm.cs" id="1_form"]
+
+[node name="ServerForm" type="Container" node_paths=PackedStringArray("TitleLabel", "NameEdit", "HostEdit", "PortEdit")]
+visible = false
+mouse_filter = 2
+script = ExtResource("1_form")
+TitleLabel = NodePath("Panel/Layout/Title")
+NameEdit = NodePath("Panel/Layout/Name/Edit")
+HostEdit = NodePath("Panel/Layout/Address/Host/Edit")
+PortEdit = NodePath("Panel/Layout/Address/Port/Edit")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 2
+theme_type_variation = &"FormPanel"
+
+[node name="Layout" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Panel/Layout"]
+layout_mode = 2
+theme_type_variation = &"FormTitle"
+uppercase = true
+
+[node name="Name" type="VBoxContainer" parent="Panel/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Panel/Layout/Name"]
+layout_mode = 2
+theme_type_variation = &"FormFieldLabel"
+text = "NAME"
+
+[node name="Edit" type="LineEdit" parent="Panel/Layout/Name"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"FormField"
+placeholder_text = "My server"
+
+[node name="Address" type="HBoxContainer" parent="Panel/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Host" type="VBoxContainer" parent="Panel/Layout/Address"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Panel/Layout/Address/Host"]
+layout_mode = 2
+theme_type_variation = &"FormFieldLabel"
+text = "HOST"
+
+[node name="Edit" type="LineEdit" parent="Panel/Layout/Address/Host"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"FormFieldMono"
+placeholder_text = "127.0.0.1"
+
+[node name="Port" type="VBoxContainer" parent="Panel/Layout/Address"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Panel/Layout/Address/Port"]
+layout_mode = 2
+theme_type_variation = &"FormFieldLabel"
+text = "PORT"
+
+[node name="Edit" type="LineEdit" parent="Panel/Layout/Address/Port"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"FormFieldMono"

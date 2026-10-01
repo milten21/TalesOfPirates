@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/Toast.cs" id="1_toast"]
+
+[node name="Toast" type="PanelContainer" node_paths=PackedStringArray("TextLabel")]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 56.0
+offset_bottom = 56.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"Toast"
+script = ExtResource("1_toast")
+TextLabel = NodePath("Text")
+
+[node name="Text" type="Label" parent="."]
+layout_mode = 2
+theme_type_variation = &"ToastText"
+vertical_alignment = 1

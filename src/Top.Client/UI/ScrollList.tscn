@@ -1,0 +1,57 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/ScrollList.cs" id="1_list"]
+
+[sub_resource type="Gradient" id="Gradient_fades"]
+resource_local_to_scene = true
+offsets = PackedFloat32Array(0, 0.1, 0.9, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fades"]
+resource_local_to_scene = true
+gradient = SubResource("Gradient_fades")
+width = 1
+fill_to = Vector2(0, 1)
+
+[node name="ScrollList" type="Control" node_paths=PackedStringArray("Mask", "Scroll", "Items")]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_list")
+Mask = NodePath("Mask")
+Scroll = NodePath("Mask/Scroll")
+Items = NodePath("Mask/Scroll/Gutter/Items")
+
+[node name="Mask" type="TextureRect" parent="."]
+clip_children = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_fades")
+expand_mode = 1
+
+[node name="Scroll" type="ScrollContainer" parent="Mask"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+
+[node name="Gutter" type="MarginContainer" parent="Mask/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/margin_right = 8
+
+[node name="Items" type="VBoxContainer" parent="Mask/Scroll/Gutter"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6

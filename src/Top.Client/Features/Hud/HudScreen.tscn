@@ -1,0 +1,99 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Hud/HudScreen.cs" id="1_screen"]
+[ext_resource type="PackedScene" path="res://Features/Hud/PlayerFrame.tscn" id="2_player_frame"]
+[ext_resource type="PackedScene" path="res://Features/Hud/FairyPlate.tscn" id="3_fairy_plate"]
+[ext_resource type="PackedScene" path="res://Features/Party/InviteCard.tscn" id="4_invite_card"]
+[ext_resource type="PackedScene" path="res://Features/Hud/PartyRow.tscn" id="5_party_row"]
+[ext_resource type="PackedScene" path="res://Features/Inventory/Bag/InventoryWindow.tscn" id="6_inventory_window"]
+[ext_resource type="PackedScene" path="res://UI/Toast.tscn" id="7_toast"]
+
+[node name="HudScreen" type="Control" node_paths=PackedStringArray("PlayerFrame", "FairyPlate", "Stack", "PartyBlock", "PartyRows", "InviteCard0", "InviteCard1", "InventoryWindow", "Toast")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_screen")
+PlayerFrame = NodePath("PlayerFrame")
+FairyPlate = NodePath("FairyPlate")
+Stack = NodePath("Stack")
+PartyBlock = NodePath("Stack/PartyBlock")
+PartyRows = NodePath("Stack/PartyBlock/PartyRows")
+PartyRowScene = ExtResource("5_party_row")
+InviteCard0 = NodePath("Stack/InviteBlock/Invites/InviteCard0")
+InviteCard1 = NodePath("Stack/InviteBlock/Invites/InviteCard1")
+InventoryWindow = NodePath("InventoryWindow")
+Toast = NodePath("Toast")
+
+[node name="PlayerFrame" parent="." instance=ExtResource("2_player_frame")]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 462.0
+offset_bottom = 110.0
+
+[node name="FairyPlate" parent="." instance=ExtResource("3_fairy_plate")]
+visible = false
+layout_mode = 0
+offset_left = 120.0
+offset_top = 108.0
+offset_right = 400.0
+offset_bottom = 136.0
+
+[node name="Stack" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 126.0
+offset_right = 351.0
+offset_bottom = 126.0
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="PartyBlock" type="MarginContainer" parent="Stack"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 27
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="PartyRows" type="VBoxContainer" parent="Stack/PartyBlock"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="InviteBlock" type="MarginContainer" parent="Stack"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 35
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="Invites" type="VBoxContainer" parent="Stack/InviteBlock"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="InviteCard0" parent="Stack/InviteBlock/Invites" instance=ExtResource("4_invite_card")]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="InviteCard1" parent="Stack/InviteBlock/Invites" instance=ExtResource("4_invite_card")]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="InventoryWindow" parent="." instance=ExtResource("6_inventory_window")]
+visible = false
+layout_mode = 0
+offset_left = 835.0
+offset_top = 200.0
+
+[node name="Toast" parent="." instance=ExtResource("7_toast")]
+layout_mode = 1

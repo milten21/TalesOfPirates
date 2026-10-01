@@ -1,0 +1,148 @@
+[gd_scene format=3 uid="uid://ci6vf774yqwxh"]
+
+[ext_resource type="Script" uid="uid://bm23ico5kcqbg" path="res://Features/MainMenu/Servers/ServersScreen.cs" id="1_screen"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/Servers/Widgets/ServerRow.tscn" id="2_server_row"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/StepBlock.tscn" id="3_block"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/StepPage.tscn" id="4_page"]
+[ext_resource type="PackedScene" path="res://UI/AddRow.tscn" id="5_add_row"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/Servers/ServerForm.tscn" id="6_form"]
+[ext_resource type="PackedScene" path="res://UI/ScrollList.tscn" id="7_scroll_list"]
+[ext_resource type="Script" path="res://UI/ExpandContainer.cs" id="8_expand"]
+
+[node name="ServersScreen" type="Control" node_paths=PackedStringArray("Block", "FilterBar", "FilterEdit", "ClearFilterButton", "ServerList", "ListHint", "AddRowSlot", "AddRow", "Form", "BackButton", "JoinButton", "CancelButton", "SaveButton")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_screen")
+ServerRowScene = ExtResource("2_server_row")
+Block = NodePath("Block")
+FilterBar = NodePath("Block/Pages/List/Body/FilterBar")
+FilterEdit = NodePath("Block/Pages/List/Body/FilterBar/Filter")
+ClearFilterButton = NodePath("Block/Pages/List/Body/FilterBar/Filter/Clear")
+ServerList = NodePath("Block/Pages/List/Body/Servers")
+ListHint = NodePath("Block/Pages/List/Body/ListHint")
+AddRowSlot = NodePath("Block/Pages/List/Body/Footer/AddServerSlot")
+AddRow = NodePath("Block/Pages/List/Body/Footer/AddServerSlot/AddServer")
+Form = NodePath("Block/Pages/List/Body/Footer/Form")
+BackButton = NodePath("Block/Pages/List/Actions/Back")
+JoinButton = NodePath("Block/Pages/List/Actions/Join")
+CancelButton = NodePath("Block/Pages/List/Actions/Cancel")
+SaveButton = NodePath("Block/Pages/List/Actions/Save")
+
+[node name="Block" parent="." instance=ExtResource("3_block")]
+layout_mode = 1
+
+[node name="Title" parent="Block/Header" index="1"]
+text = "Servers"
+
+[node name="List" parent="Block/Pages" instance=ExtResource("4_page")]
+layout_mode = 1
+
+[node name="Body" parent="Block/Pages/List" index="0"]
+theme_override_constants/separation = 6
+
+[node name="FilterBar" type="MarginContainer" parent="Block/Pages/List/Body" index="0"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_bottom = 4
+
+[node name="Filter" type="LineEdit" parent="Block/Pages/List/Body/FilterBar"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_type_variation = &"FilterField"
+placeholder_text = "Filter by name or address"
+
+[node name="Icon" type="Label" parent="Block/Pages/List/Body/FilterBar/Filter"]
+custom_minimum_size = Vector2(22, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_right = 36.0
+grow_vertical = 2
+theme_type_variation = &"FilterIcon"
+text = "search"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Clear" type="Button" parent="Block/Pages/List/Body/FilterBar/Filter"]
+visible = false
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -15.0
+offset_right = -14.0
+offset_bottom = 15.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"FilterClear"
+text = "close"
+
+[node name="Servers" parent="Block/Pages/List/Body" index="1" instance=ExtResource("7_scroll_list")]
+layout_mode = 2
+
+[node name="ListHint" type="Label" parent="Block/Pages/List/Body" index="2"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"ListHint"
+text = "No servers yet. Add one to play online."
+
+[node name="Footer" type="VBoxContainer" parent="Block/Pages/List/Body" index="3"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="AddServerSlot" type="Container" parent="Block/Pages/List/Body/Footer"]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("8_expand")
+
+[node name="AddServer" parent="Block/Pages/List/Body/Footer/AddServerSlot" instance=ExtResource("5_add_row")]
+layout_mode = 2
+
+[node name="Caption" parent="Block/Pages/List/Body/Footer/AddServerSlot/AddServer/Layout" index="1"]
+text = "ADD SERVER"
+
+[node name="Form" parent="Block/Pages/List/Body/Footer" instance=ExtResource("6_form")]
+layout_mode = 2
+
+[node name="Back" type="Button" parent="Block/Pages/List/Actions" index="0"]
+layout_mode = 2
+theme_type_variation = &"SceneAction"
+text = "BACK"
+
+[node name="Join" type="Button" parent="Block/Pages/List/Actions" index="1"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"GoldPillScene"
+disabled = true
+text = "JOIN SERVER"
+
+[node name="Cancel" type="Button" parent="Block/Pages/List/Actions" index="2"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"SceneAction"
+text = "CANCEL"
+
+[node name="Save" type="Button" parent="Block/Pages/List/Actions" index="3"]
+visible = false
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"GoldPillScene"
+disabled = true
+text = "SAVE SERVER"
+
+[editable path="Block"]
+[editable path="Block/Pages/List"]
+[editable path="Block/Pages/List/Body/Footer/AddServerSlot/AddServer"]

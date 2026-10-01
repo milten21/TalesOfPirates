@@ -1,0 +1,64 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/MainMenu/Accounts/AccountsScreen.cs" id="1_screen"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/Accounts/AccountRow.tscn" id="2_account_row"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/StepBlock.tscn" id="3_block"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/StepPage.tscn" id="4_page"]
+[ext_resource type="PackedScene" path="res://UI/AddRow.tscn" id="5_add_row"]
+[ext_resource type="PackedScene" path="res://UI/ScrollList.tscn" id="6_scroll_list"]
+
+[node name="AccountsScreen" type="Control" node_paths=PackedStringArray("Block", "AccountList", "OtherAccountRow", "BackButton", "NextButton")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_screen")
+AccountRowScene = ExtResource("2_account_row")
+Block = NodePath("Block")
+AccountList = NodePath("Block/Pages/List/Body/Accounts")
+OtherAccountRow = NodePath("Block/Pages/List/Body/OtherAccount")
+BackButton = NodePath("Block/Pages/List/Actions/Back")
+NextButton = NodePath("Block/Pages/List/Actions/Next")
+
+[node name="Block" parent="." instance=ExtResource("3_block")]
+layout_mode = 1
+
+[node name="Title" parent="Block/Header" index="1"]
+text = "Accounts"
+
+[node name="List" parent="Block/Pages" instance=ExtResource("4_page")]
+layout_mode = 1
+
+[node name="Body" parent="Block/Pages/List" index="0"]
+theme_override_constants/separation = 6
+
+[node name="Accounts" parent="Block/Pages/List/Body" index="0" instance=ExtResource("6_scroll_list")]
+layout_mode = 2
+
+[node name="OtherAccount" parent="Block/Pages/List/Body" index="1" instance=ExtResource("5_add_row")]
+layout_mode = 2
+
+[node name="Icon" parent="Block/Pages/List/Body/OtherAccount/Layout" index="0"]
+text = "person_add"
+
+[node name="Caption" parent="Block/Pages/List/Body/OtherAccount/Layout" index="1"]
+text = "OTHER ACCOUNT"
+
+[node name="Back" type="Button" parent="Block/Pages/List/Actions" index="0"]
+layout_mode = 2
+theme_type_variation = &"SceneAction"
+text = "BACK"
+
+[node name="Next" type="Button" parent="Block/Pages/List/Actions" index="1"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"GoldPillScene"
+disabled = true
+text = "NEXT"
+
+[editable path="Block"]
+[editable path="Block/Pages/List"]
+[editable path="Block/Pages/List/Body/OtherAccount"]

@@ -40,5 +40,33 @@ namespace Top.Legacy.Tables.Tests
             Assert.That(ItemModules.TryGetModule(null, 0, out _), Is.False);
             Assert.That(ItemModules.TryGetModule(MakeItem("a", "b", "c", "d", "e"), -1, out _), Is.False);
         }
+
+        [Test]
+        public void The_body_column_names_the_frameworks_that_equip_the_item_counting_from_one()
+        {
+            var item = new ItemInfoRecord { Id = 303, Body = [1, 3] };
+
+            Assert.That(ItemModules.CanEquip(item, 0), Is.True);
+            Assert.That(ItemModules.CanEquip(item, 1), Is.False);
+            Assert.That(ItemModules.CanEquip(item, 2), Is.True);
+            Assert.That(ItemModules.CanEquip(item, 3), Is.False);
+        }
+
+        [Test]
+        public void A_body_column_opening_with_minus_one_lets_every_framework_equip_the_item()
+        {
+            var item = new ItemInfoRecord { Id = 5748, Body = [-1, -2, -2, -2] };
+
+            Assert.That(ItemModules.CanEquip(item, 0), Is.True);
+            Assert.That(ItemModules.CanEquip(item, 3), Is.True);
+        }
+
+        [Test]
+        public void No_framework_equips_an_item_with_no_body_column()
+        {
+            Assert.That(ItemModules.CanEquip(new ItemInfoRecord { Id = 1 }, 0), Is.False);
+            Assert.That(ItemModules.CanEquip(new ItemInfoRecord { Id = 1, Body = [] }, 0), Is.False);
+            Assert.That(ItemModules.CanEquip(null, 0), Is.False);
+        }
     }
 }

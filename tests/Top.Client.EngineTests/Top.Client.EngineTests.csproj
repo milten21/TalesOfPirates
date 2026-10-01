@@ -1,0 +1,72 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <IsTestProject>true</IsTestProject>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)/.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <ClientDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', '..', 'src', 'Top.Client'))</ClientDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="test/**/*.cs;gdunit4_testadapter*/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="gdUnit4.api" />
+    <PackageReference Include="gdUnit4.test.adapter" />
+    <PackageReference Include="gdUnit4.analyzers" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Top.Client.LegacyBridge\Top.Client.LegacyBridge.csproj" />
+    <ProjectReference Include="..\..\src\Top.Client.Messages\Top.Client.Messages.csproj" />
+    <ProjectReference Include="..\..\src\Top.Content\Top.Content.csproj" />
+    <ProjectReference Include="..\..\src\Top.Contracts\Top.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Top.Contracts.Assets\Top.Contracts.Assets.csproj" />
+    <ProjectReference Include="..\..\src\Top.Contracts.Tables\Top.Contracts.Tables.csproj" />
+    <ProjectReference Include="..\..\src\Top.Logging\Top.Logging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DesignTimeBuild)' == 'true'">
+    <ProjectReference Include="..\..\src\Top.Client\Top.Client.csproj" />
+  </ItemGroup>
+
+  <Target Name="LinkClientFolders" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="Exists('$(ClientDirectory)test')"
+           Text="The client has a root folder named 'test'. It collides with the test folder of $(MSBuildProjectName)." />
+    <ItemGroup>
+      <ClientFolder Include="$([System.IO.Directory]::GetDirectories('$(ClientDirectory)'))" />
+      <ClientFolder Remove="@(ClientFolder)" Condition="'%(Filename)' == '' Or '%(Filename)' == 'bin' Or '%(Filename)' == 'obj'" />
+      <ProjectLink Include="$([System.IO.Directory]::GetDirectories('$(MSBuildProjectDirectory)'))" />
+      <ProjectLink Remove="@(ProjectLink)" Condition="!$([System.IO.File]::GetAttributes(`%(FullPath)`).ToString().Contains(`ReparsePoint`))" />
+      <StaleLink Include="@(ProjectLink)" Exclude="@(ClientFolder->'$(MSBuildProjectDirectory)/%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <Exec Condition="'@(StaleLink)' != '' And '$(OS)' == 'Windows_NT'"
+          Command="rmdir &quot;%(StaleLink.FullPath)&quot;" />
+    <Exec Condition="'@(StaleLink)' != '' And '$(OS)' != 'Windows_NT'"
+          Command="rm &quot;%(StaleLink.FullPath)&quot;" />
+    <Exec Condition="!Exists('%(ClientFolder.Filename)%(ClientFolder.Extension)') And '$(OS)' == 'Windows_NT'"
+          Command="mklink /J &quot;%(ClientFolder.Filename)%(ClientFolder.Extension)&quot; &quot;%(ClientFolder.FullPath)&quot;"
+          StandardOutputImportance="low" />
+    <Exec Condition="!Exists('%(ClientFolder.Filename)%(ClientFolder.Extension)') And '$(OS)' != 'Windows_NT'"
+          Command="ln -s &quot;%(ClientFolder.FullPath)&quot; &quot;%(ClientFolder.Filename)%(ClientFolder.Extension)&quot;"
+          StandardOutputImportance="low" />
+    <PropertyGroup>
+      <ClientSourceGlobs>@(ClientFolder->'%(Filename)%(Extension)/**/*.cs')</ClientSourceGlobs>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Include="$(ClientSourceGlobs)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ImportGodotResources" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true' And '$(GODOT_BIN)' != ''">
+    <Exec Command="&quot;$(GODOT_BIN)&quot; --headless --path &quot;$(MSBuildProjectDirectory)&quot; --import"
+          StandardOutputImportance="low"
+          StandardErrorImportance="low" />
+  </Target>
+</Project>

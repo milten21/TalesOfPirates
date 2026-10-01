@@ -38,7 +38,7 @@ namespace Top.Conversion.Tests.Pipeline
             var tables = new ClientTables(null, null,
                 new Table<SceneObjectInfoRecord>([..rows]), null);
 
-            return new SceneObjectConverter(settings, tables, new ModelConverter(settings));
+            return new SceneObjectConverter(settings, tables, new ModelConverter(settings, tables));
         }
 
         [Test]

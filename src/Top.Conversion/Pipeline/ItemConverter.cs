@@ -40,6 +40,7 @@ namespace Top.Conversion.Pipeline
     /// Converts iteminfo units. An item names up to one module per player
     /// model, wearables live under the client's character models and held
     /// items under its item models, with a fallback to the other folder.
+    /// Each item also brings its icon.
     /// </summary>
     public class ItemConverter
     {
@@ -48,12 +49,14 @@ namespace Top.Conversion.Pipeline
         private readonly ConversionSettings _settings;
         private readonly ClientTables _tables;
         private readonly ModelConverter _models;
+        private readonly ItemIconWriter _icons;
 
         public ItemConverter(ConversionSettings settings, ClientTables tables, ModelConverter models)
         {
             _settings = settings;
             _tables = tables;
             _models = models;
+            _icons = new ItemIconWriter(settings);
         }
 
         public ItemResult Convert(int id)
@@ -66,7 +69,7 @@ namespace Top.Conversion.Pipeline
                     new string[Models], new ModelArtifact[Models]);
             }
 
-            return ConvertModules(item);
+            return ConvertItem(item);
         }
 
         public IEnumerable<ItemResult> ConvertAll(IProgress<ConversionProgress> progress = null,
@@ -76,10 +79,17 @@ namespace Top.Conversion.Pipeline
 
             return Batch.Run(rows,
                 item => $"item {item.Id}",
-                item => ConvertModules(item),
+                ConvertItem,
                 item => new ItemResult(item.Id, item.Name, ConversionOutcome.Failed,
                     ItemModules.IsWearable(item.Type), new string[Models], new ModelArtifact[Models]),
                 progress, cancellation);
+        }
+
+        private ItemResult ConvertItem(ItemInfoRecord item)
+        {
+            _icons.Write(item);
+
+            return ConvertModules(item);
         }
 
         public ItemResult ConvertModules(ItemInfoRecord item, int? model = null)

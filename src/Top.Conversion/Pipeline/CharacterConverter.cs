@@ -5,11 +5,14 @@ using System.Linq;
 using System.Threading;
 using Top.Conversion.Models;
 using Top.Conversion.Models.Gltf;
+using Top.Conversion.Textures;
 using Top.Logging;
 using Top.Legacy.MindPower;
 using Top.Legacy.MindPower.Animation;
 using Top.Legacy.MindPower.Geometry;
 using Top.Legacy.Tables.Records;
+using BoatSlots = Top.Contracts.Tables.Characters.BoatSlots;
+using TowerSlots = Top.Contracts.Tables.Characters.TowerSlots;
 
 namespace Top.Conversion.Pipeline
 {
@@ -20,19 +23,32 @@ namespace Top.Conversion.Pipeline
     /// </summary>
     public class CharacterResult : UnitResult
     {
+        private static readonly IReadOnlyList<ModelArtifact> NoClips = Array.Empty<ModelArtifact>();
+
+        private static readonly IReadOnlyList<ModelArtifact> NoMachineParts = Array.Empty<ModelArtifact>();
+
         public CharacterResult(int id, string name, ConversionOutcome outcome,
-            ModelArtifact rig, ModelArtifact model, IReadOnlyList<ItemResult> parts)
+            RigArtifacts rig, ModelArtifact model, IReadOnlyList<ItemResult> parts,
+            IReadOnlyList<ModelArtifact> machineParts = null)
             : base(id, name, outcome)
         {
-            Rig = rig;
+            Rig = rig?.Rig;
+            Clips = rig?.Clips ?? NoClips;
             Model = model;
             Parts = parts;
+            MachineParts = machineParts ?? NoMachineParts;
         }
 
         /// <summary>
         /// The skeleton a player character animates on, null for a monster.
         /// </summary>
         public ModelArtifact Rig { get; }
+
+        /// <summary>
+        /// The clips a player character plays, a file each, none for a
+        /// monster.
+        /// </summary>
+        public IReadOnlyList<ModelArtifact> Clips { get; }
 
         /// <summary>
         /// The merged glTF a monster is, null for a player character.
@@ -45,6 +61,12 @@ namespace Top.Conversion.Pipeline
         /// </summary>
         public IReadOnlyList<ItemResult> Parts { get; }
 
+        /// <summary>
+        /// The parts a boat or a tower is built of, a rigid model each, none
+        /// for any other character.
+        /// </summary>
+        public IReadOnlyList<ModelArtifact> MachineParts { get; }
+
         public override IEnumerable<ModelArtifact> Artifacts
         {
             get
@@ -52,6 +74,11 @@ namespace Top.Conversion.Pipeline
                 if (Rig != null)
                 {
                     yield return Rig;
+                }
+
+                foreach (var clip in Clips)
+                {
+                    yield return clip;
                 }
 
                 if (Model != null)
@@ -63,6 +90,11 @@ namespace Top.Conversion.Pipeline
                 {
                     yield return artifact;
                 }
+
+                foreach (var part in MachineParts)
+                {
+                    yield return part;
+                }
             }
         }
     }
@@ -70,28 +102,37 @@ namespace Top.Conversion.Pipeline
     /// <summary>
     /// Converts characterinfo units. Characters that share a skeleton share
     /// its rig and, when they are monsters, its merged model: the first one
-    /// converts, the rest read as skipped.
+    /// converts, the rest read as skipped. A boat or a tower is built of
+    /// rigid parts, and each part converts once to a model of its own.
     /// </summary>
     public class CharacterConverter
     {
-        private const int EquipmentSlots = 5;
-
         private static readonly IReadOnlyList<ItemResult> NoParts = Array.Empty<ItemResult>();
+
+        private static readonly IReadOnlyList<ClipRange> NoClips = Array.Empty<ClipRange>();
 
         private readonly ConversionSettings _settings;
         private readonly ClientTables _tables;
         private readonly RigConverter _rigs;
         private readonly ItemConverter _items;
+        private readonly ModelConverter _models;
+        private readonly TextureTranslucency _translucency;
 
         private readonly ArtifactMemo _merged = new ArtifactMemo();
+        private readonly RigBoneCheck _boneCheck = new RigBoneCheck();
+
+        private readonly Dictionary<int, IReadOnlyList<ClipRange>> _machineClips =
+            new Dictionary<int, IReadOnlyList<ClipRange>>();
 
         public CharacterConverter(ConversionSettings settings, ClientTables tables, RigConverter rigs,
-            ItemConverter items)
+            ItemConverter items, ModelConverter models, TextureTranslucency translucency = null)
         {
             _settings = settings;
             _tables = tables;
             _rigs = rigs;
             _items = items;
+            _models = models;
+            _translucency = translucency ?? new TextureTranslucency();
         }
 
         public CharacterResult Convert(int id)
@@ -144,6 +185,7 @@ namespace Top.Conversion.Pipeline
             {
                 CharacterModalType.MainCharacter => ConvertPlayer(row),
                 CharacterModalType.Other => ConvertMonster(row),
+                CharacterModalType.Boat or CharacterModalType.Employee => ConvertMachine(row),
                 _ => new CharacterResult(row.Id, Named(row.Id), ConversionOutcome.Skipped, null, null, NoParts)
             };
         }
@@ -160,7 +202,7 @@ namespace Top.Conversion.Pipeline
 
             var parts = new List<ItemResult>();
 
-            foreach (var itemId in row.Parts.Take(EquipmentSlots).Where(part => part != 0))
+            foreach (var itemId in ClientTables.SelectDefaultItems(row).Where(itemId => itemId != 0))
             {
                 if (_tables.Items == null || !_tables.Items.TryGetById(itemId, out var item))
                 {
@@ -169,7 +211,10 @@ namespace Top.Conversion.Pipeline
                     continue;
                 }
 
-                parts.Add(_items.ConvertModules(item, row.Model));
+                var part = _items.ConvertModules(item, row.Model);
+
+                parts.Add(part);
+                ReportUnknownBones(row, rig.Rig, part.ModuleArtifacts.ElementAtOrDefault(row.Model));
             }
 
             if (!parts.SelectMany(part => part.Artifacts).Any())
@@ -179,12 +224,28 @@ namespace Top.Conversion.Pipeline
                 return new CharacterResult(row.Id, name, ConversionOutcome.Failed, rig, null, parts);
             }
 
-            var outcome = rig.Outcome == ConversionOutcome.Converted ||
+            var outcome = rig.Rig.Outcome == ConversionOutcome.Converted ||
                           parts.Any(part => part.Outcome == ConversionOutcome.Converted)
                 ? ConversionOutcome.Converted
                 : ConversionOutcome.Skipped;
 
             return new CharacterResult(row.Id, name, outcome, rig, null, parts);
+        }
+
+        private void ReportUnknownBones(CharacterInfoRecord row, ModelArtifact rig, ModelArtifact part)
+        {
+            if (part == null)
+            {
+                return;
+            }
+
+            var unknown = _boneCheck.FindUnknownBones(rig, part);
+
+            if (unknown.Count > 0)
+            {
+                Log.Warning($"characterinfo {row.Id}: part '{part.Name}' binds bones rig '{rig.Name}' does not have, " +
+                            $"they bind to its first bone: {string.Join(", ", unknown)}");
+            }
         }
 
         private CharacterResult ConvertMonster(CharacterInfoRecord row)
@@ -239,14 +300,62 @@ namespace Top.Conversion.Pipeline
             }
 
             var packaging = new ModelPackaging(glbPath, _settings.Output.TextureDir(ContentKind.Character));
+            var textureDir = _settings.Source.TextureDir(ContentKind.Character);
             var file = GltfExport.Character(name, skeleton, parts.ToArray(),
-                _tables.ActionsFor(siblings, row.Model), packaging.TextureUriPrefix);
+                _tables.ActionsFor(siblings, row.Model), packaging.TextureUriPrefix,
+                isTextureTranslucent: (stage, cutoff) => _translucency.IsTranslucent(textureDir, stage, cutoff));
 
-            var packaged = packaging.Write(file, parts,
-                _settings.Source.TextureDir(ContentKind.Character));
+            var packaged = packaging.Write(file, parts, textureDir);
 
             return Merged(row, labPath, new ModelArtifact(name, ContentKind.Character, packaged.ModelPath,
                 packaged.TexturePaths, ConversionOutcome.Converted));
+        }
+
+        private CharacterResult ConvertMachine(CharacterInfoRecord row)
+        {
+            var name = Named(row.Id);
+            var drivingSlot = row.ModalType == CharacterModalType.Boat ? BoatSlots.Driving : TowerSlots.Driving;
+            var clips = DecodeMachineClips(row);
+            var parts = _tables.SelectMachineModules(row)
+                .Select((module, slot) => (Slot: slot, Module: module))
+                .Concat(_tables.SelectShipModules(row))
+                .Where(part => part.Module != null)
+                .DistinctBy(part => part.Module)
+                .Select(part => _models.ConvertMachinePart(part.Module, part.Slot == drivingSlot ? clips : NoClips))
+                .Where(part => part != null)
+                .ToList();
+
+            if (parts.Count == 0)
+            {
+                Log.Error($"no part of character {row.Id} loaded");
+
+                return new CharacterResult(row.Id, name, ConversionOutcome.Failed, null, null, NoParts);
+            }
+
+            var outcome = parts.Any(part => part.Outcome == ConversionOutcome.Converted)
+                ? ConversionOutcome.Converted
+                : ConversionOutcome.Skipped;
+
+            return new CharacterResult(row.Id, name, outcome, null, null, NoParts, parts);
+        }
+
+
+        private IReadOnlyList<ClipRange> DecodeMachineClips(CharacterInfoRecord row)
+        {
+            if (_tables.Actions == null || !_tables.Actions.TryGetActions(row.ActionId, out var poses))
+            {
+                Log.Warning($"characterinfo {row.Id}: no action set {row.ActionId}, its parts play their whole tracks");
+
+                return NoClips;
+            }
+
+            if (!_machineClips.TryGetValue(row.ActionId, out var clips))
+            {
+                clips = RigClipSet.DecodeWithoutStances(row.ActionId, poses).Clips;
+                _machineClips[row.ActionId] = clips;
+            }
+
+            return clips;
         }
 
         private List<GeometryObject> LoadParts(CharacterInfoRecord row, int model)

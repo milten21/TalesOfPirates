@@ -1,0 +1,39 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Inventory/Bag/BagUnlockForm.cs" id="1_form"]
+[ext_resource type="Script" path="res://Features/Lobby/Select/Widgets/SecurityCodeEdit.cs" id="2_code_edit"]
+
+[node name="BagUnlockForm" type="PanelContainer" node_paths=PackedStringArray("CodeEdit", "UnlockButton")]
+theme_type_variation = &"WindowNotice"
+script = ExtResource("1_form")
+CodeEdit = NodePath("Row/Code")
+UnlockButton = NodePath("Row/Unlock")
+
+[node name="Row" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Text" type="Label" parent="Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"WindowNoticeText"
+text = "Locked. Items can't be moved."
+vertical_alignment = 1
+
+[node name="Code" type="LineEdit" parent="Row"]
+custom_minimum_size = Vector2(220, 30)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"WindowCodeField"
+placeholder_text = "Security code"
+virtual_keyboard_type = 2
+secret = true
+script = ExtResource("2_code_edit")
+
+[node name="Unlock" type="Button" parent="Row"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"WindowGoldPill"
+disabled = true
+text = "Unlock"

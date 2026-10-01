@@ -1,8 +1,12 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Top.Conversion.Pipeline;
 using Top.Conversion.Gltf;
+using Top.Legacy.MindPower.Animation;
+using Top.Legacy.Tables;
+using Top.Legacy.Tables.Records;
 
 namespace Top.Conversion.Tests.Pipeline
 {
@@ -25,9 +29,53 @@ namespace Top.Conversion.Tests.Pipeline
             _client.Dispose();
         }
 
-        private ModelConverter Converter(bool overwrite = true)
+        private ModelConverter Converter(bool overwrite = true, IEnumerable<ItemInfoRecord> items = null)
         {
-            return new ModelConverter(_client.Settings(overwrite));
+            var tables = new ClientTables(null, new Table<ItemInfoRecord>((items ?? []).ToList()), null, null);
+
+            return new ModelConverter(_client.Settings(overwrite), tables);
+        }
+
+        private static ItemInfoRecord Worn(int id, string module, params int[] bodyTypes)
+        {
+            var columns = new[] { "0", "0", "0", "0", "0" };
+
+            foreach (var bodyType in bodyTypes)
+            {
+                columns[bodyType + 1] = module;
+            }
+
+            return new ItemInfoRecord
+            {
+                Id = id,
+                Name = $"item {id}",
+                Type = ItemType.Armor,
+                Modules = columns,
+                Body = [-1],
+            };
+        }
+
+        private static IReadOnlyList<string> JointNames(ModelArtifact artifact)
+        {
+            using var stream = File.OpenRead(artifact.ModelPath);
+            var document = GltfReader.Read(stream).Document;
+
+            return document.Skins.Single().Joints.Select(joint => document.Nodes[joint].Name).ToList();
+        }
+
+        private static float[] InverseBindMatrices(ModelArtifact artifact)
+        {
+            using var stream = File.OpenRead(artifact.ModelPath);
+            var file = GltfReader.Read(stream);
+
+            return new GltfData(file).ReadFloats(file.Document.Skins.Single().InverseBindMatrices.Value);
+        }
+
+        private static IReadOnlyList<string> BoneNames(string fixture)
+        {
+            using var stream = File.OpenRead(Fixtures.Path(fixture));
+
+            return LabFile.Read(stream).Animation.Bones.Select(bone => bone.Name).ToList();
         }
 
         [Test]
@@ -123,15 +171,73 @@ namespace Top.Conversion.Tests.Pipeline
         }
 
         [Test]
-        public void A_skinned_object_binds_to_the_skeleton_its_name_points_at()
+        public void A_worn_part_binds_like_every_other_part_of_the_body_type_whose_column_names_it()
+        {
+            _client.AddSkeleton("lab/0724.lab", "0000.lab");
+            var bodyTypePart = _client.AddModel("character", "lgo/0724000000.lgo", "0000000002.lgo");
+            var source = _client.AddModel("character", "lgo/0724000000.lgo", "9011000002.lgo");
+            var converter = Converter(items: [Worn(1, "0000000002", 0), Worn(5748, "9011000002", 0)]);
+
+            var expected = converter.Convert(bodyTypePart);
+            var artifact = converter.Convert(source);
+
+            Assert.That(JointNames(artifact), Is.EqualTo(BoneNames("lab/0724.lab")));
+            Assert.That(JointNames(artifact), Is.EqualTo(JointNames(expected)));
+            Assert.That(InverseBindMatrices(artifact), Is.EqualTo(InverseBindMatrices(expected)));
+            Assert.That(_log.Warnings, Has.None.Contains("converting rigid").And.None.Contains("worn by"));
+        }
+
+        [Test]
+        public void The_body_type_column_decides_the_skeleton_over_the_name()
+        {
+            _client.AddSkeleton("lab/0724.lab", "0000.lab");
+            _client.AddSkeleton("lab/0001.lab");
+            var source = _client.AddModel("character", "lgo/0724000000.lgo", "0001000002.lgo");
+
+            var artifact = Converter(items: [Worn(9451, "0001000002", 0)]).Convert(source);
+
+            Assert.That(JointNames(artifact), Is.EqualTo(BoneNames("lab/0724.lab")));
+        }
+
+        [Test]
+        public void A_part_no_body_type_wears_binds_to_the_skeleton_its_name_points_at_and_is_reported()
         {
             _client.AddSkeleton("lab/0724.lab");
             var source = _client.AddModel("character", "lgo/0724000000.lgo");
 
             var artifact = Converter().Convert(source);
 
-            using var stream = File.OpenRead(artifact.ModelPath);
-            Assert.That(GltfReader.Read(stream).Document.Skins, Is.Not.Empty);
+            Assert.That(JointNames(artifact), Is.EqualTo(BoneNames("lab/0724.lab")));
+            Assert.That(_log.Warnings, Has.Some.Contains("'0724000000' is worn by no body type"));
+        }
+
+        [Test]
+        public void A_body_type_that_cannot_equip_the_item_does_not_claim_its_part()
+        {
+            _client.AddSkeleton("lab/0724.lab");
+            _client.AddSkeleton("lab/0001.lab");
+            var source = _client.AddModel("character", "lgo/0724000000.lgo");
+            var item = Worn(303, "0724000000", 1);
+            item.Body = [1, 3];
+
+            var artifact = Converter(items: [item]).Convert(source);
+
+            Assert.That(JointNames(artifact), Is.EqualTo(BoneNames("lab/0724.lab")));
+            Assert.That(_log.Warnings, Has.Some.Contains("'0724000000' is worn by no body type"));
+        }
+
+        [Test]
+        public void A_part_two_body_types_wear_binds_to_the_skeleton_its_name_points_at_and_is_reported()
+        {
+            _client.AddSkeleton("lab/0724.lab");
+            _client.AddSkeleton("lab/0001.lab");
+            var source = _client.AddModel("character", "lgo/0724000000.lgo");
+
+            var artifact = Converter(items: [Worn(303, "0724000000", 1), Worn(1930, "0724000000", 2)])
+                .Convert(source);
+
+            Assert.That(JointNames(artifact), Is.EqualTo(BoneNames("lab/0724.lab")));
+            Assert.That(_log.Warnings, Has.Some.Contains("'0724000000' is worn by body types 1, 2"));
         }
 
         [Test]

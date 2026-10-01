@@ -56,6 +56,30 @@ namespace Top.Legacy.Tables.Tests
         }
 
         [Test]
+        public void Reads_the_corrected_axe_type()
+        {
+            using var stream = File.OpenRead(Fixtures.Path("tables/iteminfo.txt"));
+            var table = TableFile.Read<ItemInfoRecord>(stream);
+
+            var record = table[196];
+
+            Assert.That(record.Name, Is.EqualTo("Axe"));
+            Assert.That(record.Type, Is.EqualTo(ItemType.Axe));
+        }
+
+        [Test]
+        public void Reads_the_corrected_metal_pickaxe_type()
+        {
+            using var stream = File.OpenRead(Fixtures.Path("tables/iteminfo.txt"));
+            var table = TableFile.Read<ItemInfoRecord>(stream);
+
+            var record = table[197];
+
+            Assert.That(record.Name, Is.EqualTo("Pickaxe"));
+            Assert.That(record.Type, Is.EqualTo(ItemType.MetalPickaxe));
+        }
+
+        [Test]
         public void Reads_attr_effect_on_item_use_row()
         {
             using var stream = File.OpenRead(Fixtures.Path("tables/iteminfo.txt"));

@@ -250,7 +250,8 @@ namespace Top.Conversion.Tests
 
             var clip = doc.Animations.Single(a => a.Name == "geom_4");
 
-            Assert.That(clip.Channels, Has.Count.EqualTo(10), "5 bones, translation and rotation");
+            Assert.That(clip.Channels, Has.Count.EqualTo(12),
+                "5 bones, translation and rotation, and scale on Bone01 and Bone02, which squash to 0.84 and 0.75");
             Assert.That(data.ReadFloats(clip.Samplers[0].Input), Has.Length.EqualTo(101));
         }
     }

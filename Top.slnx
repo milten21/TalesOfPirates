@@ -3,6 +3,8 @@
     <File Path=".editorconfig" />
     <File Path=".github/workflows/ci.yml" />
     <File Path=".gitignore" />
+    <File Path="Directory.Packages.props" />
+    <File Path="tests.slnf" />
   </Folder>
 
   <Folder Name="/Solution Items/src/">
@@ -16,6 +18,9 @@
   </Folder>
 
   <Folder Name="/src/">
+    <Project Path="src/Top.Client/Top.Client.csproj" />
+    <Project Path="src/Top.Client.LegacyBridge/Top.Client.LegacyBridge.csproj" />
+    <Project Path="src/Top.Client.Messages/Top.Client.Messages.csproj" />
     <Project Path="src/Top.Logging/Top.Logging.csproj" />
     <Project Path="src/Top.Legacy.MindPower/Top.Legacy.MindPower.csproj" />
     <Project Path="src/Top.Legacy.Text/Top.Legacy.Text.csproj" />
@@ -30,6 +35,9 @@
     <Project Path="src/Top.Conversion.Cli/Top.Conversion.Cli.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Top.Client.Tests/Top.Client.Tests.csproj" />
+    <Project Path="tests/Top.Client.EngineTests/Top.Client.EngineTests.csproj" />
+    <Project Path="tests/Top.Client.LegacyBridge.Tests/Top.Client.LegacyBridge.Tests.csproj" />
     <Project Path="tests/Top.Logging.Tests/Top.Logging.Tests.csproj" />
     <Project Path="tests/Top.Legacy.MindPower.Tests/Top.Legacy.MindPower.Tests.csproj" />
     <Project Path="tests/Top.Legacy.Text.Tests/Top.Legacy.Text.Tests.csproj" />

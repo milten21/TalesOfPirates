@@ -6,11 +6,13 @@ namespace Top.Conversion.Pipeline
     /// </summary>
     public class ConversionSettings
     {
-        public ConversionSettings(string clientRoot, string outputRoot, bool overwrite = false)
+        public ConversionSettings(string clientRoot, string outputRoot, bool overwrite = false,
+            int mapChunkSize = Maps.MapBuilder.DefaultChunkSize)
         {
             ClientRoot = clientRoot;
             OutputRoot = outputRoot;
             Overwrite = overwrite;
+            MapChunkSize = mapChunkSize;
             Source = new SourcePaths(clientRoot);
             Output = new OutputPaths(outputRoot);
         }
@@ -20,6 +22,8 @@ namespace Top.Conversion.Pipeline
         public string OutputRoot { get; }
 
         public bool Overwrite { get; }
+
+        public int MapChunkSize { get; }
 
         public SourcePaths Source { get; }
 

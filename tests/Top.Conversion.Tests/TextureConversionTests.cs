@@ -63,12 +63,77 @@ namespace Top.Conversion.Tests
         }
 
         [Test]
+        public void A_png_source_passes_through_unchanged()
+        {
+            var png = TextureConversion.ToPng(File.ReadAllBytes(Fixtures.Path("dds/010022.dds")));
+
+            Assert.That(TextureConversion.ToPng(png), Is.EqualTo(png));
+        }
+
+        [Test]
         public void Undecodable_sources_throw()
         {
             var source = File.ReadAllBytes(Fixtures.Path("obj/teampk.obj"));
 
             Assert.That(() => TextureConversion.ToPng(source, new TextureStage()),
                 Throws.InstanceOf<InvalidDataException>());
+        }
+
+        [Test]
+        public void Color_keying_makes_a_texture_translucent()
+        {
+            var source = File.ReadAllBytes(Fixtures.Path("dds/010022.dds"));
+
+            Assert.That(
+                TextureConversion.FindHighestTranslucentAlpha(
+                    TextureConversion.Decode(source, new TextureStage
+                    {
+                        ColorKeyType = ColorKeyType.FirstPixel,
+                    })),
+                Is.EqualTo((byte)0), "the keyed color becomes a hole, whatever the source alpha was");
+        }
+
+        [Test]
+        public void An_image_that_is_opaque_everywhere_has_no_translucent_texels()
+        {
+            var image = new RgbaImage(2, 1, [new Rgba32(1, 2, 3, 255), new Rgba32(4, 5, 6, 255)]);
+
+            Assert.That(TextureConversion.FindHighestTranslucentAlpha(image), Is.Null);
+
+            image.Pixels[1] = new Rgba32(4, 5, 6, 254);
+
+            Assert.That(TextureConversion.FindHighestTranslucentAlpha(image), Is.EqualTo((byte)254),
+                "one texel below full alpha is enough");
+        }
+
+        [Test]
+        public void The_highest_translucent_alpha_is_reported()
+        {
+            var image = new RgbaImage(3, 1,
+                [new Rgba32(1, 2, 3, 0), new Rgba32(4, 5, 6, 200), new Rgba32(7, 8, 9, 255)]);
+
+            Assert.That(TextureConversion.FindHighestTranslucentAlpha(image), Is.EqualTo((byte)200));
+        }
+
+        [Test]
+        public void Decoding_stops_before_dilation()
+        {
+            var source = File.ReadAllBytes(Fixtures.Path("dds/010022.dds"));
+            var stage = new TextureStage { ColorKeyType = ColorKeyType.FirstPixel };
+            var decoded = TextureConversion.Decode(source, stage);
+
+            Assert.That(decoded.Pixels[0], Is.EqualTo(new Rgba32(0, 0, 0, 0)),
+                "dilation would have bled a neighbour's color into the hole");
+        }
+
+        [Test]
+        public void A_named_texture_is_found_under_any_of_its_containers()
+        {
+            var dir = Path.GetDirectoryName(Fixtures.Path("dds/010022.dds"));
+
+            Assert.That(Path.GetFileName(TextureConversion.FindSource(dir, "010022.bmp")),
+                Is.EqualTo("010022.dds"), "the original names a texture without its container");
+            Assert.That(TextureConversion.FindSource(dir, "nothing.bmp"), Is.Null);
         }
 
         private static int ReadInt32BE(byte[] bytes, int offset)

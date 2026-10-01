@@ -14,11 +14,6 @@ namespace Top.Conversion.Models.Gltf
             return new Vector3(v.X, v.Z, v.Y);
         }
 
-        public static Quaternion ToGltf(Quaternion q)
-        {
-            return new Quaternion(q.X, q.Z, q.Y, -q.W);
-        }
-
         public static Matrix4x4 ToGltf(Matrix4x4 m)
         {
             return new Matrix4x4(

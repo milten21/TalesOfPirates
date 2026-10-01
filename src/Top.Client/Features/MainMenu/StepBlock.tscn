@@ -1,0 +1,93 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/MainMenu/StepBlock.cs" id="1_block"]
+[ext_resource type="Script" path="res://Features/MainMenu/Servers/Widgets/ServerLine.cs" id="2_server_line"]
+
+[node name="StepBlock" type="VBoxContainer" node_paths=PackedStringArray("ServerLine", "Subtitle", "Pages")]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -720.0
+offset_top = -110.0
+offset_right = -120.0
+offset_bottom = -110.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 28
+script = ExtResource("1_block")
+ServerLine = NodePath("Header/ServerLine")
+Subtitle = NodePath("Header/Subtitle")
+Pages = NodePath("Pages")
+
+[node name="Header" type="VBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="ServerLine" type="MarginContainer" parent="Header" node_paths=PackedStringArray("ServerLabel", "AddressLabel", "Separator", "AccountLabel")]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_override_constants/margin_bottom = 4
+script = ExtResource("2_server_line")
+ServerLabel = NodePath("Layout/Server")
+AddressLabel = NodePath("Layout/Address")
+Separator = NodePath("Layout/Separator")
+AccountLabel = NodePath("Layout/Account")
+
+[node name="Layout" type="HBoxContainer" parent="Header/ServerLine"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="DiamondSlot" type="Control" parent="Header/ServerLine/Layout"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Diamond" type="Panel" parent="Header/ServerLine/Layout/DiamondSlot"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+pivot_offset = Vector2(4, 4)
+rotation = 0.7853982
+mouse_filter = 2
+theme_type_variation = &"ServerLineDiamond"
+
+[node name="Server" type="Label" parent="Header/ServerLine/Layout"]
+layout_mode = 2
+theme_type_variation = &"ServerLineServer"
+uppercase = true
+
+[node name="Address" type="Label" parent="Header/ServerLine/Layout"]
+layout_mode = 2
+theme_type_variation = &"ServerLineAddress"
+
+[node name="Separator" type="Label" parent="Header/ServerLine/Layout"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"ServerLineSeparator"
+text = "·"
+
+[node name="Account" type="Label" parent="Header/ServerLine/Layout"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"ServerLine"
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+theme_type_variation = &"StepTitle"
+
+[node name="Subtitle" type="Label" parent="Header"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"StepSubtitle"
+
+[node name="Pages" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 2

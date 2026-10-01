@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
-using Top.Legacy.Protocol.Messages.Login;
+using Top.Legacy.Protocol.Messages.Account;
 using Top.Legacy.Protocol.Packets;
 
 namespace Top.Legacy.Protocol.Tests
 {
     public class LoginRequestTests
     {
-        private const string Account = "MiltenUnityPort";
+        private const string Account = "blackbeard";
         private const string Password = "secret";
         private const string SecretDigest = "66E754709229A1A76F12B770D612D4DBA1D51E28894E2DCE1B53CA15104F84C0";
         private const string UnknownMacAddress = "Unknown";

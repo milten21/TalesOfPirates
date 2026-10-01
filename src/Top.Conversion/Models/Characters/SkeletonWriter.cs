@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using Top.Contracts.Assets.Models;
 using Top.Conversion.Models.Gltf;
@@ -16,6 +17,8 @@ namespace Top.Conversion.Models.Characters
     /// </summary>
     public class SkeletonWriter
     {
+        private const float ScaleTolerance = 1e-4f;
+
         private readonly GltfBuilder _gltf;
 
         public SkeletonWriter(GltfBuilder gltf)
@@ -25,38 +28,24 @@ namespace Top.Conversion.Models.Characters
 
         /// <summary>
         /// One node per bone, parented to each other. Bones with no parent hang
-        /// off <paramref name="parent"/>, or become roots when it is absent.
+        /// off <paramref name="parent"/>, or become roots when it is absent. A
+        /// bone rests at the translation, rotation and scale nearest to its
+        /// bind, which a sheared bind cannot reach exactly.
         /// </summary>
         public GltfNodeRef[] AddSkeleton(BoneAnimation skeleton, GltfNodeRef parent = null)
         {
             var boneNodes = new GltfNodeRef[skeleton.Bones.Length];
-            var bindWorld = new Matrix4x4[skeleton.Bones.Length];
-
-            for (var i = 0; i < skeleton.Bones.Length; i++)
-            {
-                Matrix4x4.Invert(skeleton.Bones[i].InvBindMatrix, out bindWorld[i]);
-            }
 
             for (var i = 0; i < skeleton.Bones.Length; i++)
             {
                 var bone = skeleton.Bones[i];
                 var node = _gltf.AddNode(string.IsNullOrEmpty(bone.Name) ? $"bone_{i}" : bone.Name);
-                var local = bone.ParentId >= 0 && bone.ParentId < skeleton.Bones.Length
-                    ? bindWorld[i] * skeleton.Bones[bone.ParentId].InvBindMatrix
-                    : bindWorld[i];
 
-                if (!local.IsIdentity)
+                if (!BindLocal(skeleton, i).IsIdentity)
                 {
-                    if (Matrix4x4.Decompose(Axis.ToGltf(local),
-                            out var scale, out var rotation, out var translation))
-                    {
-                        node.WithTrs(translation, rotation, scale);
-                    }
-                    else
-                    {
-                        Log.Warning($"bind pose of bone {node.Name} is not TRS-decomposable, kept as a matrix node");
-                        node.WithMatrix(Axis.ToGltfMatrix(Axis.ToGltf(local)));
-                    }
+                    var rest = Rest(skeleton, i);
+
+                    node.WithTrs(rest.Translation, rest.Rotation, rest.Scale);
                 }
 
                 boneNodes[i] = node;
@@ -90,16 +79,21 @@ namespace Top.Conversion.Models.Characters
                 return;
             }
 
+            var inverseBind = InverseBinds(skeleton);
+
             foreach (var dummy in skeleton.Dummies)
             {
                 var node = _gltf.AddNode(Naming.Dummy(dummy.Id));
                 var parented = dummy.ParentBoneId < boneNodes.Length;
 
                 var local = parented
-                    ? dummy.Matrix * skeleton.Bones[dummy.ParentBoneId].InvBindMatrix
-                    : dummy.Matrix;
+                    ? Axis.ToGltf(dummy.Matrix) * inverseBind[dummy.ParentBoneId]
+                    : Axis.ToGltf(dummy.Matrix);
 
-                Axis.Place(node, local);
+                if (!local.IsIdentity)
+                {
+                    node.WithMatrix(Axis.ToGltfMatrix(local));
+                }
 
                 if (parented)
                 {
@@ -115,14 +109,7 @@ namespace Top.Conversion.Models.Characters
 
         public GltfSkinRef AddSkin(BoneAnimation skeleton, GltfNodeRef[] boneNodes, string name)
         {
-            var inverseBind = new Matrix4x4[skeleton.Bones.Length];
-
-            for (var i = 0; i < inverseBind.Length; i++)
-            {
-                inverseBind[i] = Axis.ToGltf(skeleton.Bones[i].InvBindMatrix);
-            }
-
-            var skin = _gltf.AddSkin(name, boneNodes, _gltf.Buffer.AddMatrices(inverseBind));
+            var skin = _gltf.AddSkin(name, boneNodes, _gltf.Buffer.AddMatrices(InverseBinds(skeleton)));
             var root = Array.FindIndex(skeleton.Bones, bone => bone.ParentId < 0);
 
             if (root >= 0)
@@ -150,16 +137,16 @@ namespace Top.Conversion.Models.Characters
                 Log.Warning("no action table entry, emitting the full timeline as one clip");
             }
 
-            var tracks = BoneTracks.Convert(skeleton);
+            var keys = BoneTracks.Convert(skeleton);
 
             foreach (var action in actions)
             {
-                AddBoneAnimation(skeleton, boneNodes, tracks, action.StartFrame, action.EndFrame,
+                AddBoneAnimation(skeleton, boneNodes, keys, action.StartFrame, action.EndFrame,
                     Naming.ActionClip(modelName, action.ActionNo));
             }
         }
 
-        public void AddBoneAnimation(BoneAnimation skeleton, GltfNodeRef[] boneNodes, TrackSamples[] tracks,
+        public void AddBoneAnimation(BoneAnimation skeleton, GltfNodeRef[] boneNodes, Matrix4x4[][] keys,
             int startFrame, int endFrame, string name)
         {
             var start = startFrame;
@@ -179,49 +166,109 @@ namespace Top.Conversion.Models.Characters
                 return;
             }
 
-            var length = end - start + 1;
             var animation = _gltf.AddAnimation(name);
-            var input = _gltf.Buffer.AddScalars(Timeline.Seconds(length), withMinMax: true);
+            var input = _gltf.Buffer.AddScalars(Timeline.Seconds(end - start + 1), withMinMax: true);
 
             for (var i = 0; i < boneNodes.Length; i++)
             {
-                var track = tracks[i];
-
-                if (track == null)
+                if (keys[i] == null)
                 {
                     continue;
                 }
 
-                // glTF forbids TRS channels on a node that kept a matrix.
-                if (boneNodes[i].HasMatrix)
-                {
-                    continue;
-                }
-
-                if (start + length > track.Positions.Length)
+                if (end >= keys[i].Length)
                 {
                     Log.Warning($"clip {name}: track of bone {skeleton.Bones[i].Name} " +
                                 "is shorter than the timeline, the bone stays in bind pose");
                     continue;
                 }
 
-                var translations = new Vector3[length];
-                var rotations = new Vector4[length];
-
-                Array.Copy(track.Positions, start, translations, 0, length);
-                Array.Copy(track.Rotations, start, rotations, 0, length);
-
-                animation
-                    .AddChannel(input,
-                        _gltf.Buffer.AddVec3(translations, withMinMax: false, vertexData: false),
-                        boneNodes[i], "translation")
-                    .AddChannel(input, _gltf.Buffer.AddVec4(rotations), boneNodes[i], "rotation");
+                AddChannels(animation, input, boneNodes[i], Rest(skeleton, i), keys[i][start..(end + 1)]);
             }
 
             if (animation.ChannelCount == 0)
             {
                 // The builder drops it, glTF rejects a channelless animation.
                 Log.Warning($"clip {name} has no usable tracks, skipped");
+            }
+        }
+
+        /// <summary>
+        /// The bone's local bind matrix in glTF axes: its bind pose relative
+        /// to its parent's.
+        /// </summary>
+        private static Matrix4x4 BindLocal(BoneAnimation skeleton, int bone)
+        {
+            var parentId = skeleton.Bones[bone].ParentId;
+
+            Matrix4x4.Invert(skeleton.Bones[bone].InvBindMatrix, out var bindWorld);
+
+            return Axis.ToGltf(parentId >= 0 && parentId < skeleton.Bones.Length
+                ? bindWorld * skeleton.Bones[parentId].InvBindMatrix
+                : bindWorld);
+        }
+
+        private static Trs Rest(BoneAnimation skeleton, int bone)
+        {
+            return Trs.Of(BindLocal(skeleton, bone));
+        }
+
+        /// <summary>
+        /// The inverse of each bone's rest as the nodes hold it, times its
+        /// parents', in glTF axes. The skin and the dummies bind each bone here
+        /// rather than at its .lab bind, which a sheared bind would miss, so
+        /// that the rest pose leaves every vertex and dummy where it is.
+        /// </summary>
+        private static Matrix4x4[] InverseBinds(BoneAnimation skeleton)
+        {
+            var world = new Matrix4x4[skeleton.Bones.Length];
+            var known = new bool[skeleton.Bones.Length];
+
+            Matrix4x4 Of(int bone)
+            {
+                if (!known[bone])
+                {
+                    var parentId = skeleton.Bones[bone].ParentId;
+                    var local = Rest(skeleton, bone).Matrix;
+
+                    world[bone] = parentId >= 0 && parentId < skeleton.Bones.Length ? local * Of(parentId) : local;
+                    known[bone] = true;
+                }
+
+                return world[bone];
+            }
+
+            var inverseBind = new Matrix4x4[world.Length];
+
+            for (var i = 0; i < world.Length; i++)
+            {
+                Matrix4x4.Invert(Of(i), out inverseBind[i]);
+            }
+
+            return inverseBind;
+        }
+
+        private void AddChannels(GltfAnimationRef animation, int input, GltfNodeRef bone, Trs rest, Matrix4x4[] keys)
+        {
+            var poses = new Trs[keys.Length];
+            var previous = rest;
+
+            for (var k = 0; k < keys.Length; k++)
+            {
+                poses[k] = previous = Trs.Of(keys[k], previous);
+            }
+
+            animation
+                .AddChannel(input, _gltf.Buffer.AddVec3(poses.Select(pose => pose.Translation).ToArray(),
+                    withMinMax: false, vertexData: false), bone, "translation")
+                .AddChannel(input, _gltf.Buffer.AddVec4(poses
+                    .Select(pose => new Vector4(pose.Rotation.X, pose.Rotation.Y, pose.Rotation.Z, pose.Rotation.W))
+                    .ToArray()), bone, "rotation");
+
+            if (poses.Any(pose => Vector3.Distance(pose.Scale, rest.Scale) > ScaleTolerance))
+            {
+                animation.AddChannel(input, _gltf.Buffer.AddVec3(poses.Select(pose => pose.Scale).ToArray(),
+                    withMinMax: false, vertexData: false), bone, "scale");
             }
         }
     }

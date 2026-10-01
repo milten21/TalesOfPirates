@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Top.Conversion.Pipeline;
+using Top.Conversion.Textures;
 using Top.Legacy.Tables;
 using Top.Legacy.Tables.Records;
 
@@ -38,13 +40,30 @@ namespace Top.Conversion.Tests.Pipeline
             return new ItemInfoRecord { Id = id, Name = $"item {id}", Type = type, Modules = columns };
         }
 
+        private static ItemInfoRecord Icon(ItemInfoRecord item, string icon)
+        {
+            item.Icon = icon;
+
+            return item;
+        }
+
+        private string AddIcon(string fileName, byte[] bytes)
+        {
+            var path = Path.Combine(_client.ClientRoot, "texture", "icon", fileName);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllBytes(path, bytes);
+
+            return path;
+        }
+
         private ItemConverter Converter(params ItemInfoRecord[] items)
         {
             var settings = _client.Settings();
             var tables = new ClientTables(null,
                 new Table<ItemInfoRecord>([..items]), null, null);
 
-            return new ItemConverter(settings, tables, new ModelConverter(settings));
+            return new ItemConverter(settings, tables, new ModelConverter(settings, tables));
         }
 
         [Test]
@@ -71,7 +90,7 @@ namespace Top.Conversion.Tests.Pipeline
         {
             _client.AddModel("character", "lgo/dirk.lgo", "worn0.lgo");
 
-            var result = Converter(Item(5, ItemType.Clothing, "worn0")).Convert(5);
+            var result = Converter(Item(5, ItemType.Armor, "worn0")).Convert(5);
 
             Assert.That(result.Wearable, Is.True);
             Assert.That(result.ModuleArtifacts[0].Kind, Is.EqualTo("character"));
@@ -165,6 +184,48 @@ namespace Top.Conversion.Tests.Pipeline
 
             Assert.That(results.Select(result => result.Outcome),
                 Is.EqualTo(new[] { ConversionOutcome.Converted, ConversionOutcome.Skipped }));
+        }
+
+        [Test]
+        public void Exports_the_png_icon_as_it_is_under_the_icons_folder()
+        {
+            var png = TextureConversion.ToPng(File.ReadAllBytes(Fixtures.Path("dds/010022.dds")));
+            AddIcon("n1651.png", png);
+
+            Converter(Icon(Item(231, ItemType.Pet), "N1651")).Convert(231);
+
+            Assert.That(File.ReadAllBytes(_client.ConvertedTexture("icons", "n1651.png")), Is.EqualTo(png),
+                "an item without a model still gets its icon");
+        }
+
+        [Test]
+        public void Exports_an_icon_in_another_texture_format_as_png()
+        {
+            AddIcon("n0010.dds", File.ReadAllBytes(Fixtures.Path("dds/010022.dds")));
+
+            Converter(Icon(Item(5, ItemType.Sword), "n0010")).ConvertAll().ToList();
+
+            var png = File.ReadAllBytes(_client.ConvertedTexture("icons", "n0010.png"));
+
+            Assert.That(png[..8], Is.EqualTo(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }));
+        }
+
+        [Test]
+        public void An_icon_with_no_source_file_is_reported()
+        {
+            Converter(Icon(Item(5, ItemType.Sword), "n0010")).Convert(5);
+
+            Assert.That(File.Exists(_client.ConvertedTexture("icons", "n0010.png")), Is.False);
+            Assert.That(_log.Warnings, Has.Some.Contains("no source file for icon n0010"));
+        }
+
+        [Test]
+        public void An_item_with_no_icon_exports_none()
+        {
+            Converter(Icon(Item(5, ItemType.Sword), "0")).Convert(5);
+
+            Assert.That(Directory.Exists(Path.Combine(_client.OutputRoot, "textures", "icons")), Is.False);
+            Assert.That(_log.Warnings, Has.None.Contains("icon"));
         }
     }
 }

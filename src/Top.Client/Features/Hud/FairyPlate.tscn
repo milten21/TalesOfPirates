@@ -1,0 +1,191 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Hud/FairyPlate.cs" id="1_plate"]
+[ext_resource type="Script" path="res://Features/Hud/HudPlate.cs" id="2_hud_plate"]
+[ext_resource type="Script" path="res://Features/Hud/HudBar.cs" id="3_bar"]
+
+[node name="FairyPlate" type="Control" node_paths=PackedStringArray("OrbGlow", "Icon", "GrowthFullPlate", "StaminaBar", "GrowthBar", "LevelLabel", "Tip", "TipHeader")]
+custom_minimum_size = Vector2(280, 28)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 280.0
+offset_bottom = 28.0
+script = ExtResource("1_plate")
+OrbGlow = NodePath("Row/Orb/Glow")
+Icon = NodePath("Row/Orb/Body/Icon")
+GrowthFullPlate = NodePath("GrowthFullPlate")
+StaminaBar = NodePath("Row/Bars/Stamina")
+GrowthBar = NodePath("Row/Bars/Growth")
+LevelLabel = NodePath("Row/Level")
+Tip = NodePath("Tip")
+TipHeader = NodePath("Tip/Lines/Header")
+
+[node name="Plate" type="Control" parent="."]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 3.0
+offset_right = 280.0
+offset_bottom = 25.0
+mouse_filter = 2
+theme_type_variation = &"HudFairyPlate"
+script = ExtResource("2_hud_plate")
+
+[node name="GrowthFullPlate" type="Control" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 14.0
+offset_top = 3.0
+offset_right = 280.0
+offset_bottom = 25.0
+mouse_filter = 2
+theme_type_variation = &"HudFairyPlateGrowthFull"
+script = ExtResource("2_hud_plate")
+
+[node name="Row" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 9
+
+[node name="Orb" type="Control" parent="Row"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Glow" type="Panel" parent="Row/Orb"]
+layout_mode = 0
+offset_left = -18.0
+offset_top = -18.0
+offset_right = 46.0
+offset_bottom = 46.0
+mouse_filter = 2
+theme_type_variation = &"HudFairyOrbGlow"
+
+[node name="Ring" type="Panel" parent="Row/Orb"]
+layout_mode = 0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 30.0
+offset_bottom = 30.0
+mouse_filter = 2
+theme_type_variation = &"HudFairyOrbRing"
+
+[node name="Body" type="Panel" parent="Row/Orb"]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudFairyOrb"
+
+[node name="Fill" type="Panel" parent="Row/Orb/Body"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudFairyOrbFill"
+
+[node name="Icon" type="TextureRect" parent="Row/Orb/Body"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Bars" type="VBoxContainer" parent="Row"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Stamina" type="Control" parent="Row/Bars" node_paths=PackedStringArray("AmountLabel")]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudFairyStaminaBar"
+script = ExtResource("3_bar")
+AmountLabel = NodePath("../../../Tip/Lines/StaminaLine/Value")
+
+[node name="Growth" type="Control" parent="Row/Bars" node_paths=PackedStringArray("AmountLabel")]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudFairyGrowthBar"
+script = ExtResource("3_bar")
+AmountLabel = NodePath("../../../Tip/Lines/GrowthLine/Value")
+
+[node name="Level" type="Label" parent="Row"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"HudFairyLevel"
+text = "LV 0"
+
+[node name="Tip" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 4.0
+offset_right = 4.0
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudFairyTip"
+
+[node name="Lines" type="VBoxContainer" parent="Tip"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="Label" parent="Tip/Lines"]
+layout_mode = 2
+theme_type_variation = &"HudFairyTipHeader"
+text = "LV 0"
+
+[node name="StaminaLine" type="HBoxContainer" parent="Tip/Lines"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Key" type="Label" parent="Tip/Lines/StaminaLine"]
+layout_mode = 2
+theme_type_variation = &"HudFairyStaminaKey"
+text = "STAMINA"
+
+[node name="Value" type="Label" parent="Tip/Lines/StaminaLine"]
+layout_mode = 2
+theme_type_variation = &"HudTipText"
+text = "0 / 0"
+
+[node name="GrowthLine" type="HBoxContainer" parent="Tip/Lines"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Key" type="Label" parent="Tip/Lines/GrowthLine"]
+layout_mode = 2
+theme_type_variation = &"HudFairyGrowthKey"
+text = "GROWTH"
+
+[node name="Value" type="Label" parent="Tip/Lines/GrowthLine"]
+layout_mode = 2
+theme_type_variation = &"HudTipText"
+text = "0 / 0"

@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://dm830l7esy2m5"]
+
+[ext_resource type="Script" uid="uid://f172qju7j7lr" path="res://Features/Lobby/Select/CharacterSelectScene.cs" id="1_scene"]
+[ext_resource type="PackedScene" uid="uid://cn0bny847cnxo" path="res://Features/Lobby/Select/Assets/login02.glb" id="2_background"]
+[ext_resource type="PackedScene" path="res://Features/Lobby/Select/CharacterSelectScreen.tscn" id="3_screen"]
+[ext_resource type="PackedScene" path="res://Features/Lobby/Select/CharacterStand.tscn" id="4_stand"]
+
+[node name="CharacterSelectScene" type="Node" unique_id=27084706 node_paths=PackedStringArray("CharacterSelectScreen", "Camera", "Stands", "SelectionLight")]
+script = ExtResource("1_scene")
+CharacterSelectScreen = NodePath("Ui/Root/CharacterSelectScreen")
+Camera = NodePath("WorldRoot/Camera")
+Stands = NodePath("WorldRoot/Stands")
+SelectionLight = NodePath("WorldRoot/SelectionLight")
+
+[node name="Ambient" type="ShaderGlobalsOverride" parent="." unique_id=2133234442]
+params/ambient_ground_color = Vector3(1, 1, 1)
+params/ambient_horizon_color = Vector3(1, 1, 1)
+params/ambient_sky_color = Vector3(1, 1, 1)
+
+[node name="WorldRoot" type="Node3D" parent="." unique_id=946806900]
+
+[node name="Background" parent="WorldRoot" unique_id=1789346981 instance=ExtResource("2_background")]
+
+[node name="Stands" type="Node3D" parent="WorldRoot" unique_id=728220625]
+
+[node name="Stand0" parent="WorldRoot/Stands" unique_id=1669790389 node_paths=PackedStringArray("Ring", "Nameplate") instance=ExtResource("4_stand")]
+transform = Transform3D(0.76604444, 0, 0.6427876, 0, 1, 0, -0.6427876, 0, 0.76604444, 21.64, 0, 16.57)
+Ring = NodePath("../../Background/geom_46")
+Nameplate = NodePath("../../../Ui/Root/CharacterSelectScreen/Nameplates/Nameplate0")
+
+[node name="Stand1" parent="WorldRoot/Stands" unique_id=737354165 node_paths=PackedStringArray("Ring", "Nameplate") instance=ExtResource("4_stand")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.1, 0, 13.89)
+Ring = NodePath("../../Background/geom_47")
+Nameplate = NodePath("../../../Ui/Root/CharacterSelectScreen/Nameplates/Nameplate1")
+
+[node name="Stand2" parent="WorldRoot/Stands" unique_id=766518557 node_paths=PackedStringArray("Ring", "Nameplate") instance=ExtResource("4_stand")]
+transform = Transform3D(0.76604444, 0, -0.6427876, 0, 1, 0, 0.6427876, 0, 0.76604444, 26.14, 0, 15.79)
+Ring = NodePath("../../Background/geom_48")
+Nameplate = NodePath("../../../Ui/Root/CharacterSelectScreen/Nameplates/Nameplate2")
+
+[node name="SelectionLight" type="DirectionalLight3D" parent="WorldRoot" unique_id=1426931857]
+transform = Transform3D(0.70710677, -0.23570226, 0.6666667, 0, 0.94280905, 0.33333334, -0.70710677, -0.23570226, 0.6666667, 24.1, 4, 15)
+light_color = Color(0.7254902, 0.14117648, 0.21176471, 1)
+light_cull_mask = 2
+
+[node name="Camera" type="Camera3D" parent="WorldRoot" unique_id=1664583873]
+transform = Transform3D(0.9999966, 7.5688484e-05, -0.0026480425, -8.939996e-05, 0.99998665, -0.005178229, 0.0026476127, 0.005178449, 0.9999832, 23.749, 1.982, 20.923)
+keep_aspect = 0
+fov = 86.06
+
+[node name="Ui" type="CanvasLayer" parent="." unique_id=1098491000]
+
+[node name="Root" type="Control" parent="Ui" unique_id=2015531314 groups=["theme_root"]]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CharacterSelectScreen" parent="Ui/Root" unique_id=1127418875 instance=ExtResource("3_screen")]
+layout_mode = 1

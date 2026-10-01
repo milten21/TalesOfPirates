@@ -1,0 +1,35 @@
+{
+  "solution": {
+    "path": "Top.slnx",
+    "projects": [
+      "src/Top.Client/Top.Client.csproj",
+      "src/Top.Client.LegacyBridge/Top.Client.LegacyBridge.csproj",
+      "src/Top.Client.Messages/Top.Client.Messages.csproj",
+      "src/Top.Logging/Top.Logging.csproj",
+      "src/Top.Legacy.MindPower/Top.Legacy.MindPower.csproj",
+      "src/Top.Legacy.Text/Top.Legacy.Text.csproj",
+      "src/Top.Legacy.Protocol/Top.Legacy.Protocol.csproj",
+      "src/Top.Conversion.Gltf/Top.Conversion.Gltf.csproj",
+      "src/Top.Legacy.Tables/Top.Legacy.Tables.csproj",
+      "src/Top.Contracts/Top.Contracts.csproj",
+      "src/Top.Contracts.Assets/Top.Contracts.Assets.csproj",
+      "src/Top.Contracts.Tables/Top.Contracts.Tables.csproj",
+      "src/Top.Content/Top.Content.csproj",
+      "src/Top.Conversion/Top.Conversion.csproj",
+      "src/Top.Conversion.Cli/Top.Conversion.Cli.csproj",
+      "tests/Top.Client.Tests/Top.Client.Tests.csproj",
+      "tests/Top.Client.LegacyBridge.Tests/Top.Client.LegacyBridge.Tests.csproj",
+      "tests/Top.Logging.Tests/Top.Logging.Tests.csproj",
+      "tests/Top.Legacy.MindPower.Tests/Top.Legacy.MindPower.Tests.csproj",
+      "tests/Top.Legacy.Text.Tests/Top.Legacy.Text.Tests.csproj",
+      "tests/Top.Legacy.Protocol.Tests/Top.Legacy.Protocol.Tests.csproj",
+      "tests/Top.Conversion.Gltf.Tests/Top.Conversion.Gltf.Tests.csproj",
+      "tests/Top.Legacy.Tables.Tests/Top.Legacy.Tables.Tests.csproj",
+      "tests/Top.Contracts.Tests/Top.Contracts.Tests.csproj",
+      "tests/Top.Contracts.Assets.Tests/Top.Contracts.Assets.Tests.csproj",
+      "tests/Top.Contracts.Tables.Tests/Top.Contracts.Tables.Tests.csproj",
+      "tests/Top.Content.Tests/Top.Content.Tests.csproj",
+      "tests/Top.Conversion.Tests/Top.Conversion.Tests.csproj"
+    ]
+  }
+}

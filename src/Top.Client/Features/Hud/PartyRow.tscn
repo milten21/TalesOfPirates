@@ -1,0 +1,128 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Hud/PartyRow.cs" id="1_row"]
+[ext_resource type="Script" path="res://Features/Hud/HudPlate.cs" id="2_plate"]
+[ext_resource type="Script" path="res://Features/Hud/HudBar.cs" id="3_bar"]
+[ext_resource type="Script" path="res://Features/Hud/HealthBar.cs" id="4_health_bar"]
+[ext_resource type="Script" path="res://Features/Hud/BaselineRow.cs" id="5_baseline_row"]
+[ext_resource type="PackedScene" path="res://Features/Characters/Portrait/CharacterPortrait.tscn" id="6_portrait"]
+
+[node name="PartyRow" type="Control" node_paths=PackedStringArray("PortraitHalo", "PortraitDisc", "Portrait", "NameLabel", "LevelLabel", "HealthLabel", "DeadLabel", "HealthBar", "ManaBar")]
+custom_minimum_size = Vector2(290, 48)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 290.0
+offset_bottom = 48.0
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("1_row")
+PortraitHalo = NodePath("Portrait/Halo")
+PortraitDisc = NodePath("Portrait/Disc")
+Portrait = NodePath("Portrait/Character")
+NameLabel = NodePath("Column/NameLine/Name")
+LevelLabel = NodePath("Column/NameLine/Level")
+HealthLabel = NodePath("Column/NameLine/Health")
+DeadLabel = NodePath("Column/NameLine/Dead")
+HealthBar = NodePath("Column/HealthBar")
+ManaBar = NodePath("Column/ManaBar")
+
+[node name="Plate" type="Control" parent="."]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 6.0
+offset_right = 290.0
+offset_bottom = 42.0
+mouse_filter = 2
+theme_type_variation = &"HudPartyPlate"
+script = ExtResource("2_plate")
+
+[node name="Portrait" type="Control" parent="."]
+layout_mode = 0
+offset_top = 3.0
+offset_right = 42.0
+offset_bottom = 45.0
+mouse_filter = 2
+
+[node name="Halo" type="Panel" parent="Portrait"]
+layout_mode = 0
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 46.0
+offset_bottom = 46.0
+mouse_filter = 2
+theme_type_variation = &"HudPartyPortraitHalo"
+
+[node name="Disc" type="Panel" parent="Portrait"]
+layout_mode = 0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 44.0
+offset_bottom = 44.0
+mouse_filter = 2
+theme_type_variation = &"HudPartyPortraitDisc"
+
+[node name="Character" parent="Portrait" instance=ExtResource("6_portrait")]
+visible = false
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 0
+offset_right = 42.0
+offset_bottom = 42.0
+
+[node name="Column" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 54.0
+offset_right = 262.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="NameLine" type="Container" parent="Column"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+script = ExtResource("5_baseline_row")
+
+[node name="Name" type="Label" parent="Column/NameLine"]
+layout_mode = 2
+theme_type_variation = &"HudPartyName"
+
+[node name="Level" type="Label" parent="Column/NameLine"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"HudPartyLevel"
+text = "LV 1"
+
+[node name="Spacer" type="Control" parent="Column/NameLine"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Health" type="Label" parent="Column/NameLine"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"HudPartyHealth"
+text = "0 / 0"
+
+[node name="Dead" type="Label" parent="Column/NameLine"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"HudPartyDead"
+text = "DEAD"
+
+[node name="HealthBar" type="Control" parent="Column"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudPartyHealthBar"
+script = ExtResource("4_health_bar")
+
+[node name="ManaBar" type="Control" parent="Column"]
+custom_minimum_size = Vector2(171, 3)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_type_variation = &"HudPartyManaBar"
+script = ExtResource("3_bar")

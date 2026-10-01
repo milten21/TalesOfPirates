@@ -29,12 +29,22 @@ namespace Top.Legacy.Protocol.Packets
             _packet.Add((byte)value);
         }
 
+        public void WriteShort(short value)
+        {
+            WriteUShort(unchecked((ushort)value));
+        }
+
         public void WriteUInt(uint value)
         {
             _packet.Add((byte)(value >> 24));
             _packet.Add((byte)(value >> 16));
             _packet.Add((byte)(value >> 8));
             _packet.Add((byte)value);
+        }
+
+        public void WriteInt(int value)
+        {
+            WriteUInt(unchecked((uint)value));
         }
 
         public void WriteString(string text)

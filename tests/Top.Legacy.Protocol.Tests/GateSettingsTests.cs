@@ -12,6 +12,7 @@ namespace Top.Legacy.Protocol.Tests
 
             Assert.That(settings.IdleInterval, Is.EqualTo(TimeSpan.FromSeconds(2)), "TcpCommApp::BeforeSel of Comm.cpp");
             Assert.That(settings.ReadTimeout, Is.EqualTo(TimeSpan.FromSeconds(30)), "m_nSendHeartbeat of GameConfig.cpp");
+            Assert.That(settings.ConnectTimeout, Is.EqualTo(TimeSpan.FromSeconds(40)), "[Internet] connect_time_out of kop.cfg");
             Assert.That(settings.ClientVersion, Is.EqualTo(32125), "[Main] Version of GateServer.cfg");
         }
 
@@ -28,6 +29,14 @@ namespace Top.Legacy.Protocol.Tests
         {
             Assert.That(
                 () => new GateSettings(readTimeout: TimeSpan.Zero),
+                Throws.InstanceOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void A_connect_timeout_of_zero_is_refused()
+        {
+            Assert.That(
+                () => new GateSettings(connectTimeout: TimeSpan.Zero),
                 Throws.InstanceOf<ArgumentOutOfRangeException>());
         }
 

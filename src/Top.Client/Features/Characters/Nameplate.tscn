@@ -1,0 +1,93 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Characters/Nameplate.cs" id="1_script"]
+[ext_resource type="FontFile" uid="uid://byt641qi1v28v" path="res://UI/Assets/Fonts/simsun.ttc" id="2_font"]
+
+[sub_resource type="Gradient" id="Gradient_white"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bar"]
+gradient = SubResource("Gradient_white")
+width = 90
+height = 8
+
+[node name="Nameplate" type="Node3D" node_paths=PackedStringArray("NameLabel", "GuildLabel", "HealthLabel", "HealthBar", "HealthFill")]
+script = ExtResource("1_script")
+NameLabel = NodePath("NameLabel")
+GuildLabel = NodePath("GuildLabel")
+HealthLabel = NodePath("HealthLabel")
+HealthBar = NodePath("HealthBar")
+HealthFill = NodePath("HealthFill")
+
+[node name="NameLabel" type="Label3D" parent="."]
+visible = false
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 1.0
+billboard = 1
+no_depth_test = true
+fixed_size = true
+render_priority = 123
+outline_render_priority = 122
+font = ExtResource("2_font")
+font_size = 18
+outline_size = 4
+vertical_alignment = 2
+
+[node name="GuildLabel" type="Label3D" parent="."]
+visible = false
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 1.0
+billboard = 1
+no_depth_test = true
+fixed_size = true
+render_priority = 123
+outline_render_priority = 122
+modulate = Color(0.969, 0.624, 0.122, 1)
+font = ExtResource("2_font")
+font_size = 18
+outline_size = 4
+vertical_alignment = 2
+
+[node name="HealthLabel" type="Label3D" parent="."]
+visible = false
+cast_shadow = 0
+gi_mode = 0
+pixel_size = 1.0
+billboard = 1
+no_depth_test = true
+fixed_size = true
+render_priority = 123
+outline_render_priority = 122
+font = ExtResource("2_font")
+font_size = 18
+outline_size = 4
+vertical_alignment = 2
+
+[node name="HealthBar" type="Sprite3D" parent="."]
+visible = false
+cast_shadow = 0
+gi_mode = 0
+centered = false
+modulate = Color(0, 0, 0, 0.565)
+pixel_size = 1.0
+billboard = 1
+no_depth_test = true
+fixed_size = true
+render_priority = 120
+texture = SubResource("GradientTexture2D_bar")
+
+[node name="HealthFill" type="Sprite3D" parent="."]
+visible = false
+cast_shadow = 0
+gi_mode = 0
+centered = false
+pixel_size = 1.0
+billboard = 1
+no_depth_test = true
+fixed_size = true
+render_priority = 121
+texture = SubResource("GradientTexture2D_bar")
+region_enabled = true
+region_rect = Rect2(0, 0, 90, 8)

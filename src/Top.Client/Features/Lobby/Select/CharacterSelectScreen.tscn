@@ -1,0 +1,369 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Lobby/Select/CharacterSelectScreen.cs" id="1_screen"]
+[ext_resource type="PackedScene" path="res://UI/MessagePopup.tscn" id="2_message_popup"]
+[ext_resource type="PackedScene" path="res://Features/Lobby/Select/Widgets/StandNameplate.tscn" id="4_nameplate"]
+[ext_resource type="Script" path="res://Features/MainMenu/Servers/Widgets/ServerLine.cs" id="5_server_line"]
+[ext_resource type="Script" path="res://UI/IconAction.cs" id="6_icon_action"]
+[ext_resource type="Script" path="res://UI/VersionLabel.cs" id="7_version"]
+[ext_resource type="Script" path="res://UI/ActionArea.cs" id="8_action_area"]
+[ext_resource type="PackedScene" path="res://UI/PulsingDiamond.tscn" id="9_diamond"]
+[ext_resource type="PackedScene" path="res://Features/Lobby/Select/Forms/SecurityCodeForm.tscn" id="10_security_code_form"]
+[ext_resource type="PackedScene" path="res://UI/Toast.tscn" id="11_toast"]
+[ext_resource type="Script" path="res://UI/HoledDim.cs" id="12_holed_dim"]
+[ext_resource type="PackedScene" path="res://Features/Lobby/Select/Forms/DeleteCharacterForm.tscn" id="13_delete_form"]
+
+[sub_resource type="Gradient" id="Gradient_bottom_fade"]
+offsets = PackedFloat32Array(0, 0.45, 1)
+colors = PackedColorArray(0.024, 0.086, 0.118, 0, 0.024, 0.086, 0.118, 0.6, 0.024, 0.086, 0.118, 0.85)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bottom_fade"]
+gradient = SubResource("Gradient_bottom_fade")
+width = 1
+height = 64
+fill_to = Vector2(0, 1)
+
+[sub_resource type="Gradient" id="Gradient_dim_hole"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(0.016, 0.039, 0.063, 0, 0.016, 0.039, 0.063, 0, 0.016, 0.039, 0.063, 0.72)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_dim_hole"]
+gradient = SubResource("Gradient_dim_hole")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_corner_scrim"]
+colors = PackedColorArray(0.024, 0.086, 0.118, 0.7, 0.024, 0.086, 0.118, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_corner_scrim"]
+gradient = SubResource("Gradient_corner_scrim")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(1, 0)
+fill_to = Vector2(0, 0)
+
+[node name="CharacterSelectScreen" type="Control" node_paths=PackedStringArray("BottomFade", "Dim", "HoledDim", "AccountLabel", "ServerLine", "LogOutButton", "ActionArea", "SelectActions", "EnterWorldLine", "EnterWorldLabel", "PrimaryPill", "CreateButton", "SecurityCodeButton", "DeleteButton", "FirstCodeForm", "ChangeCodeForm", "DeleteForm", "Toast", "MessagePopup")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_screen")
+BottomFade = NodePath("BottomFade")
+Dim = NodePath("Dim")
+HoledDim = NodePath("HoledDim")
+AccountLabel = NodePath("Header/Account/Name")
+ServerLine = NodePath("Header/Account/ServerLine")
+LogOutButton = NodePath("Header/LogOut")
+ActionArea = NodePath("ActionArea")
+SelectActions = NodePath("ActionArea/SelectActions")
+EnterWorldLine = NodePath("ActionArea/EnterWorldLine")
+EnterWorldLabel = NodePath("ActionArea/EnterWorldLine/Text")
+PrimaryPill = NodePath("ActionArea/SelectActions/Primary")
+CreateButton = NodePath("ActionArea/SelectActions/Create")
+SecurityCodeButton = NodePath("ActionArea/SelectActions/SecurityCode")
+DeleteButton = NodePath("ActionArea/SelectActions/Delete")
+FirstCodeForm = NodePath("ActionArea/FirstCodeForm")
+ChangeCodeForm = NodePath("ActionArea/ChangeCodeForm")
+DeleteForm = NodePath("ActionArea/DeleteForm")
+Toast = NodePath("Toast")
+MessagePopup = NodePath("MessagePopup")
+
+[node name="Dim" type="Panel" parent="."]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"SceneDim"
+
+[node name="HoledDim" type="Control" parent="."]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"SceneDim"
+script = ExtResource("12_holed_dim")
+HoleTexture = SubResource("GradientTexture2D_dim_hole")
+
+[node name="BottomFade" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -300.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_bottom_fade")
+expand_mode = 1
+
+[node name="CornerScrim" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -760.0
+offset_bottom = 260.0
+grow_horizontal = 0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_corner_scrim")
+expand_mode = 1
+
+[node name="Nameplates" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Nameplate0" parent="Nameplates" instance=ExtResource("4_nameplate")]
+layout_mode = 0
+
+[node name="Nameplate1" parent="Nameplates" instance=ExtResource("4_nameplate")]
+layout_mode = 0
+
+[node name="Nameplate2" parent="Nameplates" instance=ExtResource("4_nameplate")]
+layout_mode = 0
+
+[node name="Header" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_top = 44.0
+offset_right = -120.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 28
+
+[node name="Account" type="VBoxContainer" parent="Header"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Name" type="Label" parent="Header/Account"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_type_variation = &"HeaderAccount"
+horizontal_alignment = 2
+
+[node name="ServerLine" type="MarginContainer" parent="Header/Account" node_paths=PackedStringArray("ServerLabel", "AddressLabel", "Separator", "AccountLabel")]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+script = ExtResource("5_server_line")
+ServerLabel = NodePath("Layout/Server")
+AddressLabel = NodePath("Layout/Address")
+Separator = NodePath("Layout/Separator")
+AccountLabel = NodePath("Layout/Account")
+
+[node name="Layout" type="HBoxContainer" parent="Header/Account/ServerLine"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="DiamondSlot" type="Control" parent="Header/Account/ServerLine/Layout"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Diamond" type="Panel" parent="Header/Account/ServerLine/Layout/DiamondSlot"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+pivot_offset = Vector2(4, 4)
+rotation = 0.7853982
+mouse_filter = 2
+theme_type_variation = &"ServerLineDiamond"
+
+[node name="Server" type="Label" parent="Header/Account/ServerLine/Layout"]
+layout_mode = 2
+theme_type_variation = &"ServerLineServer"
+uppercase = true
+
+[node name="Address" type="Label" parent="Header/Account/ServerLine/Layout"]
+layout_mode = 2
+theme_type_variation = &"ServerLineAddress"
+
+[node name="Separator" type="Label" parent="Header/Account/ServerLine/Layout"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"ServerLineSeparator"
+text = "·"
+
+[node name="Account" type="Label" parent="Header/Account/ServerLine/Layout"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"ServerLine"
+
+[node name="Divider" type="Panel" parent="Header"]
+custom_minimum_size = Vector2(1, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"HeaderDivider"
+
+[node name="LogOut" type="Button" parent="Header" node_paths=PackedStringArray("Layout", "IconLabel", "Caption")]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"HeaderAction"
+script = ExtResource("6_icon_action")
+Layout = NodePath("Layout")
+IconLabel = NodePath("Layout/Icon")
+Caption = NodePath("Layout/Caption")
+
+[node name="Layout" type="HBoxContainer" parent="Header/LogOut"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="Label" parent="Header/LogOut/Layout"]
+layout_mode = 2
+theme_type_variation = &"HeaderIcon"
+text = "logout"
+vertical_alignment = 1
+
+[node name="Caption" type="Label" parent="Header/LogOut/Layout"]
+layout_mode = 2
+theme_type_variation = &"HeaderText"
+text = "LOG OUT"
+vertical_alignment = 1
+
+[node name="ActionArea" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_action_area")
+
+[node name="SelectActions" type="HBoxContainer" parent="ActionArea"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_top = -56.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 36
+
+[node name="Primary" type="Button" parent="ActionArea/SelectActions"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"GoldPillScene"
+text = "ENTER WORLD"
+
+[node name="Create" type="Button" parent="ActionArea/SelectActions"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SceneAction"
+text = "CREATE"
+
+[node name="SecurityCode" type="Button" parent="ActionArea/SelectActions"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SceneAction"
+text = "SECURITY CODE"
+
+[node name="Delete" type="Button" parent="ActionArea/SelectActions"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SceneActionDanger"
+disabled = true
+text = "DELETE"
+
+[node name="EnterWorldLine" type="HBoxContainer" parent="ActionArea"]
+visible = false
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_top = -56.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Diamond" parent="ActionArea/EnterWorldLine" instance=ExtResource("9_diamond")]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Text" type="Label" parent="ActionArea/EnterWorldLine"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"StepMessage"
+
+[node name="FirstCodeForm" parent="ActionArea" instance=ExtResource("10_security_code_form")]
+visible = false
+layout_mode = 1
+
+[node name="Line" parent="ActionArea/FirstCodeForm/Header" index="1"]
+text = "Set a code to protect your characters"
+
+[node name="ChangeCodeForm" parent="ActionArea" instance=ExtResource("10_security_code_form")]
+visible = false
+layout_mode = 1
+AsksCurrentCode = true
+
+[node name="Line" parent="ActionArea/ChangeCodeForm/Header" index="1"]
+visible = false
+
+[node name="Leave" parent="ActionArea/ChangeCodeForm/Actions" index="0"]
+text = "CANCEL"
+
+[node name="DeleteForm" parent="ActionArea" instance=ExtResource("13_delete_form")]
+visible = false
+layout_mode = 1
+
+[node name="Version" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_bottom = -28.0
+grow_vertical = 0
+theme_type_variation = &"VersionLabel"
+script = ExtResource("7_version")
+
+[node name="Toast" parent="." instance=ExtResource("11_toast")]
+layout_mode = 1
+
+[node name="MessagePopup" parent="." instance=ExtResource("2_message_popup")]
+visible = false

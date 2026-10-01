@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/WaitPopup.cs" id="1_wait"]
+
+[node name="WaitPopup" type="PopupPanel"]
+visible = false
+exclusive = true
+script = ExtResource("1_wait")
+
+[node name="Message" type="Label" parent="."]
+custom_minimum_size = Vector2(240, 0)
+text = "Please wait"
+horizontal_alignment = 1

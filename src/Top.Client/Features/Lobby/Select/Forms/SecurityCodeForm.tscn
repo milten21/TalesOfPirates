@@ -1,0 +1,130 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Lobby/Select/Forms/SecurityCodeForm.cs" id="1_form"]
+[ext_resource type="Script" path="res://Features/Lobby/Select/Widgets/SecurityCodeEdit.cs" id="2_code_edit"]
+
+[node name="SecurityCodeForm" type="VBoxContainer" node_paths=PackedStringArray("CurrentCodeField", "CurrentCodeEdit", "NewCodeEdit", "RepeatCodeEdit", "ErrorLabel", "LeaveButton", "SaveButton")]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_top = -56.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 26
+script = ExtResource("1_form")
+CurrentCodeField = NodePath("Fields/CurrentCode")
+CurrentCodeEdit = NodePath("Fields/CurrentCode/Edit")
+NewCodeEdit = NodePath("Fields/NewCode/Edit")
+RepeatCodeEdit = NodePath("Fields/RepeatCode/Edit")
+ErrorLabel = NodePath("Error")
+LeaveButton = NodePath("Actions/Leave")
+SaveButton = NodePath("Actions/Save")
+
+[node name="Header" type="VBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+theme_type_variation = &"StepTitle"
+text = "Security code"
+horizontal_alignment = 1
+
+[node name="Line" type="Label" parent="Header"]
+layout_mode = 2
+theme_type_variation = &"StepLine"
+horizontal_alignment = 1
+
+[node name="Fields" type="HBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="CurrentCode" type="VBoxContainer" parent="Fields"]
+visible = false
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Fields/CurrentCode"]
+layout_mode = 2
+theme_type_variation = &"SceneFieldLabel"
+text = "CURRENT CODE"
+
+[node name="Edit" type="LineEdit" parent="Fields/CurrentCode"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"SceneFieldCode"
+alignment = 1
+secret = true
+script = ExtResource("2_code_edit")
+
+[node name="NewCode" type="VBoxContainer" parent="Fields"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Fields/NewCode"]
+layout_mode = 2
+theme_type_variation = &"SceneFieldLabel"
+text = "NEW CODE"
+
+[node name="Edit" type="LineEdit" parent="Fields/NewCode"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"SceneFieldCode"
+alignment = 1
+secret = true
+script = ExtResource("2_code_edit")
+
+[node name="RepeatCode" type="VBoxContainer" parent="Fields"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Fields/RepeatCode"]
+layout_mode = 2
+theme_type_variation = &"SceneFieldLabel"
+text = "REPEAT NEW CODE"
+
+[node name="Edit" type="LineEdit" parent="Fields/RepeatCode"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_type_variation = &"SceneFieldCode"
+alignment = 1
+secret = true
+script = ExtResource("2_code_edit")
+
+[node name="Error" type="Label" parent="."]
+visible = false
+layout_mode = 2
+theme_type_variation = &"SceneError"
+horizontal_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 36
+alignment = 1
+
+[node name="Leave" type="Button" parent="Actions"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SceneAction"
+text = "LOG OUT"
+
+[node name="Save" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_type_variation = &"GoldPillScene"
+disabled = true
+text = "SAVE CODE"

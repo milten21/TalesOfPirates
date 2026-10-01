@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dfohibq6kq0q4"]
+
+[ext_resource type="Script" uid="uid://ciqhhy8rbdv6v" path="res://Features/Lobby/Select/CharacterStand.cs" id="1_stand"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_placeholder"]
+height = 2.4
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_placeholder"]
+height = 2.4
+
+[node name="CharacterStand" type="StaticBody3D" unique_id=1090814930 node_paths=PackedStringArray("Placeholder", "Shape")]
+script = ExtResource("1_stand")
+Placeholder = NodePath("Placeholder")
+Shape = NodePath("Shape")
+
+[node name="Placeholder" type="MeshInstance3D" parent="." unique_id=1907769192]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("CapsuleMesh_placeholder")
+
+[node name="Shape" type="CollisionShape3D" parent="." unique_id=1283842221]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("CapsuleShape3D_placeholder")

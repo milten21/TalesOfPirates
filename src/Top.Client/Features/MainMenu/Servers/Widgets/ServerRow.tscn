@@ -1,0 +1,106 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/MainMenu/Servers/Widgets/ServerRow.cs" id="1_server_row"]
+[ext_resource type="Script" path="res://UI/ListRow.cs" id="2_list_row"]
+[ext_resource type="PackedScene" path="res://UI/InlineConfirm.tscn" id="3_inline_confirm"]
+
+[node name="ServerRow" type="VBoxContainer" node_paths=PackedStringArray("Row", "NameLabel", "AddressLabel", "DetailLabel", "EditButton", "RemoveButton", "InlineConfirm")]
+mouse_filter = 2
+theme_override_constants/separation = 6
+script = ExtResource("1_server_row")
+Row = NodePath("Row")
+NameLabel = NodePath("Row/Layout/Text/Name")
+AddressLabel = NodePath("Row/Layout/Text/Meta/Address")
+DetailLabel = NodePath("Row/Layout/Text/Meta/Detail")
+EditButton = NodePath("Row/Layout/Edit")
+RemoveButton = NodePath("Row/Layout/Remove")
+InlineConfirm = NodePath("RemoveConfirm")
+
+[node name="Row" type="Button" parent="." node_paths=PackedStringArray("Layout", "SelectedMark")]
+layout_mode = 2
+theme_type_variation = &"ListRow"
+toggle_mode = true
+script = ExtResource("2_list_row")
+Layout = NodePath("Layout")
+SelectedMark = NodePath("Layout/DiamondSlot/Diamond")
+
+[node name="Layout" type="HBoxContainer" parent="Row"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="DiamondSlot" type="Control" parent="Row/Layout"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Diamond" type="Panel" parent="Row/Layout/DiamondSlot"]
+visible = false
+layout_mode = 0
+offset_right = 10.0
+offset_bottom = 10.0
+pivot_offset = Vector2(5, 5)
+rotation = 0.7853982
+mouse_filter = 2
+theme_type_variation = &"ListRowDiamond"
+
+[node name="Text" type="VBoxContainer" parent="Row/Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="Name" type="Label" parent="Row/Layout/Text"]
+layout_mode = 2
+theme_type_variation = &"ListRowTitle"
+text_overrun_behavior = 3
+
+[node name="Meta" type="HBoxContainer" parent="Row/Layout/Text"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Address" type="Label" parent="Row/Layout/Text/Meta"]
+layout_mode = 2
+theme_type_variation = &"ListRowMetaMono"
+
+[node name="Separator" type="Label" parent="Row/Layout/Text/Meta"]
+layout_mode = 2
+theme_type_variation = &"ListRowMeta"
+text = "·"
+
+[node name="Detail" type="Label" parent="Row/Layout/Text/Meta"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"ListRowMeta"
+text_overrun_behavior = 3
+
+[node name="Edit" type="Button" parent="Row/Layout"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+mouse_filter = 1
+size_flags_vertical = 4
+theme_type_variation = &"RowIconButton"
+text = "edit"
+
+[node name="Remove" type="Button" parent="Row/Layout"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+mouse_filter = 1
+size_flags_vertical = 4
+theme_type_variation = &"RowIconButtonDanger"
+text = "delete"
+
+[node name="RemoveConfirm" parent="." instance=ExtResource("3_inline_confirm")]
+layout_mode = 2
+
+[node name="Confirm" parent="RemoveConfirm/Panel/Layout" index="1"]
+text = "Remove"
+
+[editable path="RemoveConfirm"]

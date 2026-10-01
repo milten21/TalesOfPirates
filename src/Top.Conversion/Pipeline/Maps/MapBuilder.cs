@@ -12,9 +12,10 @@ namespace Top.Conversion.Pipeline.Maps
     /// Builds a converted map from a .map terrain file and its .obj objects.
     /// Both tile record versions convert, in meters and degrees.
     /// </summary>
-    public class MapBuilder(Original.MapFile terrain, Original.ObjFile objects, Table<TerrainInfoRecord> terrains)
+    public class MapBuilder(Original.MapFile terrain, Original.ObjFile objects, Table<TerrainInfoRecord> terrains,
+        int chunkSize = MapBuilder.DefaultChunkSize)
     {
-        public const int ChunkSize = 64;
+        public const int DefaultChunkSize = 16;
 
         private const int ModelKind = 0;
         private const int EffectKind = 1;
@@ -44,11 +45,11 @@ namespace Top.Conversion.Pipeline.Maps
             {
                 for (var chunkX = 0; chunkX < countX; chunkX++)
                 {
-                    chunks[chunkX, chunkY] = Chunk(chunkX * ChunkSize, chunkY * ChunkSize);
+                    chunks[chunkX, chunkY] = Chunk(chunkX * chunkSize, chunkY * chunkSize);
                 }
             }
 
-            var map = new Converted.MapFile(terrain.Width, terrain.Height, ChunkSize);
+            var map = new Converted.MapFile(terrain.Width, terrain.Height, chunkSize);
 
             Array.Copy(chunks, map.Chunks, chunks.Length);
 
@@ -57,9 +58,9 @@ namespace Top.Conversion.Pipeline.Maps
             return map;
         }
 
-        private static int ChunkCount(int tiles)
+        private int ChunkCount(int tiles)
         {
-            return (tiles + ChunkSize - 1) / ChunkSize;
+            return (tiles + chunkSize - 1) / chunkSize;
         }
 
         /// <summary>
@@ -88,13 +89,13 @@ namespace Top.Conversion.Pipeline.Maps
                 return null;
             }
 
-            var chunk = new Converted.MapChunk(ChunkSize);
+            var chunk = new Converted.MapChunk(chunkSize);
 
-            for (var y = 0; y < ChunkSize; y++)
+            for (var y = 0; y < chunkSize; y++)
             {
-                for (var x = 0; x < ChunkSize; x++)
+                for (var x = 0; x < chunkSize; x++)
                 {
-                    chunk.Tiles[(y * ChunkSize) + x] = Tile(originX + x, originY + y);
+                    chunk.Tiles[(y * chunkSize) + x] = Tile(originX + x, originY + y);
                 }
             }
 
@@ -105,8 +106,8 @@ namespace Top.Conversion.Pipeline.Maps
         {
             var firstX = originX / terrain.SectionWidth;
             var firstY = originY / terrain.SectionHeight;
-            var lastX = Math.Min((originX + ChunkSize - 1) / terrain.SectionWidth, terrain.SectionCountX - 1);
-            var lastY = Math.Min((originY + ChunkSize - 1) / terrain.SectionHeight, terrain.SectionCountY - 1);
+            var lastX = Math.Min((originX + chunkSize - 1) / terrain.SectionWidth, terrain.SectionCountX - 1);
+            var lastY = Math.Min((originY + chunkSize - 1) / terrain.SectionHeight, terrain.SectionCountY - 1);
 
             for (var sectionY = firstY; sectionY <= lastY; sectionY++)
             {
@@ -251,8 +252,8 @@ namespace Top.Conversion.Pipeline.Maps
 
             var x = (placed.X + originX) / (float)Centimeters;
             var y = (placed.Y + originY) / (float)Centimeters;
-            var chunkX = (int)Math.Floor(x / ChunkSize);
-            var chunkY = (int)Math.Floor(y / ChunkSize);
+            var chunkX = (int)Math.Floor(x / chunkSize);
+            var chunkY = (int)Math.Floor(y / chunkSize);
 
             if (chunkX < 0 || chunkY < 0 || chunkX >= map.ChunkCountX || chunkY >= map.ChunkCountY)
             {

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
-using Top.Legacy.Protocol.Messages.Login;
+using Top.Legacy.Protocol.Messages.Account;
 using Top.Legacy.Protocol.Packets;
 
 namespace Top.Legacy.Protocol.Tests
@@ -55,6 +55,17 @@ namespace Top.Legacy.Protocol.Tests
             Assert.That(reply.Characters[1].Job, Is.EqualTo("Herbalist"));
             Assert.That(reply.Characters[1].Level, Is.EqualTo(7));
             Assert.That(reply.Characters[1].TypeId, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void A_character_after_an_empty_row_takes_the_next_position()
+        {
+            var reply = Read(PinnedReplyHex);
+
+            Assert.That(
+                reply.Characters[1].Name,
+                Is.EqualTo("Anne"),
+                "the group server closes up a character it could not read, so the index it expects is dense");
         }
 
         [Test]
@@ -154,16 +165,15 @@ namespace Top.Legacy.Protocol.Tests
         }
 
         [Test]
-        public void An_empty_row_is_dropped_on_the_way_back_out()
+        public void An_empty_row_is_closed_up_when_written_back()
         {
             var packet = new PacketWriter();
             Read(PinnedReplyHex).Write(packet);
 
             Assert.That(
                 packet.ToArray(),
-                Is.EqualTo(Hex.Bytes(
-                    Accepted + SlotCapOfFive + "02" + BlackbeardRow + AnneRow + SecondPasswordSet)),
-                "a decoded reply holds characters, not slots, so the empty row cannot be written back");
+                Is.EqualTo(Hex.Bytes(Accepted + SlotCapOfFive + "02" + BlackbeardRow + AnneRow + SecondPasswordSet)),
+                "the reply's character list cannot express a gap");
         }
 
         [Test]

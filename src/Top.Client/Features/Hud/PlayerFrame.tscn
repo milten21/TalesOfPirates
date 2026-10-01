@@ -1,0 +1,249 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Hud/PlayerFrame.cs" id="1_frame"]
+[ext_resource type="Script" path="res://Features/Hud/HudPlate.cs" id="2_plate"]
+[ext_resource type="Script" path="res://Features/Hud/HudBar.cs" id="3_bar"]
+[ext_resource type="Script" path="res://Features/Hud/HealthBar.cs" id="4_health_bar"]
+[ext_resource type="Script" path="res://Features/Hud/LevelHexagon.cs" id="5_hexagon"]
+[ext_resource type="Script" path="res://Features/Hud/BaselineRow.cs" id="6_baseline_row"]
+[ext_resource type="PackedScene" path="res://Features/Characters/Portrait/CharacterPortrait.tscn" id="7_portrait"]
+
+[node name="PlayerFrame" type="Control" node_paths=PackedStringArray("PortraitHalo", "PortraitDisc", "Portrait", "LevelLabel", "NameLabel", "JobLabel", "HealthNumbers", "HealthLabel", "MaxHealthLabel", "DeadLabel", "HealthBar", "ManaBar", "ExperienceLine", "ExperienceLabel")]
+custom_minimum_size = Vector2(446, 96)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 446.0
+offset_bottom = 96.0
+mouse_filter = 2
+script = ExtResource("1_frame")
+PortraitHalo = NodePath("Portrait/Halo")
+PortraitDisc = NodePath("Portrait/Disc")
+Portrait = NodePath("Portrait/Character")
+LevelLabel = NodePath("Portrait/LevelHexagon/Level")
+NameLabel = NodePath("Column/NameMargin/NameLine/Name")
+JobLabel = NodePath("Column/NameMargin/NameLine/Job")
+HealthNumbers = NodePath("Column/NameMargin/NameLine/HealthNumbers")
+HealthLabel = NodePath("Column/NameMargin/NameLine/HealthNumbers/Health")
+MaxHealthLabel = NodePath("Column/NameMargin/NameLine/HealthNumbers/MaxHealth")
+DeadLabel = NodePath("Column/NameMargin/NameLine/Dead")
+HealthBar = NodePath("Column/HealthBar")
+ManaBar = NodePath("Column/ManaBar")
+ExperienceLine = NodePath("ExperienceRow/Line")
+ExperienceLabel = NodePath("ExperienceRow/Percent")
+
+[node name="Plate" type="Control" parent="."]
+layout_mode = 0
+offset_left = 46.0
+offset_top = 12.0
+offset_right = 446.0
+offset_bottom = 84.0
+mouse_filter = 2
+theme_type_variation = &"HudPlate"
+script = ExtResource("2_plate")
+
+[node name="ExperienceRow" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 96.0
+offset_top = 78.0
+offset_right = 416.0
+offset_bottom = 91.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Line" type="Control" parent="ExperienceRow"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"HudExperienceLine"
+script = ExtResource("3_bar")
+
+[node name="Percent" type="Label" parent="ExperienceRow"]
+layout_mode = 2
+theme_type_variation = &"HudExperienceLabel"
+text = "0.00%"
+
+[node name="Portrait" type="Control" parent="."]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 96.0
+mouse_filter = 2
+
+[node name="Halo" type="Panel" parent="Portrait"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 96.0
+mouse_filter = 2
+theme_type_variation = &"HudPortraitHalo"
+
+[node name="Disc" type="Panel" parent="Portrait"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 92.0
+offset_bottom = 92.0
+mouse_filter = 2
+theme_type_variation = &"HudPortraitDisc"
+
+[node name="Character" parent="Portrait" instance=ExtResource("7_portrait")]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 11.0
+offset_right = 85.0
+offset_bottom = 85.0
+
+[node name="LevelHexagon" type="Control" parent="Portrait"]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 76.0
+offset_right = 67.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme_type_variation = &"HudLevelHexagon"
+script = ExtResource("5_hexagon")
+
+[node name="Level" type="Label" parent="Portrait/LevelHexagon"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HudLevel"
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Column" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 108.0
+offset_right = 408.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="NameMargin" type="MarginContainer" parent="Column"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 0
+
+[node name="NameLine" type="Container" parent="Column/NameMargin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+script = ExtResource("6_baseline_row")
+
+[node name="Name" type="Label" parent="Column/NameMargin/NameLine"]
+layout_mode = 2
+theme_type_variation = &"HudPlayerName"
+
+[node name="Job" type="Label" parent="Column/NameMargin/NameLine"]
+layout_mode = 2
+theme_type_variation = &"HudPlayerJob"
+
+[node name="Spacer" type="Control" parent="Column/NameMargin/NameLine"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="HealthNumbers" type="Container" parent="Column/NameMargin/NameLine"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+script = ExtResource("6_baseline_row")
+
+[node name="Health" type="Label" parent="Column/NameMargin/NameLine/HealthNumbers"]
+layout_mode = 2
+theme_type_variation = &"HudPlayerHealth"
+text = "0"
+
+[node name="MaxHealth" type="Label" parent="Column/NameMargin/NameLine/HealthNumbers"]
+layout_mode = 2
+theme_type_variation = &"HudPlayerMaxHealth"
+text = " / 0"
+
+[node name="Dead" type="Label" parent="Column/NameMargin/NameLine"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"HudPlayerDead"
+text = "DEAD"
+
+[node name="HealthBar" type="Control" parent="Column" node_paths=PackedStringArray("Tip", "AmountLabel")]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+theme_type_variation = &"HudHealthBar"
+script = ExtResource("4_health_bar")
+Tip = NodePath("Tip")
+AmountLabel = NodePath("Tip/Line/Value")
+
+[node name="Tip" type="PanelContainer" parent="Column/HealthBar"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_right = 10.0
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudTip"
+
+[node name="Line" type="HBoxContainer" parent="Column/HealthBar/Tip"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Key" type="Label" parent="Column/HealthBar/Tip/Line"]
+layout_mode = 2
+theme_type_variation = &"HudTipKey"
+text = "HP"
+
+[node name="Value" type="Label" parent="Column/HealthBar/Tip/Line"]
+layout_mode = 2
+theme_type_variation = &"HudTipText"
+text = "0 / 0"
+
+[node name="ManaBar" type="Control" parent="Column" node_paths=PackedStringArray("Tip", "AmountLabel")]
+custom_minimum_size = Vector2(250, 5)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"HudManaBar"
+script = ExtResource("3_bar")
+Tip = NodePath("Tip")
+AmountLabel = NodePath("Tip/Line/Value")
+
+[node name="Tip" type="PanelContainer" parent="Column/ManaBar"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_right = 10.0
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudTip"
+
+[node name="Line" type="HBoxContainer" parent="Column/ManaBar/Tip"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Key" type="Label" parent="Column/ManaBar/Tip/Line"]
+layout_mode = 2
+theme_type_variation = &"HudTipKey"
+text = "SP"
+
+[node name="Value" type="Label" parent="Column/ManaBar/Tip/Line"]
+layout_mode = 2
+theme_type_variation = &"HudTipText"
+text = "0 / 0"

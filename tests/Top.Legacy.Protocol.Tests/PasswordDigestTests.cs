@@ -41,7 +41,7 @@ namespace Top.Legacy.Protocol.Tests
         [Test]
         public void A_digest_is_uppercase_hex_of_thirty_two_bytes()
         {
-            Assert.That(PasswordDigest.Hex("24022402"), Does.Match("^[0-9A-F]{64}$"));
+            Assert.That(PasswordDigest.Hex("parrot123"), Does.Match("^[0-9A-F]{64}$"));
         }
     }
 }

@@ -1,3 +1,5 @@
+using Top.Conversion.Textures;
+
 namespace Top.Conversion.Pipeline
 {
     /// <summary>
@@ -16,11 +18,13 @@ namespace Top.Conversion.Pipeline
         {
             Settings = settings;
             ClientTables = tables;
-            Models = new ModelConverter(settings);
+            var translucency = new TextureTranslucency();
+
+            Models = new ModelConverter(settings, tables, translucency);
             Rigs = new RigConverter(settings, tables);
             Items = new ItemConverter(settings, tables, Models);
             SceneObjects = new SceneObjectConverter(settings, tables, Models);
-            Characters = new CharacterConverter(settings, tables, Rigs, Items);
+            Characters = new CharacterConverter(settings, tables, Rigs, Items, Models, translucency);
             Tables = new TableConverter(settings, tables);
             Maps = new MapConverter(settings, tables);
         }

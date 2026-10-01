@@ -1,0 +1,118 @@
+[gd_scene format=3 uid="uid://cv7akswx15vfn"]
+
+[ext_resource type="Script" uid="uid://b40ojjqfba2ob" path="res://Features/MainMenu/MainMenuScene.cs" id="1_scene"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/Menu/MainMenuScreen.tscn" id="2_menu"]
+[ext_resource type="PackedScene" uid="uid://ci6vf774yqwxh" path="res://Features/MainMenu/Servers/ServersScreen.tscn" id="3_servers"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/Login/LoginScreen.tscn" id="5_login"]
+[ext_resource type="PackedScene" uid="uid://dwboralo0mdrs" path="res://Features/MainMenu/Assets/login.glb" id="6_7t7xn"]
+[ext_resource type="PackedScene" path="res://Features/MainMenu/Accounts/AccountsScreen.tscn" id="6_accounts"]
+[ext_resource type="PackedScene" path="res://UI/MessagePopup.tscn" id="7_message_popup"]
+[ext_resource type="PackedScene" uid="uid://dbk3tqpjfyl0g" path="res://UI/ConfirmPopup.tscn" id="8_confirm_popup"]
+[ext_resource type="Script" uid="uid://u32k4f144ur2" path="res://UI/VersionLabel.cs" id="9_version"]
+
+[sub_resource type="Gradient" id="Gradient_scrim"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(0.024, 0.086, 0.118, 0, 0.024, 0.086, 0.118, 0.55, 0.024, 0.086, 0.118, 0.8)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_scrim"]
+gradient = SubResource("Gradient_scrim")
+width = 260
+height = 1
+
+[node name="MainMenuScene" type="Node" unique_id=338528542 node_paths=PackedStringArray("ScreenSlot", "SmallWordmark", "MessagePopup", "ExitPopup")]
+script = ExtResource("1_scene")
+ScreenSlot = NodePath("Ui/Root/ScreenSlot")
+SmallWordmark = NodePath("Ui/Root/SmallWordmark")
+MessagePopup = NodePath("Ui/Root/MessagePopup")
+ExitPopup = NodePath("Ui/Root/ExitPopup")
+MainMenuScreen = ExtResource("2_menu")
+ServersScreen = ExtResource("3_servers")
+AccountsScreen = ExtResource("6_accounts")
+LoginScreen = ExtResource("5_login")
+
+[node name="Ambient" type="ShaderGlobalsOverride" parent="." unique_id=1209157872]
+params/ambient_ground_color = Vector3(1, 1, 1)
+params/ambient_horizon_color = Vector3(1, 1, 1)
+params/ambient_sky_color = Vector3(1, 1, 1)
+
+[node name="WorldRoot" type="Node3D" parent="." unique_id=2073458419]
+
+[node name="login" parent="WorldRoot" unique_id=588059313 instance=ExtResource("6_7t7xn")]
+
+[node name="Camera3D" type="Camera3D" parent="WorldRoot" unique_id=1560138563]
+transform = Transform3D(0.96394974, -0.060986686, 0.25900093, 0, 0.9733792, 0.2292006, -0.2660843, -0.22093786, 0.9382886, 288.7954, 160.21178, 175.37059)
+
+[node name="Ui" type="CanvasLayer" parent="." unique_id=853828686]
+
+[node name="Root" type="Control" parent="Ui" unique_id=1438994987 groups=["theme_root"]]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="Panel" parent="Ui/Root" unique_id=934811257]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"SceneBackground"
+
+[node name="Scrim" type="TextureRect" parent="Ui/Root" unique_id=1596886927]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1040.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_scrim")
+expand_mode = 1
+
+[node name="ScreenSlot" type="Control" parent="Ui/Root" unique_id=940277950]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SmallWordmark" type="VBoxContainer" parent="Ui/Root" unique_id=586926134]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 120.0
+offset_top = 64.0
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="Ui/Root/SmallWordmark" unique_id=917288767]
+layout_mode = 2
+theme_type_variation = &"WordmarkCaptionSmall"
+text = "TALES OF"
+
+[node name="Title" type="Label" parent="Ui/Root/SmallWordmark" unique_id=1628975345]
+layout_mode = 2
+theme_type_variation = &"WordmarkTitleSmall"
+text = "Pirates"
+
+[node name="Version" type="Label" parent="Ui/Root" unique_id=792753148]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_bottom = -28.0
+grow_vertical = 0
+theme_type_variation = &"VersionLabel"
+script = ExtResource("9_version")
+
+[node name="MessagePopup" parent="Ui/Root" unique_id=1713795409 instance=ExtResource("7_message_popup")]
+
+[node name="ExitPopup" parent="Ui/Root" unique_id=1239364852 instance=ExtResource("8_confirm_popup")]

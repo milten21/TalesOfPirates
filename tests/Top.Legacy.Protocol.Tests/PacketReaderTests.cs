@@ -152,5 +152,44 @@ namespace Top.Legacy.Protocol.Tests
 
             Assert.Throws<InvalidDataException>(() => reader.ReadPoints());
         }
+
+        [Test]
+        public void A_signed_integer_round_trips()
+        {
+            var writer = new PacketWriter(0);
+            writer.WriteInt(-70400);
+            writer.WriteInt(284880);
+
+            var reader = new PacketReader(writer.ToArray());
+            reader.ReadUShort();
+
+            Assert.That(reader.ReadInt(), Is.EqualTo(-70400));
+            Assert.That(reader.ReadInt(), Is.EqualTo(284880));
+            Assert.That(reader.Remaining, Is.Zero);
+        }
+
+        [Test]
+        public void A_signed_integer_reads_big_endian_twos_complement()
+        {
+            var reader = new PacketReader(new byte[] { 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x04, 0x58, 0xD0 });
+
+            Assert.That(reader.ReadInt(), Is.EqualTo(-2));
+            Assert.That(reader.ReadInt(), Is.EqualTo(284880), "the y the reference server gave a character on garner");
+        }
+
+        [Test]
+        public void A_signed_short_round_trips()
+        {
+            var writer = new PacketWriter(0);
+            writer.WriteShort(-1);
+            writer.WriteShort(475);
+
+            var reader = new PacketReader(writer.ToArray());
+            reader.ReadUShort();
+
+            Assert.That(reader.ReadShort(), Is.EqualTo(-1), "the kitbag terminator");
+            Assert.That(reader.ReadShort(), Is.EqualTo(475));
+            Assert.That(reader.Remaining, Is.Zero);
+        }
     }
 }

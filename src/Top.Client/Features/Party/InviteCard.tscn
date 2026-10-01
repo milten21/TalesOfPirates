@@ -1,0 +1,152 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Party/InviteCard.cs" id="1_card"]
+
+[node name="InviteCard" type="Control" node_paths=PackedStringArray("SecondsLabel", "NameLabel", "MeterFill", "DeclineButton", "AcceptButton")]
+custom_minimum_size = Vector2(300, 130)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 300.0
+offset_bottom = 130.0
+mouse_filter = 2
+script = ExtResource("1_card")
+SecondsLabel = NodePath("Background/Content/Strip/Row/Seconds")
+NameLabel = NodePath("Background/Content/Body/Row/Name")
+MeterFill = NodePath("Background/Content/Meter/Fill")
+DeclineButton = NodePath("Background/Content/Buttons/Row/Decline")
+AcceptButton = NodePath("Background/Content/Buttons/Row/Accept")
+
+[node name="Shadow" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteCardShadow"
+
+[node name="Background" type="Panel" parent="."]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteCard"
+
+[node name="Content" type="VBoxContainer" parent="Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Strip" type="PanelContainer" parent="Background/Content"]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteStrip"
+
+[node name="Row" type="HBoxContainer" parent="Background/Content/Strip"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="Background/Content/Strip/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+vertical_alignment = 1
+theme_type_variation = &"HudInvitePartyLabel"
+text = "PARTY INVITE"
+
+[node name="Seconds" type="Label" parent="Background/Content/Strip/Row"]
+layout_mode = 2
+mouse_filter = 2
+vertical_alignment = 1
+horizontal_alignment = 2
+theme_type_variation = &"HudInviteSeconds"
+text = "30s"
+
+[node name="Body" type="MarginContainer" parent="Background/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Row" type="VBoxContainer" parent="Background/Content/Body"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Name" type="Label" parent="Background/Content/Body/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteName"
+text = "Name"
+
+[node name="Text" type="Label" parent="Background/Content/Body/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteText"
+text = "invites you to a party"
+
+[node name="Buttons" type="MarginContainer" parent="Background/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Row" type="HBoxContainer" parent="Background/Content/Buttons"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 2
+theme_override_constants/separation = 8
+
+[node name="Decline" type="Button" parent="Background/Content/Buttons/Row"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"HudInviteDecline"
+text = "Decline"
+
+[node name="Accept" type="Button" parent="Background/Content/Buttons/Row"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"HudInviteAccept"
+text = "Accept"
+
+[node name="Meter" type="Control" parent="Background/Content"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Track" type="Panel" parent="Background/Content/Meter"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteMeterTrack"
+
+[node name="Fill" type="Panel" parent="Background/Content/Meter"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudInviteMeterFill"

@@ -36,11 +36,12 @@ namespace Top.Conversion.Tests.Pipeline
             return new TerrainInfoRecord { Id = id, Name = fileName };
         }
 
-        private MapConverter Converter(bool overwrite = true, params TerrainInfoRecord[] terrain)
+        private MapConverter Converter(bool overwrite = true, int chunkSize = FakeClient.MapChunkSize,
+            params TerrainInfoRecord[] terrain)
         {
             var tables = new ClientTables(null, null, null, null, new Table<TerrainInfoRecord>([..terrain]));
 
-            return new MapConverter(_client.Settings(overwrite), tables);
+            return new MapConverter(_client.Settings(overwrite, chunkSize), tables);
         }
 
         private Converted.MapFile Read(string name)
@@ -531,6 +532,69 @@ namespace Top.Conversion.Tests.Pipeline
 
             Assert.That(progress.Steps.Select(step => step.Unit),
                 Is.EqualTo(new[] { "map first", "map second" }));
+        }
+
+        private static Original.MapFile MarkedTerrain(int width, int height)
+        {
+            var terrain = LegacyMaps.Terrain(LegacyMaps.NewFormat, width, height);
+
+            for (var section = 0; section < terrain.Sections.Length; section++)
+            {
+                var mark = section;
+
+                terrain.Sections[section] = LegacyMaps.Section(index =>
+                {
+                    var tile = LegacyMaps.Tile();
+                    tile.HeightStep = (sbyte)(((mark * 7) + index) % 128);
+                    tile.Color565 = (short)((mark * 131) + index);
+
+                    return tile;
+                });
+            }
+
+            return terrain;
+        }
+
+        [Test]
+        public void A_map_converted_at_the_default_chunk_size_holds_the_same_tiles_in_the_same_places_as_at_64()
+        {
+            var terrain = MarkedTerrain(128, 128);
+
+            _client.AddMap("compare", terrain);
+
+            Converter(chunkSize: FakeClient.MapChunkSize).ConvertAll().ToList();
+            var atLegacySize = Read("compare");
+
+            Converter(chunkSize: 16).ConvertAll().ToList();
+            var atSmallChunks = Read("compare");
+
+            for (var y = 0; y < terrain.Height; y++)
+            {
+                for (var x = 0; x < terrain.Width; x++)
+                {
+                    Assert.That(TileAt(atSmallChunks, x, y), Is.EqualTo(TileAt(atLegacySize, x, y)),
+                        $"tile ({x},{y}) should not move when the chunk size changes");
+                }
+            }
+        }
+
+        [Test]
+        public void A_placement_lands_in_the_chunk_its_position_falls_in_not_its_original_64_tile_section()
+        {
+            var terrain = LegacyMaps.FilledTerrain(LegacyMaps.NewFormat, 64, 64);
+            var objects = LegacyMaps.Objects(64, 64);
+
+            objects.Sections[0] = new Original.ObjSection { Objects = [LegacyMaps.Model(9, 2000, 2000, 0, 0)] };
+
+            _client.AddMap("rebucket", terrain, objects);
+
+            Converter(chunkSize: 16).ConvertAll().ToList();
+
+            var map = Read("rebucket");
+
+            Assert.That(map.Chunks[0, 0].Placements, Is.Empty,
+                "the whole 64-tile section this placement came from no longer shares one chunk");
+            Assert.That(map.Chunks[1, 1].Placements.Select(placement => placement.Id), Is.EqualTo(new[] { 9 }));
         }
     }
 }

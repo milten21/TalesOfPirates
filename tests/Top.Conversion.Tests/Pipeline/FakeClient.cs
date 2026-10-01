@@ -15,6 +15,8 @@ namespace Top.Conversion.Tests.Pipeline
     /// </summary>
     internal class FakeClient : IDisposable
     {
+        internal const int MapChunkSize = 64;
+
         private readonly string _root;
 
         internal FakeClient()
@@ -35,9 +37,9 @@ namespace Top.Conversion.Tests.Pipeline
 
         internal string OutputRoot { get; }
 
-        internal ConversionSettings Settings(bool overwrite = true)
+        internal ConversionSettings Settings(bool overwrite = true, int mapChunkSize = MapChunkSize)
         {
-            return new ConversionSettings(ClientRoot, OutputRoot, overwrite);
+            return new ConversionSettings(ClientRoot, OutputRoot, overwrite, mapChunkSize);
         }
 
         /// <summary>
@@ -130,6 +132,11 @@ namespace Top.Conversion.Tests.Pipeline
         internal string ConvertedRig(string name)
         {
             return Path.Combine(OutputRoot, "rigs", name + ".glb");
+        }
+
+        internal string ConvertedClip(string rigName, string clipName)
+        {
+            return Path.Combine(OutputRoot, "animations", rigName, clipName + ".glb");
         }
 
         internal string ConvertedTexture(string kind, string name)

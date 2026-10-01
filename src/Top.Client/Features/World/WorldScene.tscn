@@ -1,0 +1,207 @@
+[gd_scene format=3 uid="uid://vr2snkm0al34"]
+
+[ext_resource type="Script" uid="uid://ktj38sovvkyp" path="res://Features/World/WorldScene.cs" id="1_scene"]
+[ext_resource type="PackedScene" uid="uid://bm26dyoa52p8h" path="res://Features/Maps/Map.tscn" id="2_map"]
+[ext_resource type="Script" uid="uid://bl18wchagstc2" path="res://Features/Camera/FollowCamera.cs" id="3_udrme"]
+[ext_resource type="PackedScene" path="res://Features/Characters/Nameplate.tscn" id="4_plate"]
+[ext_resource type="Script" path="res://Features/Characters/Movement/PlayerController.cs" id="5_player"]
+[ext_resource type="PackedScene" path="res://Features/Characters/Movement/ClickMarker.tscn" id="6_marker"]
+[ext_resource type="Script" uid="uid://dyhkuh0lc7s1i" path="res://Features/World/LoadingScreen.cs" id="7_loading"]
+[ext_resource type="PackedScene" path="res://Features/World/GameMenu.tscn" id="8_game_menu"]
+[ext_resource type="PackedScene" path="res://Features/Hud/HudScreen.tscn" id="9_hud"]
+
+[node name="WorldScene" type="Node" unique_id=158231968 node_paths=PackedStringArray("WorldRoot", "Map", "Camera", "Characters", "PlayerController", "Hud", "LoadingScreen", "GameMenu")]
+script = ExtResource("1_scene")
+WorldRoot = NodePath("WorldRoot")
+Map = NodePath("WorldRoot/Map")
+Camera = NodePath("WorldRoot/FollowCamera")
+Characters = NodePath("WorldRoot/Characters")
+PlayerController = NodePath("PlayerController")
+Hud = NodePath("Ui/Root/Hud")
+LoadingScreen = NodePath("Ui/Root/LoadingScreen")
+GameMenu = NodePath("Ui/Root/GameMenu")
+NameplateScene = ExtResource("4_plate")
+
+[node name="Ambient" type="ShaderGlobalsOverride" parent="." unique_id=1995814966]
+
+[node name="WorldRoot" type="Node3D" parent="." unique_id=926954228]
+
+[node name="Map" parent="WorldRoot" unique_id=1778622097 instance=ExtResource("2_map")]
+StreamingRadius = 48.0
+
+[node name="FollowCamera" type="Camera3D" parent="WorldRoot" unique_id=3965025]
+process_priority = 1
+script = ExtResource("3_udrme")
+StartDistance = 18.327
+StartHeight = 3.665
+StartFov = 32.0
+
+[node name="Characters" type="Node3D" parent="WorldRoot" unique_id=251340809]
+
+[node name="ClickMarker" parent="WorldRoot" instance=ExtResource("6_marker")]
+
+[node name="PlayerController" type="Node" parent="." node_paths=PackedStringArray("ClickMarker")]
+script = ExtResource("5_player")
+ClickMarker = NodePath("../WorldRoot/ClickMarker")
+
+[node name="Ui" type="CanvasLayer" parent="." unique_id=1469466712]
+
+[node name="Root" type="Control" parent="Ui" unique_id=396860293 groups=["theme_root"]]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Hud" parent="Ui/Root" instance=ExtResource("9_hud")]
+visible = false
+layout_mode = 1
+
+[node name="LoadingScreen" type="Panel" parent="Ui/Root" unique_id=643509321 node_paths=PackedStringArray("Diamond", "Bar", "StageWord", "Percent", "Title", "ZoneLine", "ZoneTypeWord", "ZoneSeparator", "ZoneRuleWord", "Tip")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"LoadingBackground"
+script = ExtResource("7_loading")
+Diamond = NodePath("Column/DiamondSlot/Diamond")
+Bar = NodePath("Column/BarSlot/Bar")
+StageWord = NodePath("Column/StageLine/StageWord")
+Percent = NodePath("Column/StageLine/Percent")
+Title = NodePath("Column/TitleSlot/Title")
+ZoneLine = NodePath("Column/ZoneLine")
+ZoneTypeWord = NodePath("Column/ZoneLine/ZoneType")
+ZoneSeparator = NodePath("Column/ZoneLine/ZoneSeparator")
+ZoneRuleWord = NodePath("Column/ZoneLine/ZoneRule")
+Tip = NodePath("Tip")
+
+[node name="Column" type="VBoxContainer" parent="Ui/Root/LoadingScreen"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 430.0
+offset_right = 300.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_type_variation = &"LoadingColumn"
+
+[node name="DiamondSlot" type="Control" parent="Ui/Root/LoadingScreen/Column"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="Diamond" type="Panel" parent="Ui/Root/LoadingScreen/Column/DiamondSlot"]
+layout_mode = 0
+offset_right = 14.0
+offset_bottom = 14.0
+rotation = 0.7853982
+pivot_offset = Vector2(7, 7)
+mouse_filter = 2
+theme_type_variation = &"LoadingDiamond"
+
+[node name="Glow" type="Panel" parent="Ui/Root/LoadingScreen/Column/DiamondSlot/Diamond"]
+show_behind_parent = true
+layout_mode = 0
+offset_left = -19.0
+offset_top = -19.0
+offset_right = 33.0
+offset_bottom = 33.0
+mouse_filter = 2
+theme_type_variation = &"LoadingDiamondGlow"
+
+[node name="TitleSlot" type="Control" parent="Ui/Root/LoadingScreen/Column"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Ui/Root/LoadingScreen/Column/TitleSlot"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"LoadingTitle"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ZoneLine" type="HBoxContainer" parent="Ui/Root/LoadingScreen/Column"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"LoadingZoneLine"
+
+[node name="ZoneType" type="Label" parent="Ui/Root/LoadingScreen/Column/ZoneLine"]
+layout_mode = 2
+theme_type_variation = &"LoadingZoneWord"
+
+[node name="ZoneSeparator" type="Label" parent="Ui/Root/LoadingScreen/Column/ZoneLine"]
+layout_mode = 2
+theme_type_variation = &"LoadingZoneWord"
+text = " · "
+
+[node name="ZoneRule" type="Label" parent="Ui/Root/LoadingScreen/Column/ZoneLine"]
+layout_mode = 2
+theme_type_variation = &"LoadingZoneWord"
+
+[node name="BarSlot" type="MarginContainer" parent="Ui/Root/LoadingScreen/Column"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"LoadingBarSlot"
+
+[node name="Bar" type="ProgressBar" parent="Ui/Root/LoadingScreen/Column/BarSlot"]
+custom_minimum_size = Vector2(360, 2)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"LoadingBar"
+step = 0.0
+show_percentage = false
+
+[node name="StageLine" type="HBoxContainer" parent="Ui/Root/LoadingScreen/Column"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"LoadingStageLine"
+
+[node name="StageWord" type="Label" parent="Ui/Root/LoadingScreen/Column/StageLine"]
+layout_mode = 2
+theme_type_variation = &"LoadingStageWord"
+text = "Reading tables"
+
+[node name="Percent" type="Label" parent="Ui/Root/LoadingScreen/Column/StageLine"]
+layout_mode = 2
+theme_type_variation = &"LoadingPercent"
+text = "0%"
+
+[node name="Tip" type="Label" parent="Ui/Root/LoadingScreen"]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -72.0
+offset_right = 500.0
+offset_bottom = -72.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_type_variation = &"LoadingTip"
+horizontal_alignment = 1
+vertical_alignment = 2
+autowrap_mode = 3
+
+[node name="GameMenu" parent="Ui/Root" instance=ExtResource("8_game_menu")]
+visible = false
+layout_mode = 1

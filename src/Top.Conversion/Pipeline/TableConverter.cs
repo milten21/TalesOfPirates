@@ -27,7 +27,20 @@ namespace Top.Conversion.Pipeline
         [
             new SceneObjectTableUnit(tables),
             new TerrainTableUnit(tables),
-            new MapTableUnit(tables)
+            new MapTableUnit(tables),
+            new AreaTableUnit(tables),
+            new TipTableUnit(tables),
+            new CharacterTableUnit(tables),
+            new JobTableUnit(),
+            new PortraitCameraTableUnit(tables),
+            new ItemTableUnit(tables),
+            new ItemTypeTableUnit(),
+            new ItemPrefixTableUnit(tables),
+            new GemTableUnit(tables),
+            new RigTableUnit(tables),
+            new ActionSetTableUnit(tables),
+            new ShipTableUnit(tables),
+            new ShipPartTableUnit(tables)
         ];
 
         public TableResult Convert(ITableUnit unit)

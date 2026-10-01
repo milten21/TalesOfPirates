@@ -9,16 +9,15 @@ namespace Top.Conversion.Tests
     /// <summary>
     /// The MindPower half of the axis change, pinned to literals.
     /// <br/>
-    /// The reference model below is shared with the build-core golden test in
-    /// <c>com.top.assets.gltf</c>, which pins the glTF column against the Unity
-    /// one. Read the two together and a value can be chained end to end.
+    /// The table shows the reference model below in both spaces. Read across a
+    /// row to follow a value from MindPower to glTF.
     /// <code>
-    ///           MindPower       glTF            Unity
-    /// vertex    1, 2, 3         1, 3, 2         1, 3, -2
-    /// normal    0.6, 0.8, 0     0.6, 0, 0.8     0.6, 0, -0.8
-    /// uv        0.25, 0.75      0.25, 0.75      0.25, 0.25
-    /// triangle  0, 1, 2         0, 2, 1         0, 1, 2
-    /// origin    10, 20, 30      10, 30, 20      10, 30, -20
+    ///           MindPower       glTF
+    /// vertex    1, 2, 3         1, 3, 2
+    /// normal    0.6, 0.8, 0     0.6, 0, 0.8
+    /// uv        0.25, 0.75      0.25, 0.75
+    /// triangle  0, 1, 2         0, 2, 1
+    /// origin    10, 20, 30      10, 30, 20
     /// </code>
     /// </summary>
     public class AxisGoldenTests

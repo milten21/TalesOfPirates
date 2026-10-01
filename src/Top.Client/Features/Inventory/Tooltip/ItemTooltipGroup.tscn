@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Features/Inventory/Tooltip/ItemTooltipGroup.cs" id="1_group"]
+[ext_resource type="PackedScene" path="res://Features/Inventory/Tooltip/ItemTooltip.tscn" id="2_item_tooltip"]
+
+[node name="ItemTooltipGroup" type="HBoxContainer" node_paths=PackedStringArray("HoveredTooltip", "EquippedTooltips")]
+visible = false
+top_level = true
+mouse_filter = 2
+theme_override_constants/separation = 8
+script = ExtResource("1_group")
+HoveredTooltip = NodePath("HoveredTooltip")
+EquippedTooltips = NodePath("EquippedTooltips")
+ItemTooltipScene = ExtResource("2_item_tooltip")
+
+[node name="HoveredTooltip" parent="." instance=ExtResource("2_item_tooltip")]
+layout_mode = 2
+
+[node name="EquippedTooltips" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8

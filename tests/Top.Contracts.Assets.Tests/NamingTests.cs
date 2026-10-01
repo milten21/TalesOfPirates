@@ -19,6 +19,14 @@ namespace Top.Contracts.Assets.Tests
         }
 
         [Test]
+        public void Geometry_matches_the_names_it_is_given()
+        {
+            Assert.That(Naming.IsGeometry(Naming.Geometry(4)), Is.True);
+            Assert.That(Naming.IsGeometry(Naming.Dummy(4)), Is.False);
+            Assert.That(Naming.IsGeometry(Naming.Helper("Block", 0)), Is.False);
+        }
+
+        [Test]
         public void Lit_shells_match_the_names_they_are_given()
         {
             Assert.That(Naming.IsLitShell(Naming.LitShell(Naming.Geometry(7))), Is.True);

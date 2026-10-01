@@ -45,7 +45,8 @@ namespace Top.Conversion.Pipeline
 
             Log.Info($"converting map '{name}'");
 
-            var map = new MapBuilder(ReadTerrain(terrainPath), ReadObjects(name), tables.Terrain).Build();
+            var map = new MapBuilder(ReadTerrain(terrainPath), ReadObjects(name), tables.Terrain,
+                settings.MapChunkSize).Build();
 
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 

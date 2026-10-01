@@ -56,6 +56,31 @@ namespace Top.Legacy.Tables.Tests
         }
 
         [Test]
+        public void Tolerates_a_run_of_spaces_as_a_field_separator()
+        {
+            var table = ReadFixture();
+
+            table.TryGetActions(2, out var actions);
+
+            var mining = actions.Single(a => a.ActionNo == 28);
+            Assert.That(mining.StartFrame, Is.EqualTo(2292));
+            Assert.That(mining.EndFrame, Is.EqualTo(2320));
+            Assert.That(mining.KeyFrames, Is.EqualTo(new[] { 2304 }));
+        }
+
+        [TestCase(1, 245)]
+        [TestCase(2, 138)]
+        [TestCase(3, 241)]
+        [TestCase(4, 101)]
+        public void Non_zero_action_counts_match_the_shipped_data(int characterType, int expectedCount)
+        {
+            var table = ReadFixture();
+
+            Assert.That(table.TryGetActions(characterType, out var actions), Is.True);
+            Assert.That(actions.Length, Is.EqualTo(expectedCount));
+        }
+
+        [Test]
         public void Comments_and_blank_lines_are_skipped()
         {
             var table = ReadText("// header\n\n7\n\t1\t10\t20\n");

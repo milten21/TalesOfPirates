@@ -19,6 +19,11 @@ namespace Top.Contracts.Assets.Models
             return GeometryPrefix + objectId;
         }
 
+        public static bool IsGeometry(string name)
+        {
+            return name.StartsWith(GeometryPrefix, StringComparison.Ordinal);
+        }
+
         public static string LitShell(string geometryName)
         {
             return geometryName + LitShellSuffix;
@@ -85,9 +90,14 @@ namespace Top.Contracts.Assets.Models
                 return modelName + "_timeline";
             }
 
+            return modelName + "_" + ActionClip(actionNo);
+        }
+
+        public static string ActionClip(int actionNo)
+        {
             return ActionNames.TryGetName(actionNo, out var slug)
-                ? $"{modelName}_{actionNo:00}_{slug}"
-                : $"{modelName}_{actionNo:00}";
+                ? $"{actionNo:00}_{slug}"
+                : $"{actionNo:00}";
         }
     }
 }
