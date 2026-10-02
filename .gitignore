@@ -15,6 +15,10 @@ CLAUDE.local.md
 .superpowers/
 docs/superpowers/
 
+docs/agents/domain.md
+docs/agents/issue-tracker.md
+docs/agents/triage-labels.md
+
 # Original C++ reference
 /reference/
 *.DotSettings.user
