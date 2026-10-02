@@ -42,6 +42,8 @@ public partial class CharacterMotion : Node
 
     public float Rate { get; set; } = 1f;
 
+    public IReadOnlyCollection<Vector2> RemainingPoints => _points;
+
     public bool IsMoving => _points.Count > 0;
 
     public bool IsPathOpen { get; set; }

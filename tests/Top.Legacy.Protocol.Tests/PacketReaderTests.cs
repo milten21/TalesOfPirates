@@ -100,6 +100,15 @@ namespace Top.Legacy.Protocol.Tests
         }
 
         [Test]
+        public void The_bytes_are_the_whole_window_whatever_was_read()
+        {
+            var reader = new PacketReader(new byte[] { 0xFF, 0x01, 0xAF, 0x07, 0xFF }, 1, 3);
+            reader.ReadUShort();
+
+            Assert.That(reader.Bytes.ToArray(), Is.EqualTo(new byte[] { 0x01, 0xAF, 0x07 }));
+        }
+
+        [Test]
         public void A_window_that_leaves_the_packet_is_refused()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new PacketReader(new byte[4], 2, 4));

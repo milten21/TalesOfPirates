@@ -14,6 +14,7 @@ namespace Top.Client.LegacyBridge
         private readonly int _generation;
         private readonly IReadOnlyDictionary<ushort, Func<PacketReader, IServerEvent?>> _decoders;
         private readonly ConcurrentQueue<QueuedEvent> _queue;
+        private readonly IPacketObserver? _packetObserver;
         private readonly object _lock = new object();
 
         private bool _isClosed;
@@ -21,11 +22,13 @@ namespace Top.Client.LegacyBridge
         public GateListener(
             int generation,
             IReadOnlyDictionary<ushort, Func<PacketReader, IServerEvent?>> decoders,
-            ConcurrentQueue<QueuedEvent> queue)
+            ConcurrentQueue<QueuedEvent> queue,
+            IPacketObserver? packetObserver)
         {
             _generation = generation;
             _decoders = decoders ?? throw new ArgumentNullException(nameof(decoders));
             _queue = queue ?? throw new ArgumentNullException(nameof(queue));
+            _packetObserver = packetObserver;
         }
 
         public void OnOpened()
@@ -38,6 +41,7 @@ namespace Top.Client.LegacyBridge
             if (!_decoders.TryGetValue(opcode, out var decode))
             {
                 Log.Info($"packet {opcode} was received and has no decoder");
+                Observe(opcode, packet, [], EmptyPacketReason.NoDecoder);
 
                 return;
             }
@@ -47,11 +51,13 @@ namespace Top.Client.LegacyBridge
             if (serverEvent == null)
             {
                 Log.Info($"packet {opcode} was received and carries nothing the client decodes");
+                Observe(opcode, packet, [], EmptyPacketReason.DecodedToNothing);
 
                 return;
             }
 
             Enqueue(serverEvent);
+            Observe(opcode, packet, [serverEvent], null);
         }
 
         public void OnClosed(CloseReason reason)
@@ -66,6 +72,13 @@ namespace Top.Client.LegacyBridge
                 _isClosed = true;
                 _queue.Enqueue(new QueuedEvent(_generation, new DisconnectedEvent(ToDisconnectReason(reason))));
             }
+        }
+
+        private void Observe(ushort opcode, PacketReader packet, IReadOnlyList<object> messages,
+            EmptyPacketReason? emptyReason)
+        {
+            _packetObserver?.Observe(new ObservedPacket(DateTime.Now, PacketDirection.Incoming, opcode, packet.Bytes,
+                messages, emptyReason));
         }
 
         private void Enqueue(IServerEvent serverEvent)

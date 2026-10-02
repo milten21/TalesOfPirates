@@ -128,6 +128,17 @@ namespace Top.Legacy.Protocol.Tests
         }
 
         [Test]
+        public void A_received_packet_holds_the_bytes_after_its_opcode()
+        {
+            Connect(BuildSettings());
+            _gate.WritePacket(ForwardedOpcode, writer => writer.WriteUInt(0x0A0B0C0D));
+
+            var received = TakePacket();
+
+            Assert.That(received.Packet.Bytes.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0x0B, 0x0C, 0x0D }));
+        }
+
+        [Test]
         public void The_public_key_is_answered_with_the_key_the_gate_unwraps()
         {
             Connect(BuildSettings(), isEncrypted: true);

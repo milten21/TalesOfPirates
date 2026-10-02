@@ -7,6 +7,7 @@ namespace Top.Legacy.Protocol.Packets
     public class PacketReader
     {
         private readonly byte[] _packet;
+        private readonly int _start;
         private readonly int _end;
         private int _at;
 
@@ -25,11 +26,14 @@ namespace Top.Legacy.Protocol.Packets
                     $"A window of {count} bytes at {offset} is outside a packet of {_packet.Length} bytes.");
             }
 
+            _start = offset;
             _at = offset;
             _end = offset + count;
         }
 
         public int Remaining => _end - _at;
+
+        public ReadOnlyMemory<byte> Bytes => new ReadOnlyMemory<byte>(_packet, _start, _end - _start);
 
         public byte ReadByte()
         {

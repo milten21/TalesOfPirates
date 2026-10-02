@@ -8,6 +8,7 @@ public class ChunkStreamer(MapGrid mapGrid, float streamingRadius, params IChunk
     private readonly HashSet<Vector2I> _loadedChunks = [];
     private readonly HashSet<Vector2I> _chunksInRange = [];
     private readonly List<Vector2I> _chunksToUnload = [];
+    private readonly List<IChunkLoader> _chunkLoaders = [.. chunkLoaders];
 
     private Vector2 _center;
     private bool _centered;
@@ -51,6 +52,29 @@ public class ChunkStreamer(MapGrid mapGrid, float streamingRadius, params IChunk
         }
     }
 
+    public void AddLoader(IChunkLoader chunkLoader)
+    {
+        _chunkLoaders.Add(chunkLoader);
+
+        foreach (var chunk in _loadedChunks)
+        {
+            chunkLoader.Load(chunk);
+        }
+    }
+
+    public void RemoveLoader(IChunkLoader chunkLoader)
+    {
+        if (!_chunkLoaders.Remove(chunkLoader))
+        {
+            return;
+        }
+
+        foreach (var chunk in _loadedChunks)
+        {
+            chunkLoader.Unload(chunk);
+        }
+    }
+
     public void UnloadAll()
     {
         foreach (var chunk in _loadedChunks)
@@ -64,7 +88,7 @@ public class ChunkStreamer(MapGrid mapGrid, float streamingRadius, params IChunk
 
     private void LoadChunk(Vector2I chunk)
     {
-        foreach (var loader in chunkLoaders)
+        foreach (var loader in _chunkLoaders)
         {
             loader.Load(chunk);
         }
@@ -72,7 +96,7 @@ public class ChunkStreamer(MapGrid mapGrid, float streamingRadius, params IChunk
 
     private void UnloadChunk(Vector2I chunk)
     {
-        foreach (var loader in chunkLoaders)
+        foreach (var loader in _chunkLoaders)
         {
             loader.Unload(chunk);
         }

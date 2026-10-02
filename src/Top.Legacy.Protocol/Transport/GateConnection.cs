@@ -213,8 +213,9 @@ namespace Top.Legacy.Protocol.Transport
                 while (true)
                 {
                     var frame = _frameReader.ReadPacket();
-                    var packet = new PacketReader(_cipher == null ? frame : _cipher.Decrypt(frame));
-                    var opcode = packet.ReadUShort();
+                    var opened = _cipher == null ? frame : _cipher.Decrypt(frame);
+                    var opcode = new PacketReader(opened).ReadUShort();
+                    var packet = new PacketReader(opened, sizeof(ushort), opened.Length - sizeof(ushort));
 
                     switch (opcode)
                     {

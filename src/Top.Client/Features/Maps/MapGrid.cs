@@ -12,7 +12,10 @@ public class MapGrid(MapFile file)
     private const byte SignBit = 0x40;
     private const byte LevelMask = 0x3F;
     private const float LevelStep = 0.05f;
-    private const float CellsPerTile = 2f;
+
+    public const int CellsPerTile = 2;
+
+    public const float MaximumCellHeight = LevelMask * LevelStep;
 
     private static readonly MapPlacement[] NoPlacements = [];
 

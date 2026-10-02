@@ -101,6 +101,16 @@ public partial class Map : Node3D
         _chunkStreamer = null;
     }
 
+    public void AddChunkLoader(IChunkLoader chunkLoader)
+    {
+        _chunkStreamer?.AddLoader(chunkLoader);
+    }
+
+    public void RemoveChunkLoader(IChunkLoader chunkLoader)
+    {
+        _chunkStreamer?.RemoveLoader(chunkLoader);
+    }
+
     public void SetStreamingCenter(Vector3 worldPosition)
     {
         _chunkStreamer?.SetCenter(MapSpace.ToMap(worldPosition));

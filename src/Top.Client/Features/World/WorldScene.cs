@@ -67,6 +67,8 @@ public partial class WorldScene : Node
 
     private PredictedMotion? _predictedMotion;
 
+    private Walkability? _walkability;
+
     private string? _entryFailureText;
 
     [Export] public Node3D WorldRoot { get; set; } = null!;
@@ -86,6 +88,10 @@ public partial class WorldScene : Node
     [Export] public LoadingScreen LoadingScreen { get; set; } = null!;
 
     [Export] public GameMenu GameMenu { get; set; } = null!;
+
+    public Character? Player => _player;
+
+    public Walkability? Walkability => _walkability;
 
     public void Setup(Session session, IServerConnection connection, ServerContent content,
         SceneRouter router, WorldPayload payload)
@@ -285,6 +291,7 @@ public partial class WorldScene : Node
         var walkability = new Walkability(Map.Grid, player.State.ControlType, (Territory)player.Entry.Territory);
 
         _predictedMotion = new PredictedMotion(player, _connection, new Pathfinder(walkability));
+        _walkability = walkability;
         _player = player;
 
         Camera.Follow(player, _inputGate);

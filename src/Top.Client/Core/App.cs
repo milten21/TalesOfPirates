@@ -1,9 +1,11 @@
 using System.IO;
+using System.Linq;
 using Godot;
 using Top.Client.Features.MainMenu.Servers;
 using Top.Client.LegacyBridge;
 using Top.Client.Messages;
 using Top.Client.Messages.Events;
+using Top.Client.Tools.Debug;
 using Top.Client.UI;
 using Top.Logging;
 
@@ -15,6 +17,8 @@ public partial class App : Node
 
     private const string ContentFolderSetting = "top/content/folder";
 
+    private const string DebugModeArgument = "--debug-mode";
+
     private ServerConnection _connection = null!;
 
     private Session _session = null!;
@@ -22,6 +26,8 @@ public partial class App : Node
     private SceneRouter _router = null!;
 
     private ConnectionWatch _connectionWatch = null!;
+
+    private DebugOverlay? _debugOverlay;
 
     [Export] public string ThemeName { get; set; } = ThemePaths.DefaultName;
 
@@ -35,7 +41,12 @@ public partial class App : Node
     {
         Log.Writer ??= new GodotLogWriter();
 
-        _connection = new ServerConnection();
+        if (IsDebugModeOn())
+        {
+            _debugOverlay = new DebugOverlay();
+        }
+
+        _connection = new ServerConnection(_debugOverlay?.PacketLog);
 
         Content = new ServerContent(ReadContentFolder());
 
@@ -56,6 +67,13 @@ public partial class App : Node
     public override void _Ready()
     {
         GetViewport().GuiFocusChanged += PlaceCaretAtEnd;
+
+        if (_debugOverlay != null)
+        {
+            _debugOverlay.Setup(_connection);
+
+            AddChild(_debugOverlay);
+        }
     }
 
     public override void _Process(double delta)
@@ -66,6 +84,11 @@ public partial class App : Node
     public override void _ExitTree()
     {
         _connection.Close();
+    }
+
+    private static bool IsDebugModeOn()
+    {
+        return OS.IsDebugBuild() || OS.GetCmdlineUserArgs().Contains(DebugModeArgument);
     }
 
     private static string ReadContentFolder()

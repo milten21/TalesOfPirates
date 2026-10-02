@@ -24,21 +24,25 @@ namespace Top.Client.LegacyBridge
 
         private readonly Func<string, int, bool, IGateConnection> _gateConnectionFactory;
 
+        private readonly IPacketObserver? _packetObserver;
+
         private IGateConnection? _gateConnection;
         private int _generation;
         private uint _packetId;
         private bool _isDrainPaused;
 
-        public ServerConnection() : this(new GateSettings())
+        public ServerConnection(IPacketObserver? packetObserver = null) : this(new GateSettings(), packetObserver)
         {
         }
 
-        private ServerConnection(GateSettings settings)
-            : this(settings, (host, port, isEncrypted) => new GateConnection(host, port, isEncrypted, settings))
+        private ServerConnection(GateSettings settings, IPacketObserver? packetObserver)
+            : this(settings, (host, port, isEncrypted) => new GateConnection(host, port, isEncrypted, settings),
+                packetObserver)
         {
         }
 
-        public ServerConnection(GateSettings settings, Func<string, int, bool, IGateConnection> gateConnectionFactory)
+        public ServerConnection(GateSettings settings, Func<string, int, bool, IGateConnection> gateConnectionFactory,
+            IPacketObserver? packetObserver = null)
         {
             if (settings == null)
             {
@@ -47,6 +51,7 @@ namespace Top.Client.LegacyBridge
 
             _gateConnectionFactory =
                 gateConnectionFactory ?? throw new ArgumentNullException(nameof(gateConnectionFactory));
+            _packetObserver = packetObserver;
 
             RegisterMessages(settings);
         }
@@ -66,7 +71,7 @@ namespace Top.Client.LegacyBridge
             var gateConnection = _gateConnectionFactory(host, port, isEncrypted);
             _gateConnection = gateConnection;
 
-            gateConnection.Open(new GateListener(_generation, _decoders, _queue));
+            gateConnection.Open(new GateListener(_generation, _decoders, _queue, _packetObserver));
         }
 
         public void Close()
@@ -133,7 +138,14 @@ namespace Top.Client.LegacyBridge
                 return;
             }
 
-            _gateConnection.Send(encoder.Opcode, packet => encoder.Encode(command, packet));
+            var packet = new PacketWriter();
+            encoder.Encode(command, packet);
+            var bytes = packet.ToArray();
+
+            _packetObserver?.Observe(new ObservedPacket(DateTime.Now, PacketDirection.Outgoing, encoder.Opcode, bytes,
+                [command], null));
+
+            _gateConnection.Send(encoder.Opcode, payload => payload.WriteRaw(bytes));
         }
 
         public IDisposable Subscribe<TEvent>(Action<TEvent> handler) where TEvent : IServerEvent

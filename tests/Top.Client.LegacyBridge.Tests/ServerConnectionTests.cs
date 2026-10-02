@@ -2378,6 +2378,84 @@ namespace Top.Client.LegacyBridge.Tests
             Assert.That(_delivered, Is.Empty);
         }
 
+        [Test]
+        public void A_received_packet_with_a_decoder_is_observed_with_its_message()
+        {
+            var observer = ConnectObserved();
+
+            Gate.Listener.OnReceived(Opcode.DeleteCharacterReply, Unhex("0000"));
+
+            var observed = observer.Packets.Single();
+            Assert.That(observed.Direction, Is.EqualTo(PacketDirection.Incoming));
+            Assert.That(observed.Opcode, Is.EqualTo(Opcode.DeleteCharacterReply));
+            Assert.That(observed.Bytes.ToArray(), Is.EqualTo(new byte[] { 0x00, 0x00 }));
+            Assert.That(observed.Messages, Has.Count.EqualTo(1).And.All.InstanceOf<CharacterDeletedEvent>());
+            Assert.That(observed.EmptyReason, Is.Null);
+        }
+
+        [Test]
+        public void A_received_packet_with_no_decoder_is_observed_with_no_messages_and_the_reason()
+        {
+            var observer = ConnectObserved();
+
+            Gate.Listener.OnReceived(SystemInfo, Unhex("0102"));
+
+            var observed = observer.Packets.Single();
+            Assert.That(observed.Direction, Is.EqualTo(PacketDirection.Incoming));
+            Assert.That(observed.Opcode, Is.EqualTo(SystemInfo));
+            Assert.That(observed.Bytes.ToArray(), Is.EqualTo(new byte[] { 0x01, 0x02 }));
+            Assert.That(observed.Messages, Is.Empty);
+            Assert.That(observed.EmptyReason, Is.EqualTo(EmptyPacketReason.NoDecoder));
+        }
+
+        [Test]
+        public void A_received_packet_that_decodes_to_nothing_is_observed_with_no_messages_and_the_reason()
+        {
+            var observer = ConnectObserved();
+            var moveWithNoPoints =
+                Pack(packet => new MoveNotice(CrabWorldId, 42, new MoveInfo(0, null, [])).Write(packet));
+            var bytes = moveWithNoPoints.Bytes.ToArray();
+
+            Gate.Listener.OnReceived(Opcode.NotiAction, moveWithNoPoints);
+
+            var observed = observer.Packets.Single();
+            Assert.That(observed.Direction, Is.EqualTo(PacketDirection.Incoming));
+            Assert.That(observed.Opcode, Is.EqualTo(Opcode.NotiAction));
+            Assert.That(observed.Bytes.ToArray(), Is.EqualTo(bytes));
+            Assert.That(observed.Messages, Is.Empty);
+            Assert.That(observed.EmptyReason, Is.EqualTo(EmptyPacketReason.DecodedToNothing));
+        }
+
+        [Test]
+        public void A_sent_command_is_observed_with_the_bytes_the_gate_received()
+        {
+            var observer = ConnectObserved();
+            var command = new DeleteCharacterCommand(1, "123456");
+
+            _connection.Send(command);
+
+            var observed = observer.Packets.Single();
+            Assert.That(observed.Direction, Is.EqualTo(PacketDirection.Outgoing));
+            Assert.That(observed.Opcode, Is.EqualTo(Opcode.DeleteCharacter));
+            Assert.That(observed.Messages, Is.EqualTo(new object[] { command }));
+            Assert.That(observed.EmptyReason, Is.Null);
+            Assert.That(observed.Bytes.ToArray(), Is.EqualTo(Gate.Sent.Single().Payload));
+        }
+
+        [Test]
+        public void A_connection_with_no_observer_still_delivers_and_sends()
+        {
+            Subscribe<CharacterDeletedEvent>();
+            _connection.Connect(Host, Port, true);
+
+            Gate.Listener.OnReceived(Opcode.DeleteCharacterReply, Unhex("0000"));
+            _connection.Send(new EndPlayCommand());
+            _connection.Drain();
+
+            Assert.That(_delivered, Has.Count.EqualTo(1).And.All.InstanceOf<CharacterDeletedEvent>());
+            Assert.That(Gate.Sent.Single().Opcode, Is.EqualTo(Opcode.EndPlay));
+        }
+
         private FakeGate Gate => _gates[^1];
 
         private IGateConnection OpenGate(string host, int port, bool isEncrypted)
@@ -2386,6 +2464,15 @@ namespace Top.Client.LegacyBridge.Tests
             _gates.Add(gate);
 
             return gate;
+        }
+
+        private RecordingPacketObserver ConnectObserved()
+        {
+            var observer = new RecordingPacketObserver();
+            _connection = new ServerConnection(_settings, OpenGate, observer);
+            _connection.Connect(Host, Port, true);
+
+            return observer;
         }
 
         private IDisposable Subscribe<TEvent>() where TEvent : IServerEvent
@@ -2593,6 +2680,16 @@ namespace Top.Client.LegacyBridge.Tests
 
         private abstract class AbstractEvent : IServerEvent
         {
+        }
+
+        private class RecordingPacketObserver : IPacketObserver
+        {
+            public List<ObservedPacket> Packets { get; } = [];
+
+            public void Observe(ObservedPacket packet)
+            {
+                Packets.Add(packet);
+            }
         }
     }
 }
