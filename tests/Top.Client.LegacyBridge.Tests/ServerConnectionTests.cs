@@ -8,6 +8,7 @@ using Top.Client.Messages;
 using Top.Client.Messages.Events;
 using Top.Client.Messages.Account.Commands;
 using Top.Client.Messages.Account.Events;
+using Top.Client.Messages.Chat.Commands;
 using Top.Client.Messages.Inventory.Commands;
 using Top.Client.Messages.Inventory.Data;
 using Top.Client.Messages.Inventory.Events;
@@ -22,6 +23,7 @@ using Top.Legacy.Protocol;
 using Top.Legacy.Protocol.Crypto;
 using Top.Legacy.Protocol.Messages.Characters;
 using Top.Legacy.Protocol.Messages.Account;
+using Top.Legacy.Protocol.Messages.Chat;
 using Top.Legacy.Protocol.Messages.Party;
 using Top.Legacy.Protocol.Messages.Play;
 using Top.Legacy.Protocol.Packets;
@@ -1955,6 +1957,54 @@ namespace Top.Client.LegacyBridge.Tests
             var sent = Gate.Sent.Single();
             Assert.That(sent.Opcode, Is.EqualTo(Opcode.PartyRefuse));
             Assert.That(PartyRefuse.Read(new PacketReader(sent.Payload)).InviterId, Is.EqualTo(9u));
+        }
+
+        [Test]
+        public void An_invite_to_party_is_sent_as_the_party_invite_request_with_the_invited_name()
+        {
+            _connection.Connect(Host, Port, true);
+
+            _connection.Send(new InviteToPartyCommand("Anne"));
+
+            var sent = Gate.Sent.Single();
+            Assert.That(sent.Opcode, Is.EqualTo(Opcode.PartyInviteRequest));
+            Assert.That(PartyInviteRequest.Read(new PacketReader(sent.Payload)).InvitedName, Is.EqualTo("Anne"));
+        }
+
+        [Test]
+        public void A_leave_party_is_sent_as_the_party_leave_packet_with_no_body()
+        {
+            _connection.Connect(Host, Port, true);
+
+            _connection.Send(new LeavePartyCommand());
+
+            var sent = Gate.Sent.Single();
+            Assert.That(sent.Opcode, Is.EqualTo(Opcode.PartyLeave));
+            Assert.That(sent.Payload, Is.Empty);
+        }
+
+        [Test]
+        public void A_kick_party_member_is_sent_as_the_party_kick_packet_with_the_member_id()
+        {
+            _connection.Connect(Host, Port, true);
+
+            _connection.Send(new KickPartyMemberCommand(12));
+
+            var sent = Gate.Sent.Single();
+            Assert.That(sent.Opcode, Is.EqualTo(Opcode.PartyKick));
+            Assert.That(PartyKick.Read(new PacketReader(sent.Payload)).MemberId, Is.EqualTo(12u));
+        }
+
+        [Test]
+        public void A_say_is_sent_as_the_say_packet_with_the_text()
+        {
+            _connection.Connect(Host, Port, true);
+
+            _connection.Send(new SayCommand("&make 1,1"));
+
+            var sent = Gate.Sent.Single();
+            Assert.That(sent.Opcode, Is.EqualTo(Opcode.Say));
+            Assert.That(SayRequest.Read(new PacketReader(sent.Payload)).Text, Is.EqualTo("&make 1,1"));
         }
 
         [Test]

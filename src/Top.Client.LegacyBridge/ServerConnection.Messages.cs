@@ -1,8 +1,10 @@
 using Top.Client.LegacyBridge.Account;
+using Top.Client.LegacyBridge.Chat;
 using Top.Client.LegacyBridge.Inventory;
 using Top.Client.LegacyBridge.Party;
 using Top.Client.LegacyBridge.Play;
 using Top.Client.Messages.Account.Commands;
+using Top.Client.Messages.Chat.Commands;
 using Top.Client.Messages.Inventory.Commands;
 using Top.Client.Messages.Party.Commands;
 using Top.Client.Messages.Play.Commands;
@@ -63,6 +65,10 @@ namespace Top.Client.LegacyBridge
             AddDecoder(Opcode.PartyLeaderNotice, PartyLeaderNoticeDecoder.Decode);
             AddEncoder<AcceptInviteCommand>(Opcode.PartyAccept, AcceptInviteEncoder.Encode);
             AddEncoder<DeclineInviteCommand>(Opcode.PartyRefuse, DeclineInviteEncoder.Encode);
+            AddEncoder<InviteToPartyCommand>(Opcode.PartyInviteRequest, InviteToPartyEncoder.Encode);
+            AddEncoder<LeavePartyCommand>(Opcode.PartyLeave, LeavePartyEncoder.Encode);
+            AddEncoder<KickPartyMemberCommand>(Opcode.PartyKick, KickPartyMemberEncoder.Encode);
+            AddEncoder<SayCommand>(Opcode.Say, SayEncoder.Encode);
         }
     }
 }

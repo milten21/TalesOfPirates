@@ -35,6 +35,10 @@ public class FakeServerConnection : IServerConnection
     {
     }
 
+    public void Drain()
+    {
+    }
+
     public void Send(IServerCommand command)
     {
     }

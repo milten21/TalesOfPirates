@@ -1,11 +1,14 @@
+using System;
 using System.IO;
 using System.Linq;
 using Godot;
+using Top.Client.Features.MainMenu;
 using Top.Client.Features.MainMenu.Servers;
 using Top.Client.LegacyBridge;
 using Top.Client.Messages;
 using Top.Client.Messages.Events;
 using Top.Client.Tools.Debug;
+using Top.Client.Tools.Launch;
 using Top.Client.UI;
 using Top.Logging;
 
@@ -15,9 +18,13 @@ public partial class App : Node
 {
     private const string ServerFilePath = "user://servers.json";
 
+    private const string LaunchProfileFolderPath = "user://launch_profiles";
+
     private const string ContentFolderSetting = "top/content/folder";
 
     private const string DebugModeArgument = "--debug-mode";
+
+    private const string LaunchProfileArgument = "--launch-profile";
 
     private ServerConnection _connection = null!;
 
@@ -28,6 +35,8 @@ public partial class App : Node
     private ConnectionWatch _connectionWatch = null!;
 
     private DebugOverlay? _debugOverlay;
+
+    private ProfileLauncher? _profileLauncher;
 
     [Export] public string ThemeName { get; set; } = ThemePaths.DefaultName;
 
@@ -61,7 +70,17 @@ public partial class App : Node
 
         _connection.Subscribe<DisconnectedEvent>(_connectionWatch.ReportLostConnection);
 
+        if (OS.IsDebugBuild())
+        {
+            _profileLauncher = new ProfileLauncher(_connection, _session, _router);
+        }
+
         _router.SetupCurrentScene();
+
+        if (ReadLaunchProfileArgument() is { } profileName)
+        {
+            StartProfileLaunch(profileName);
+        }
     }
 
     public override void _Ready()
@@ -84,6 +103,52 @@ public partial class App : Node
     public override void _ExitTree()
     {
         _connection.Close();
+    }
+
+    public void StartProfileLaunch(string profileName)
+    {
+        if (_profileLauncher == null)
+        {
+            return;
+        }
+
+        if (GetTree().CurrentScene is not MainMenuScene)
+        {
+            Log.Error($"launch profile {profileName} can start only from the main menu");
+
+            return;
+        }
+
+        var path = ProjectSettings.GlobalizePath($"{LaunchProfileFolderPath}/{profileName}.json");
+
+        if (LaunchProfile.Read(path) is not { } profile)
+        {
+            Log.Error($"launch profile {profileName} could not be read from {path}");
+
+            return;
+        }
+
+        _profileLauncher.Launch(profile);
+    }
+
+    private static string? ReadLaunchProfileArgument()
+    {
+        var arguments = OS.GetCmdlineUserArgs();
+        var index = Array.IndexOf(arguments, LaunchProfileArgument);
+
+        if (index < 0)
+        {
+            return null;
+        }
+
+        if (index + 1 < arguments.Length)
+        {
+            return arguments[index + 1];
+        }
+
+        Log.Error($"{LaunchProfileArgument} needs a profile name");
+
+        return null;
     }
 
     private static bool IsDebugModeOn()

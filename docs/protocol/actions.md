@@ -714,6 +714,12 @@ equip cell sends -1, whichever cell it is (`UIEquipForm.cpp:1231-1253`). A doubl
   `EquipBagItemCommand(worldId, bagSlot, isSecondSlot)` and writes an `ItemUseRequest` with target -2 when
   `isSecondSlot`, else -1. The packet id comes from the same counter as MOVE. Registered at
   `ServerConnection.Messages.cs:47-48`.
+- The two commands write the same bytes when the use has no target item and the equip has no second slot: target
+  -1. The server selects use or equip from the item's links.
+- `Top.Client.Cli` sends `UseBagItemCommand` for the `use <bag slot> [timeout]` step, for any item. The step ends at
+  the next KITBAG NotiAction of its own character or at an ITEM_FAILED, and fails at the time limit. Checked on
+  2026-10-03 against the test server, as `Observer`: `&make 481,1` then `use` on its bag slot equipped the new glove,
+  and the worn glove went to that bag slot.
 - `CharacterInventory` (`CharacterInventory.cs:105-128`, rule at `:187-212`):
   - A bag item fits a link from its `equipLinks`, read up to the first negative value. The default slot is the first
     free fitting link, else the first fitting link. The second slot is link 6 for type 1 and link 8 for type 26.

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Top.Client.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Top.Client.LegacyBridge\Top.Client.LegacyBridge.csproj" />
+    <ProjectReference Include="..\Top.Client.Messages\Top.Client.Messages.csproj" />
+    <ProjectReference Include="..\Top.Logging\Top.Logging.csproj" />
+  </ItemGroup>
+</Project>

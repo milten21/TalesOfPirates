@@ -43,10 +43,14 @@ namespace Top.Legacy.Protocol.Tests
         [TestCase(Opcode.PartyInvite, 5001)]
         [TestCase(Opcode.PartyRefresh, 5002)]
         [TestCase(Opcode.PartyInviteCancel, 5003)]
+        [TestCase(Opcode.PartyInviteRequest, 6001)]
         [TestCase(Opcode.PartyAccept, 6002)]
         [TestCase(Opcode.PartyRefuse, 6003)]
+        [TestCase(Opcode.PartyLeave, 6004)]
+        [TestCase(Opcode.PartyKick, 6005)]
         [TestCase(Opcode.PartyMemberVitals, 519)]
         [TestCase(Opcode.PartyLeaderNotice, 524)]
+        [TestCase(Opcode.Say, 1)]
         public void An_opcode_counts_off_the_base_the_original_declares(ushort opcode, int expected)
         {
             Assert.That(opcode, Is.EqualTo(expected));

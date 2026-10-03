@@ -15,7 +15,8 @@ This folder records every packet that `src/Top.Legacy.Protocol` reads or writes.
 | [actions.md](actions.md) | NotiAction 508 (all action types), BeginAction 6, EndAction 7, FailedAction 520, PreMoveTime 536 |
 | [attributes.md](attributes.md) | AttributeSync 509 |
 | [items.md](items.md) | TemporaryKitbagSync 35/554, KitbagLock 31, KitbagUnlock 32, lock state 553 |
-| [party.md](party.md) | PartyInvite 5001, PartyRefresh 5002, PartyInviteCancel 5003, PartyAccept 6002, PartyRefuse 6003, PartyMemberVitals 519, PartyLeaderNotice 524 |
+| [chat.md](chat.md) | Say 1 |
+| [party.md](party.md) | PartyInvite 5001, PartyRefresh 5002, PartyInviteCancel 5003, PartyInviteRequest 6001, PartyAccept 6002, PartyRefuse 6003, PartyLeave 6004, PartyKick 6005, PartyMemberVitals 519, PartyLeaderNotice 524 |
 | [opcodes.md](opcodes.md) | Inventory of all 383 opcodes: server status, original client status, our status, feature group |
 
 The research was done on 2026-09-27 against `sources/` of the reference repo and the working tree of
@@ -78,3 +79,5 @@ These are defects or missing behaviour with a visible effect. The files give the
 | 15 | A delete has no count: the server always destroys the whole stack. The confirmation names the count. | [actions.md](actions.md#item_delete-13) |
 | 16 | The server lets a boat deed be thrown and deleted; the thrown deed takes the boat off the character, and a pick-up resets the boat to level 1 with 0 experience. Our item table has no flags for boat types, so the client disables both. | [actions.md](actions.md#item_throw-9) |
 | 17 | The server has one 200 ms throttle for consumable use, shared by all players (`CharacterCmd.cpp:929-934`). A use inside it gets no reply: nothing is used and no failure comes. A script refusal comes as a system notice with the reason, which we do not show, then ITEM_FAILED UNUSE, which the toast shows as "Can't use this item". A teleport scroll is used up but the client stays on the old map (finding 1). | [actions.md](actions.md#item_use-11) |
+| 18 | The group server tells the inviter why a party invite was refused only with a system message 517, which we do not decode. A refused invite looks the same as an open one, and a leave or a kick that the server ignores gets no reply at all. | [party.md](party.md#party-invite-request-6001--leave-6004--kick-6005) |
+| 19 | The game server drops a chat line, a GM command too, that comes less than its `say_interval` (1 s in the shipped config) after the last line. It tells the sender only with a system message 517, which we do not decode, so a dropped line looks the same as a line that the server took. | [chat.md](chat.md#say-1) |

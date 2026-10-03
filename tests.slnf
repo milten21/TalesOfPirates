@@ -3,6 +3,7 @@
     "path": "Top.slnx",
     "projects": [
       "src/Top.Client/Top.Client.csproj",
+      "src/Top.Client.Cli/Top.Client.Cli.csproj",
       "src/Top.Client.LegacyBridge/Top.Client.LegacyBridge.csproj",
       "src/Top.Client.Messages/Top.Client.Messages.csproj",
       "src/Top.Logging/Top.Logging.csproj",
@@ -18,6 +19,7 @@
       "src/Top.Conversion/Top.Conversion.csproj",
       "src/Top.Conversion.Cli/Top.Conversion.Cli.csproj",
       "tests/Top.Client.Tests/Top.Client.Tests.csproj",
+      "tests/Top.Client.Cli.Tests/Top.Client.Cli.Tests.csproj",
       "tests/Top.Client.LegacyBridge.Tests/Top.Client.LegacyBridge.Tests.csproj",
       "tests/Top.Logging.Tests/Top.Logging.Tests.csproj",
       "tests/Top.Legacy.MindPower.Tests/Top.Legacy.MindPower.Tests.csproj",

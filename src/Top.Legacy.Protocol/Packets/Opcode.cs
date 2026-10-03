@@ -61,7 +61,12 @@ namespace Top.Legacy.Protocol.Packets
         public const ushort PartyInviteCancel = FromGroup + 3;
         public const ushort PartyMemberVitals = ToClient + 19;
         public const ushort PartyLeaderNotice = ToClient + 24;
+        public const ushort PartyInviteRequest = ToGroup + 1;
         public const ushort PartyAccept = ToGroup + 2;
         public const ushort PartyRefuse = ToGroup + 3;
+        public const ushort PartyLeave = ToGroup + 4;
+        public const ushort PartyKick = ToGroup + 5;
+
+        public const ushort Say = ToGame + 1;
     }
 }

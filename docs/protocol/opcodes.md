@@ -34,12 +34,12 @@ of `prototype/godot`.
 
 | Direction | Opcodes | Names | Implemented | No sender or handler |
 |---|---|---|---|---|
-| Client → game (`CMD_CM_*`, 0-499) | 129 | 131 | 15 | 13 (no handler found) |
-| Game → client (`CMD_MC_*`, 500-999) | 182 | 183 | 18 | 30 (no sender found) |
-| Client → group (`CMD_CP_*`, 6000-6499) | 34 | 34 | 1 | 4 (no handler found) |
-| Group → client (`CMD_PC_*`, 5000-5499) | 37 | 37 | 1 | 4 (no sender found) |
+| Client → game (`CMD_CM_*`, 0-499) | 129 | 131 | 16 | 13 (no handler found) |
+| Game → client (`CMD_MC_*`, 500-999) | 182 | 183 | 20 | 30 (no sender found) |
+| Client → group (`CMD_CP_*`, 6000-6499) | 34 | 34 | 6 | 4 (no handler found) |
+| Group → client (`CMD_PC_*`, 5000-5499) | 37 | 37 | 4 | 4 (no sender found) |
 | Gate → client (`CMD_TC_*`, 7500-7999) | 1 | 1 | 0 | 0 (no sender found) |
-| **All** | **383** | **386** | **35** | **51** |
+| **All** | **383** | **386** | **46** | **51** |
 
 "Opcodes" counts values. "Names" counts defines. Three values have two names each (97, 301 and 600).
 
@@ -58,7 +58,7 @@ of `prototype/godot`.
 | [Stall](#stall) | 13 | 0 | 1 |
 | [Quests and NPC dialogue](#quests-and-npc-dialogue) | 25 | 0 | 5 |
 | [Boat](#boat) | 18 | 0 | 3 |
-| [Chat](#chat) | 27 | 0 | 2 |
+| [Chat](#chat) | 27 | 1 | 2 |
 | [Notices](#notices) | 8 | 0 | 1 |
 | [Team and volunteer list](#team-and-volunteer-list) | 25 | 0 | 2 |
 | [Guild](#guild) | 28 | 0 | 2 |
@@ -373,7 +373,7 @@ of `prototype/godot`.
 
 | Opcode | Name | Direction | Purpose | Server | Original client | Ours |
 |---|---|---|---|---|---|---|
-| 1 | `CMD_CM_SAY` | C→S gate → game | Say a line in local chat. The gate first checks for `&` GM commands. | handled: `CharacterPrl.cpp:325`, `ToClient.cpp:485` | sends: `ProCirculateCS.cpp:521` | no |
+| 1 | `CMD_CM_SAY` | C→S gate → game | Say a line in local chat. The game server runs a line that starts with `&` as a GM command. | handled: `CharacterPrl.cpp:325`, `ToClient.cpp:485` | sends: `ProCirculateCS.cpp:521` | [yes](chat.md#say-1) |
 | 91 | `CMD_CM_SAY2CAMP` | C→S game | Say a line in the camp (side) channel. | no handler found | sends: `PacketCmd_CS.cpp:1176` | no |
 | 501 | `CMD_MC_SAY` | S→C game | Local chat line from a player in view. | sent: `CharacterPrl.cpp:378`, `CharacterSuperCmd.cpp:1288` | reads: `NetIF.cpp:69` | no |
 | 596 | `CMD_MC_SAY2CAMP` | S→C unknown | Camp channel chat line. | no sender found | reads: `NetIF.cpp:260` | no |
@@ -438,11 +438,11 @@ of `prototype/godot`.
 | 5001 | `CMD_PC_TEAM_INVITE` | S→C group | A player invites you to a team. | sent: `GroupServer/GroupServerAppTeam.cpp:78` | reads: `NetIF.cpp:182` | [yes](party.md#party-invite-5001--invite-cancel-5003--accept-6002--refuse-6003) |
 | 5002 | `CMD_PC_TEAM_REFRESH` | S→C group | Team members changed. | sent: `GroupServer/GroupServerAppTeam.cpp:193`, `GroupServer/GroupServerAppTeam.cpp:293` | reads: `NetIF.cpp:184` | [yes](party.md#party-refresh-5002) |
 | 5003 | `CMD_PC_TEAM_CANCEL` | S→C group | A team invite is cancelled or timed out. | sent: `GroupServer/GroupServerAppTeam.cpp:72`, `GroupServer/GroupServerAppTeam.cpp:578` | reads: `NetIF.cpp:183` | [yes](party.md#party-invite-5001--invite-cancel-5003--accept-6002--refuse-6003) |
-| 6001 | `CMD_CP_TEAM_INVITE` | C→S group | Invite a player to the team. | handled: `GroupServerAppServ.cpp:478` | sends: `NetPkChat.cpp:97` | no |
+| 6001 | `CMD_CP_TEAM_INVITE` | C→S group | Invite a player to the team. | handled: `GroupServerAppServ.cpp:478` | sends: `NetPkChat.cpp:97` | [yes](party.md#party-invite-request-6001--leave-6004--kick-6005) |
 | 6002 | `CMD_CP_TEAM_ACCEPT` | C→S group | Accept a team invite. | handled: `GroupServerAppServ.cpp:481` | sends: `NetPkChat.cpp:115` | [yes](party.md#party-invite-5001--invite-cancel-5003--accept-6002--refuse-6003) |
 | 6003 | `CMD_CP_TEAM_REFUSE` | C→S group | Refuse a team invite. | handled: `GroupServerAppServ.cpp:484` | sends: `NetPkChat.cpp:105` | [yes](party.md#party-invite-5001--invite-cancel-5003--accept-6002--refuse-6003) |
-| 6004 | `CMD_CP_TEAM_LEAVE` | C→S group | Leave the team. | handled: `GroupServerAppServ.cpp:487` | sends: `NetPkChat.cpp:135` | no |
-| 6005 | `CMD_CP_TEAM_KICK` | C→S group | Kick a member from the team. | handled: `GroupServerAppServ.cpp:490` | sends: `NetPkChat.cpp:125` | no |
+| 6004 | `CMD_CP_TEAM_LEAVE` | C→S group | Leave the team. | handled: `GroupServerAppServ.cpp:487` | sends: `NetPkChat.cpp:135` | [yes](party.md#party-invite-request-6001--leave-6004--kick-6005) |
+| 6005 | `CMD_CP_TEAM_KICK` | C→S group | Kick a member from the team. | handled: `GroupServerAppServ.cpp:490` | sends: `NetPkChat.cpp:125` | [yes](party.md#party-invite-request-6001--leave-6004--kick-6005) |
 
 ## Guild
 

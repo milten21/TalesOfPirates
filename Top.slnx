@@ -19,6 +19,7 @@
 
   <Folder Name="/src/">
     <Project Path="src/Top.Client/Top.Client.csproj" />
+    <Project Path="src/Top.Client.Cli/Top.Client.Cli.csproj" />
     <Project Path="src/Top.Client.LegacyBridge/Top.Client.LegacyBridge.csproj" />
     <Project Path="src/Top.Client.Messages/Top.Client.Messages.csproj" />
     <Project Path="src/Top.Logging/Top.Logging.csproj" />
@@ -37,6 +38,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Top.Client.Tests/Top.Client.Tests.csproj" />
     <Project Path="tests/Top.Client.EngineTests/Top.Client.EngineTests.csproj" />
+    <Project Path="tests/Top.Client.Cli.Tests/Top.Client.Cli.Tests.csproj" />
     <Project Path="tests/Top.Client.LegacyBridge.Tests/Top.Client.LegacyBridge.Tests.csproj" />
     <Project Path="tests/Top.Logging.Tests/Top.Logging.Tests.csproj" />
     <Project Path="tests/Top.Legacy.MindPower.Tests/Top.Legacy.MindPower.Tests.csproj" />

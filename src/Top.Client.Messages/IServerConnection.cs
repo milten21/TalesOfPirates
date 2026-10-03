@@ -18,6 +18,8 @@ namespace Top.Client.Messages
 
         void ResumeDrain();
 
+        void Drain();
+
         void Send(IServerCommand command);
 
         IDisposable Subscribe<TEvent>(Action<TEvent> handler) where TEvent : IServerEvent;

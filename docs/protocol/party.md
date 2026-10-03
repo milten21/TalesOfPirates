@@ -4,8 +4,8 @@ See [README.md](README.md) for the file path conventions.
 
 ## Summary
 
-- This file covers the party invite flow (5001, 5003, 6002, 6003), the member list (5002), the member vitals (519)
-  and the leader id (524).
+- This file covers the party invite flow (5001, 5003, 6002, 6003), the invite request, leave and kick (6001, 6004,
+  6005), the member list (5002), the member vitals (519) and the leader id (524).
 - The invite readers and writers are pinned on bytes built by hand from the confirmed C++ source. The 5002, 519 and 524
   readers are pinned on bytes captured from the local server on 2026-09-27: `T1` (account one) and `Observer2` (account
   two) joined, left, were kicked and the leader left.
@@ -98,6 +98,81 @@ See [README.md](README.md) for the file path conventions.
 - The client hardcodes the 30 s invite duration for its own countdown display (`PartyInviteQueue.InviteSeconds`,
   `// TODO`: a server-declared value). The server's own timeout (`InvitedTime`) is authoritative; a mismatch only
   changes how early or late the display reaches zero relative to the real end event, never whether the invite ends.
+
+---
+
+## Party invite request (6001) / leave (6004) / kick (6005)
+
+**Types**
+
+- Writer: `PartyInviteRequest` (`Messages/Party/PartyInviteRequest.cs`) through `InviteToPartyEncoder`.
+- Writer: `PartyLeave` (`Messages/Party/PartyLeave.cs`) through `LeavePartyEncoder`.
+- Writer: `PartyKick` (`Messages/Party/PartyKick.cs`) through `KickPartyMemberEncoder`.
+
+**Payload**
+
+- PartyInviteRequest (6001): `string` name of the invited character, nothing else. Confirmed against the client send
+  (`NetPkChat.cpp:92-100`, `CS_Team_Invite`, a single `WriteString`) and the server handler
+  (`GroupServerAppTeam.cpp:30`, a single `ReadString`).
+- PartyLeave (6004): no body. Confirmed against the client send (`NetPkChat.cpp:130-137`, `CS_Team_Leave`) and the
+  server handler (`GroupServerAppTeam.cpp:367-370`, which reads nothing).
+- PartyKick (6005): `u32` member id, nothing else. Confirmed against the client send (`NetPkChat.cpp:120-128`,
+  `CS_Team_Kick`, a single `WriteLong`) and the server handler (`GroupServerAppTeam.cpp:466`, a single `ReadLong`).
+  The member id is the character id of the 5002 list, which equals the world id of the member's main character (see
+  Party refresh). It is not the character type id of the view packets.
+
+**Server** (all in `GroupServer/src/GroupServerAppTeam.cpp`)
+
+- CMD_CP_TEAM_INVITE (6001) is handled at `GroupServerAppServ.cpp:478`, which forwards to `CP_TEAM_INVITE` (`:8`).
+  The server checks in this order. Each refusal goes to the inviter as a system message (`Player::SendSysInfo`,
+  `GroupServer/src/Player.cpp:275-282`, opcode 517 `CMD_MC_SYSINFO`):
+  - `:18-21`: the inviter is in a party and does not lead it.
+  - `:22-25`: the inviter's party already has `MemberMax` members.
+  - `:31-34`: the name is longer than 16 bytes. No message: the packet is ignored. An empty name goes on to the next
+    check.
+  - `:36-42`: no player in the world has that character name, or it is the inviter.
+  - `:43-48`: the invited player is already in a party.
+  - `:49-55`: the inviter already has an open invite to that player.
+  - `:56-61`: the invited player does not take requests (`Player::CanReceiveRequests`).
+  - Else `:62-83`: the server opens the invite and sends 5001 to the invited player. When that player already holds
+    `InvitedMax` invites, the oldest ends first with a busy 5003 (see Party invite).
+- CMD_CP_TEAM_LEAVE (6004) is handled at `GroupServerAppServ.cpp:487`, which forwards to `CP_TEAM_LEAVE` (`:367`).
+  - `:370`: a player in no party is ignored.
+  - Else `:378`: a 5002 of kind leave goes to all members, the leaver included, and `CMD_PM_TEAM` goes to the game
+    server, which sends the 524 leader notices. With two members the leader leaves too and the party ends
+    (`:445-448`).
+  - The group server also calls this handler itself when a player switches character or logs out
+    (`GroupServer/src/Player.cpp:94`).
+- CMD_CP_TEAM_KICK (6005) is handled at `GroupServerAppServ.cpp:490`, which forwards to `CP_TEAM_KICK` (`:460`).
+  - `:463`, `:465`: a player in no party, or a player who does not lead the party, is ignored. No message.
+  - `:467-470`: an id equal to the leader's own id is ignored.
+  - `:471-480`: an id that is not a member of the party is only logged on the server.
+  - Else `:487`: a 5002 of kind kick goes to all members, the kicked member included, and `CMD_PM_TEAM` goes to the
+    game server, as for a leave. The same end rule applies.
+
+**Client**
+
+- **Invite, leave, kick:** `InviteToPartyCommand(CharacterName)`, `LeavePartyCommand` and
+  `KickPartyMemberCommand(MemberId)`. Only `Top.Client.Cli` sends them now: the `invite <name>`, `leave` and
+  `kick <name>` steps. `kick` takes the member id from the last `PartyChangedEvent` member list. The game client has no
+  UI action that sends them yet.
+- **The original client** sends 6001 from the player menu of a character in view (`UIStartForm.cpp:1365-1377`) and
+  from the chat member menu (`UIChat.cpp:1148`, `:1203`, `:1256`). It sends 6004 from the player menu
+  (`UIStartForm.cpp:1381-1385`), from the chat member menu (`UIChat.cpp:1112`) and from the menu of the player's own
+  frame (`CStartMgr::_OnSelfMenu`, `UIStartForm.cpp:1911-1937`), which is disabled on the arena maps `starena1` to
+  `starena3`. It sends 6005 from the chat member menu (`UIChat.cpp:1120`), with the
+  id of the selected member. All three senders return with no packet when `CStartMgr::IsCanTeamAndInfo`
+  (`UIStartForm.cpp:1950-1954`) is false; that flag is the `CanTeam` field of the map entry packet
+  (`NetProtocol.cpp:1229`).
+
+**Gaps**
+
+- The 517 system message that tells the inviter why an invite was refused has no decoder. A refused invite looks the
+  same as an invite that is open.
+- Our senders do not check the `CanTeam` map flag (it is read and dropped, see [view.md](view.md)), the level 8 rule of
+  the player menu, or the 16-byte name limit. The server does not check the map flag or the level either.
+- A leave or a kick that the server ignores sends nothing back. `Top.Client.Cli` checks the party itself before it
+  sends: it refuses a `leave` or a `kick` with no party, and a `kick` when another member leads the party.
 
 ---
 
