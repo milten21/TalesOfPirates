@@ -37,6 +37,11 @@ var _mutex := Mutex.new()
 ## (types 0/1) never count. Mutex-guarded: _log_error can fire from any thread.
 const _ERROR_TYPE_SCRIPT := 2
 const _MAX_RECENT_SCRIPT_ERRORS := 64
+const _MAX_PENDING := 4096
+const _PENDING_TRIM_THRESHOLD := _MAX_PENDING * 2
+## Lines trimmed from `_pending` since the last drain. The next drain reports
+## the count as a leading warn entry, so a gap in the log is never silent.
+var _dropped: int = 0
 var _script_error_seq: int = 0
 var _recent_script_errors: Array = []
 
@@ -93,6 +98,19 @@ func _append(level: String, text: String, details: Dictionary = {}) -> void:
 		_pending.append([level, text])
 	else:
 		_pending.append([level, text, details.duplicate(true)])
+	## Drop an old batch when a script floods the logger before the next frame.
+	## Trimming at 2x the cap amortizes the slice instead of doing it per line.
+	if _pending.size() >= _PENDING_TRIM_THRESHOLD:
+		_dropped += _pending.size() - _MAX_PENDING
+		_pending = _pending.slice(_pending.size() - _MAX_PENDING)
+	_mutex.unlock()
+
+
+## Drop queued lines that no active debugger can consume.
+func clear() -> void:
+	_mutex.lock()
+	_pending.clear()
+	_dropped = 0
 	_mutex.unlock()
 
 
@@ -102,7 +120,15 @@ func drain() -> Array:
 	_mutex.lock()
 	var out := _pending
 	_pending = []
+	var dropped := _dropped
+	_dropped = 0
 	_mutex.unlock()
+	if dropped > 0:
+		out.push_front([
+			"warn",
+			"[godot_ai] dropped %d older game log lines: the game logged faster than they could be forwarded"
+			% dropped,
+		])
 	return out
 
 

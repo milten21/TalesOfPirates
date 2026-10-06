@@ -167,11 +167,6 @@ var _uv_recheck_pending := false
 ## (foreign-port branch never sets `_server_pid`, so `_stop_server`
 ## can't kill it); the line has to show the mismatch honestly.
 var _setup_server_label: Label
-## Last rendered server-version string. `_update_status_label` runs every
-## frame; early-outs text repaint when nothing changed. Empty means
-## "no line rendered yet" (dev-checkout branch doesn't render a
-## user-mode Server line).
-var _last_rendered_server_text: String = ""
 ## Restart-server button shown next to the Setup container when
 ## `McpConnection.server_version` drifts from the plugin version. Hidden
 ## in the match case so the UI stays calm.
@@ -1358,13 +1353,19 @@ func _refresh_server_version_label(server_status: Dictionary = {}) -> void:
 			## look like it had multiple restart paths.
 			or (is_incompatible and can_recover and _crash_restart_btn == null)
 		)
-	if text == _last_rendered_server_text:
-		_setup_server_label.add_theme_color_override("font_color", color)
-		_update_restart_button(show_restart)
-		return
-	_last_rendered_server_text = text
+	## Runs every frame, so write only what changed (#1121). `Label.text`
+	## already ignores same-value writes; `add_theme_color_override` does
+	## not — every call re-sends NOTIFICATION_THEME_CHANGED and queues a
+	## redraw, which kept the idle editor redrawing while this row was
+	## visible. Compare against the label itself so a rebuilt row still
+	## gets its color and a same-text state change (amber drift -> red
+	## incompatible) still repaints.
 	_setup_server_label.text = text
-	_setup_server_label.add_theme_color_override("font_color", color)
+	if (
+		not _setup_server_label.has_theme_color_override("font_color")
+		or _setup_server_label.get_theme_color("font_color") != color
+	):
+		_setup_server_label.add_theme_color_override("font_color", color)
 	_update_restart_button(show_restart)
 
 
@@ -1382,12 +1383,10 @@ func _on_restart_stale_server() -> void:
 	if _server_restart_in_progress:
 		return
 	_server_restart_in_progress = true
-	_last_rendered_server_text = ""
 	_refresh_server_version_label()
 	if not is_inside_tree():
 		_dispatch_stale_server_restart()
 		_server_restart_in_progress = false
-		_last_rendered_server_text = ""
 		_refresh_server_version_label()
 		return
 	call_deferred("_restart_stale_server_after_feedback")
@@ -1397,7 +1396,6 @@ func _restart_stale_server_after_feedback() -> void:
 	await get_tree().create_timer(0.15).timeout
 	if not _dispatch_stale_server_restart():
 		_server_restart_in_progress = false
-		_last_rendered_server_text = ""
 		_refresh_server_version_label()
 
 
@@ -1418,7 +1416,6 @@ func present_lifecycle_action_result(accepted: bool) -> void:
 	if accepted:
 		return
 	_server_restart_in_progress = false
-	_last_rendered_server_text = ""
 	_refresh_server_version_label()
 
 
@@ -1516,7 +1513,6 @@ func _refresh_setup_status() -> void:
 		_version_restart_btn.visible = false
 		server_row.add_child(_version_restart_btn)
 		_setup_container.add_child(server_row)
-		_last_rendered_server_text = ""
 		_refresh_server_version_label()
 	else:
 		_setup_container.add_child(_make_status_row("uv", "not found", Color.RED))

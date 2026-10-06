@@ -26,6 +26,11 @@ const EDITOR_NOT_READY := "EDITOR_NOT_READY"
 const UNKNOWN_COMMAND := "UNKNOWN_COMMAND"
 const INTERNAL_ERROR := "INTERNAL_ERROR"
 const DEFERRED_TIMEOUT := "DEFERRED_TIMEOUT"
+## #1120: filesystem mutation discovery failed before any disk effect
+## (deadline/cancellation, entry/byte limits, or unreadable owner metadata).
+## Keep this separate from INVALID_PARAMS so callers can distinguish an
+## environmental discovery failure from a bad filesystem_manage request.
+const FILESYSTEM_DISCOVERY_FAILED := "FILESYSTEM_DISCOVERY_FAILED"
 ## Python-originated transport/attach bridge codes. GDScript has no emit path,
 ## but the public registry intentionally mirrors protocol/errors.py.
 const TRANSPORT_OUTCOME_UNKNOWN := "TRANSPORT_OUTCOME_UNKNOWN"

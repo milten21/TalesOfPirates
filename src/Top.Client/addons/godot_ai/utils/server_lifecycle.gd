@@ -51,6 +51,7 @@ const STALE_PRE_V4_HINT := "stale_pre_v4_server"
 const DEFAULT_PROVE_TIMEOUT_MS := 180_000
 const LAUNCH_FINGERPRINT_TIMEOUT_MS := 15_000
 const REPLACEMENT_TTL_MS := 15_000
+const IDENTITY_CAPTURE_STAGES := ["launch", "first_server", "final_server"]
 ## An authenticated endpoint that drops (a late keepalive, a server restart)
 ## is re-probed automatically with this backoff, each attempt re-proving the
 ## server exactly as a start does; after the last one the block stays until
@@ -126,6 +127,8 @@ func _begin_start_episode(existing_id := 0, probe := true) -> void:
 		"blocked_target": {},
 		"launch": {},
 		"after_stop": "",
+		"snapshot_diagnostic": {},
+		"proof_stage_attempts": {"launch": 0, "first_server": 0, "final_server": 0},
 	}
 	_publish()
 	if not probe:
@@ -461,6 +464,7 @@ func _complete_launch(result: Dictionary) -> void:
 
 
 func _complete_prove(result: Dictionary) -> void:
+	_remember_snapshot_evidence(result)
 	if bool(result.get("pending", false)):
 		_episode["proof_pending_reason"] = str(result.get("reason", "unknown"))
 		if Time.get_ticks_msec() >= int(_episode.get("prove_deadline_msec", 0)):
@@ -468,6 +472,7 @@ func _complete_prove(result: Dictionary) -> void:
 				"proof_timeout",
 				"The managed server proof timed out at %s."
 				% str(_episode.get("proof_pending_reason", "unknown"))
+				+ _snapshot_diagnostic_sentence()
 				+ startup_report_summary(str(_plan.get("startup_report", ""))),
 			)
 			return
@@ -478,6 +483,7 @@ func _complete_prove(result: Dictionary) -> void:
 		var pending_reason := str(_episode.get("proof_pending_reason", ""))
 		if not pending_reason.is_empty():
 			message += " Last pending proof: %s." % pending_reason
+		message += _snapshot_diagnostic_sentence()
 		_block(str(result.get("reason", "proof_failed")), message)
 		return
 	var launch: Dictionary = _episode.get("launch", {})
@@ -485,7 +491,11 @@ func _complete_prove(result: Dictionary) -> void:
 	var fingerprint := str(result.get("fingerprint", ""))
 	var exact_grant = _owned_process_grant(pid, fingerprint)
 	if not exact_grant.is_valid():
-		_block("process_proof_failed", "The server process identity changed before proof completed.")
+		_block(
+			"process_proof_failed",
+			"The server process identity changed before proof completed."
+			+ _snapshot_diagnostic_sentence(),
+		)
 		return
 	_process_grant = exact_grant
 	launch["pid"] = pid
@@ -861,8 +871,9 @@ func _effect_launch(payload: Dictionary) -> Dictionary:
 		"ok": not fingerprint.is_empty(),
 		"reason": "launch_unproven" if fingerprint.is_empty() else "",
 		"message": (
-			_launch_unproven_message(pid, attempts, Time.get_ticks_msec() - capture_started)
-			+ _snapshot_diagnostic_summary(snapshot_diagnostics)
+			_launch_unproven_message(
+				pid, attempts, Time.get_ticks_msec() - capture_started, snapshot_diagnostics
+			)
 			if fingerprint.is_empty()
 			else ""
 		),
@@ -896,12 +907,13 @@ static func _snapshot_diagnostic_summary(diagnostics: Array) -> String:
 ## (#988, #1012 both surfaced as this bare sentence). Diagnostic only: the
 ## values are read once more after the capture budget and never grant
 ## authority.
-func _launch_unproven_message(pid: int, attempts: Array, elapsed_ms: int) -> String:
-	var snapshot: Variant = _capture_process_snapshot(pid)
+func _launch_unproven_message(
+	pid: int, attempts: Array, elapsed_ms: int, snapshot_diagnostics: Array = []
+) -> String:
+	var capture_diagnostics: Array = []
+	var snapshot: Variant = _capture_process_snapshot(pid, capture_diagnostics)
 	var alive := PortResolver.pid_alive(pid, snapshot)
-	var commandline := PortResolver.process_commandline(pid, snapshot) if alive else ""
-	if commandline.length() > 200:
-		commandline = commandline.substr(0, 199) + "…"
+	var creation_identity := PortResolver.process_creation_identity(pid, snapshot)
 	## Summarise the per-attempt refusals as "reason×count" in first-seen order.
 	var counts := {}
 	var order: Array[String] = []
@@ -914,43 +926,218 @@ func _launch_unproven_message(pid: int, attempts: Array, elapsed_ms: int) -> Str
 	var summary: Array[String] = []
 	for key in order:
 		summary.append("%s×%d" % [key, int(counts[key])])
-	return (
+	var message := (
 		"The launched process identity could not be captured in %d attempts over %.1f s "
-		+ "(pid %d, now alive=%s, refusals: %s%s)."
+		+ "(pid %d, creation_identity=%s, now alive=%s, refusals: %s)."
 	) % [
 		attempts.size(),
 		elapsed_ms / 1000.0,
 		pid,
+		"unavailable" if creation_identity.is_empty() else creation_identity,
 		"unknown" if PortResolver.capture_failed(snapshot) else ("yes" if alive else "no"),
 		", ".join(summary) if not summary.is_empty() else "none recorded",
-		"" if commandline.is_empty() else "; command: " + commandline,
+	]
+	return message + _snapshot_diagnostic_summary(snapshot_diagnostics + capture_diagnostics)
+
+
+func _capture_process_snapshot(pid: int, diagnostics: Variant = null) -> Variant:
+	return PortResolver.capture_process_snapshot(pid, diagnostics)
+
+
+func _remember_snapshot_evidence(result: Dictionary) -> void:
+	var diagnostic: Variant = result.get("snapshot_diagnostic")
+	if diagnostic is Dictionary:
+		_episode["snapshot_diagnostic"] = diagnostic.duplicate(true)
+	var attempts: Variant = result.get("proof_stage_attempts")
+	if attempts is Dictionary:
+		_episode["proof_stage_attempts"] = attempts.duplicate(true)
+
+
+func _snapshot_diagnostic_sentence() -> String:
+	var diagnostic: Variant = _episode.get("snapshot_diagnostic", {})
+	if not (diagnostic is Dictionary) or diagnostic.is_empty():
+		return ""
+	var stage := str(diagnostic.get("stage", ""))
+	if stage not in IDENTITY_CAPTURE_STAGES:
+		stage = "unknown"
+	var category := str(diagnostic.get("category", ""))
+	if category not in PortResolver.SNAPSHOT_FAILURE_CATEGORIES:
+		category = "unknown"
+	var identity := str(diagnostic.get("creation_identity", "")).strip_edges()
+	if identity.is_empty():
+		identity = "unavailable"
+	identity = identity.get_slice("|", 0).replace("\n", " ").replace("\r", " ").substr(0, 128)
+	## The collector's own refusal, when one was recorded: the fixed category
+	## alone cannot tell a shell that exited from one that printed nothing.
+	var detail := str(diagnostic.get("detail", ""))
+	if not detail.is_empty():
+		if detail not in PortResolver.SNAPSHOT_DIAGNOSTIC_CATEGORIES:
+			detail = "unknown"
+		category += " detail=%s" % detail
+		var depth := int(diagnostic.get("depth", -1))
+		if depth >= 0:
+			category += " depth=%d" % clampi(depth, 0, 16)
+	return (
+		" Identity capture: stage=%s category=%s pid=%d creation_identity=%s attempt=%d elapsed_ms=%d."
+	) % [
+		stage,
+		category,
+		int(diagnostic.get("pid", -1)),
+		identity,
+		clampi(int(diagnostic.get("attempt", 1)), 1, 100000),
+		clampi(int(diagnostic.get("elapsed_ms", 0)), 0, 600000),
 	]
 
 
-func _capture_process_snapshot(pid: int) -> Variant:
-	return PortResolver.capture_process_snapshot(pid)
+func _capture_identity(
+	stage: String, pid: int, stage_attempts: Dictionary
+) -> Dictionary:
+	var attempt := int(stage_attempts.get(stage, 0)) + 1
+	stage_attempts[stage] = attempt
+	var diagnostics: Array = []
+	var began := Time.get_ticks_msec()
+	var snapshot: Variant = _capture_process_snapshot(pid, diagnostics)
+	return {
+		"snapshot": snapshot,
+		"diagnostic": _snapshot_evidence(
+			stage, pid, snapshot, diagnostics, attempt, Time.get_ticks_msec() - began
+		),
+	}
+
+
+func _record_snapshot_capture(
+	stage: String, pid: int, snapshot: Variant, stage_attempts: Dictionary, elapsed_ms: int = 0
+) -> Dictionary:
+	var attempt := int(stage_attempts.get(stage, 0)) + 1
+	stage_attempts[stage] = attempt
+	return {
+		"snapshot": snapshot,
+		"diagnostic": _snapshot_evidence(stage, pid, snapshot, [], attempt, elapsed_ms),
+	}
+
+
+static func _capture_elapsed_ms(capture: Dictionary) -> int:
+	var diagnostic: Variant = capture.get("diagnostic", {})
+	return int(diagnostic.get("elapsed_ms", 0)) if diagnostic is Dictionary else 0
+
+
+static func _retarget_snapshot_capture(
+	capture: Dictionary, stage: String, pid: int
+) -> Dictionary:
+	var snapshot: Variant = capture.get("snapshot")
+	var old_diagnostic: Variant = capture.get("diagnostic", {})
+	var attempt := int(old_diagnostic.get("attempt", 1)) if old_diagnostic is Dictionary else 1
+	var elapsed_ms := int(old_diagnostic.get("elapsed_ms", 0)) if old_diagnostic is Dictionary else 0
+	return {
+		"snapshot": snapshot,
+		"diagnostic": _snapshot_evidence(stage, pid, snapshot, [], attempt, elapsed_ms),
+	}
+
+
+static func _snapshot_evidence(
+	stage: String,
+	pid: int,
+	snapshot: Variant,
+	diagnostics: Array,
+	attempt: int,
+	elapsed_ms: int,
+	category_override := "",
+) -> Dictionary:
+	var detail := ""
+	var depth := -1
+	if not diagnostics.is_empty():
+		var last: Variant = diagnostics[diagnostics.size() - 1]
+		if last is Dictionary:
+			detail = str(last.get("category", ""))
+			depth = int(last.get("depth", -1))
+	var category := str(category_override)
+	if category.is_empty() and not detail.is_empty():
+		category = PortResolver.snapshot_failure_category(detail, depth)
+	elif category.is_empty() and PortResolver.capture_failed(snapshot):
+		category = "process_query"
+	var creation_identity := PortResolver.process_creation_identity(pid, snapshot)
+	return {
+		"stage": stage if stage in IDENTITY_CAPTURE_STAGES else "unknown",
+		"category": (
+			category
+			if category.is_empty() or category in PortResolver.SNAPSHOT_FAILURE_CATEGORIES
+			else "unknown"
+		),
+		"detail": (
+			detail
+			if detail.is_empty() or detail in PortResolver.SNAPSHOT_DIAGNOSTIC_CATEGORIES
+			else "unknown"
+		),
+		"depth": clampi(depth, -1, 16),
+		"pid": pid,
+		"creation_identity": "unavailable" if creation_identity.is_empty() else creation_identity,
+		"attempt": clampi(attempt, 1, 100000),
+		"elapsed_ms": clampi(elapsed_ms, 0, 600000),
+	}
+
+
+func _proof_pending(
+	reason: String, stage_attempts: Dictionary, diagnostic: Dictionary = {}
+) -> Dictionary:
+	var result := {
+		"pending": true,
+		"reason": reason,
+		"proof_stage_attempts": stage_attempts.duplicate(true),
+	}
+	if not diagnostic.is_empty():
+		result["snapshot_diagnostic"] = diagnostic.duplicate(true)
+	return result
+
+
+func _capture_failure(
+	stage_attempts: Dictionary, capture: Dictionary, category_override := ""
+) -> Dictionary:
+	var diagnostic: Dictionary = capture.get("diagnostic", {}).duplicate(true)
+	if not category_override.is_empty():
+		diagnostic["category"] = category_override
+	return _proof_pending("identity_unavailable", stage_attempts, diagnostic)
+
+
+func _identity_mismatch(
+	reason: String, stage_attempts: Dictionary, capture: Dictionary
+) -> Dictionary:
+	var diagnostic: Dictionary = capture.get("diagnostic", {}).duplicate(true)
+	diagnostic["category"] = "identity_mismatch"
+	return _proof_pending(reason, stage_attempts, diagnostic)
 
 
 func _effect_prove(payload: Dictionary) -> Dictionary:
 	var launch_grant = payload.get("grant")
 	var launch_pid := int(launch_grant.process_id()) if launch_grant != null else -1
+	var stage_attempts: Variant = payload.get("proof_stage_attempts", {})
+	if not (stage_attempts is Dictionary):
+		stage_attempts = {}
+	else:
+		stage_attempts = stage_attempts.duplicate(true)
+	for stage in IDENTITY_CAPTURE_STAGES:
+		stage_attempts[stage] = maxi(0, int(stage_attempts.get(stage, 0)))
 	## The pid file is an untrusted hint. Reuse its ancestor snapshot only
 	## when it includes the launcher; the original PID read and all final
 	## capability, listener, identity, and lineage checks still follow.
 	var hinted_pid := -1
 	var first_snapshot: Variant = null
 	var launch_snapshot: Variant = null
+	var launch_capture: Dictionary = {}
+	var first_capture: Dictionary = {}
 	if OS.get_name() == "Windows" and launch_pid > 1:
 		hinted_pid = PortResolver.read_pid_file(str(payload.get("pid_file", "")))
 		if hinted_pid > 1:
-			first_snapshot = _capture_process_snapshot(hinted_pid)
+			first_capture = _capture_identity("launch", hinted_pid, stage_attempts)
+			first_snapshot = first_capture.get("snapshot")
 			if PortResolver.process_descends_from(hinted_pid, launch_pid, first_snapshot):
+				launch_capture = _retarget_snapshot_capture(first_capture, "launch", launch_pid)
 				launch_snapshot = first_snapshot
 	if launch_snapshot == null:
-		launch_snapshot = _capture_process_snapshot(launch_pid)
+		launch_capture = _capture_identity("launch", launch_pid, stage_attempts)
+		launch_snapshot = launch_capture.get("snapshot")
 		first_snapshot = null
 	if PortResolver.capture_failed(launch_snapshot):
-		return {"pending": true, "reason": "identity_unavailable"}
+		return _capture_failure(stage_attempts, launch_capture)
 	var launch_alive := PortResolver.pid_alive(launch_pid, launch_snapshot)
 	var launch_fingerprint := (
 		PortResolver.process_fingerprint(launch_pid, launch_snapshot)
@@ -963,72 +1150,103 @@ func _effect_prove(payload: Dictionary) -> Dictionary:
 		launch_fingerprint,
 	)
 	if launch_disposition != "owned":
-		return {
-			"ok": false,
-			"reason": "launch_%s" % launch_disposition,
-			"message": (
-				"The launched server process exited or changed identity before publishing capabilities."
-				+ startup_report_summary(str(payload.get("startup_report", "")))
-			),
-		}
+		if launch_disposition == "gone":
+			return {
+				"ok": false,
+				"reason": "launch_gone",
+				"message": (
+					"The launched server process exited or changed identity before publishing capabilities."
+					+ startup_report_summary(str(payload.get("startup_report", "")))
+				),
+				"proof_stage_attempts": stage_attempts.duplicate(true),
+			}
+		var mismatch := _identity_mismatch("launch_%s" % launch_disposition, stage_attempts, launch_capture)
+		mismatch.erase("pending")
+		mismatch["ok"] = false
+		mismatch["message"] = (
+			"The launched server process exited or changed identity before publishing capabilities."
+			+ startup_report_summary(str(payload.get("startup_report", "")))
+		)
+		return mismatch
 	var port := int(payload.http_port)
 	var capability := _read_capability(port)
 	if capability.is_empty() or str(capability.get("instance_nonce", "")) == str(payload.get("baseline_instance_id", "")):
-		return {"pending": true, "reason": "capability_record"}
+		return _proof_pending("capability_record", stage_attempts)
 	if (
 		str(capability.get("http", "")) != str(payload.get("http_capability", ""))
 		or str(capability.get("websocket", "")) != str(payload.get("ws_capability", ""))
 	):
-		return {"pending": true, "reason": "capability_pair"}
+		return _proof_pending("capability_pair", stage_attempts)
 	var listeners := PortResolver.windows_listener_snapshot() if OS.get_name() == "Windows" else {}
 	var live := _probe_with_capability(port, capability, int(payload.timeout_ms), listeners)
 	if not _authenticated_status_matches_record(live, capability):
-		return {"pending": true, "reason": "authenticated_status"}
+		return _proof_pending("authenticated_status", stage_attempts)
 	var version := str(live.get("version", ""))
 	var ws_port := int(live.get("ws_port", 0))
 	if not _server_status_compatibility(
 		version, str(payload.expected_version), ws_port, int(payload.expected_ws_port)
 	).get("compatible", false):
-		return {"ok": false, "reason": "incompatible", "message": "The launched server does not match this plugin."}
+		return {
+			"ok": false,
+			"reason": "incompatible",
+			"message": "The launched server does not match this plugin.",
+			"proof_stage_attempts": stage_attempts.duplicate(true),
+		}
 	var pid := PortResolver.read_pid_file(str(payload.get("pid_file", "")))
 	if pid <= 1:
-		return {"pending": true, "reason": "pid_file"}
+		return _proof_pending("pid_file", stage_attempts)
 	if not PortResolver.find_all_pids_on_port(port, Callable(), listeners).has(pid):
-		return {"pending": true, "reason": "listener_pid"}
+		return _proof_pending("listener_pid", stage_attempts)
 	if first_snapshot == null or pid != hinted_pid:
-		first_snapshot = (
-			launch_snapshot if pid == launch_pid else _capture_process_snapshot(pid)
+		if pid == launch_pid:
+			first_snapshot = launch_snapshot
+			first_capture = _record_snapshot_capture(
+				"first_server", pid, first_snapshot, stage_attempts,
+				_capture_elapsed_ms(launch_capture)
+			)
+		else:
+			first_capture = _capture_identity("first_server", pid, stage_attempts)
+			first_snapshot = first_capture.get("snapshot")
+	else:
+		first_capture = _record_snapshot_capture(
+			"first_server", pid, first_snapshot, stage_attempts,
+			_capture_elapsed_ms(first_capture)
 		)
 	if PortResolver.capture_failed(first_snapshot):
-		return {"pending": true, "reason": "identity_unavailable"}
+		return _capture_failure(stage_attempts, first_capture)
 	if not PortResolver.pid_cmdline_is_godot_ai(pid, first_snapshot):
-		return {"pending": true, "reason": "process_brand"}
+		return _identity_mismatch("process_brand", stage_attempts, first_capture)
 	if not PortResolver.process_descends_from(pid, launch_pid, first_snapshot):
-		return {"pending": true, "reason": "launch_lineage"}
+		return _identity_mismatch("launch_lineage", stage_attempts, first_capture)
 	var fingerprint := PortResolver.process_fingerprint(pid, first_snapshot)
 	if fingerprint.is_empty():
-		return {"pending": true, "reason": "process_fingerprint"}
+		return _identity_mismatch("process_fingerprint", stage_attempts, first_capture)
 	## Close every capture window before minting process authority. The same
 	## launch-lineage PID must still own the listener, the private capability
 	## record must still name the authenticated instance, and the process
 	## fingerprint must remain unchanged after the final probe.
 	var final_capability := _read_capability(port)
 	var final_live := _probe_with_capability(port, final_capability, int(payload.timeout_ms), listeners)
-	var final_snapshot: Variant = _capture_process_snapshot(pid)
+	var final_capture := _capture_identity("final_server", pid, stage_attempts)
+	var final_snapshot: Variant = final_capture.get("snapshot")
 	if PortResolver.capture_failed(final_snapshot):
-		return {"pending": true, "reason": "identity_unavailable"}
+		return _capture_failure(stage_attempts, final_capture)
+	var final_fingerprint := PortResolver.process_fingerprint(pid, final_snapshot)
 	var final_listeners := PortResolver.windows_listener_snapshot() if OS.get_name() == "Windows" else {}
 	if (
 		PortResolver.read_pid_file(str(payload.get("pid_file", ""))) != pid
 		or not PortResolver.find_all_pids_on_port(port, Callable(), final_listeners).has(pid)
 		or not PortResolver.process_descends_from(pid, launch_pid, final_snapshot)
 		or not PortResolver.pid_cmdline_is_godot_ai(pid, final_snapshot)
-		or PortResolver.process_fingerprint(pid, final_snapshot) != fingerprint
-		or final_capability != capability
+		or final_fingerprint != fingerprint
+	):
+		return _identity_mismatch("final_capture_window", stage_attempts, final_capture)
+	if (
+		final_capability != capability
 		or not _authenticated_status_matches_record(final_live, final_capability)
 		or str(final_live.get("instance_id", "")) != str(live.get("instance_id", ""))
 	):
-		return {"pending": true, "reason": "final_capture_window"}
+		return _proof_pending("final_capture_window", stage_attempts)
 	var final_version := str(final_live.get("version", ""))
 	var final_ws_port := int(final_live.get("ws_port", 0))
 	if not _server_status_compatibility(
@@ -1041,6 +1259,7 @@ func _effect_prove(payload: Dictionary) -> Dictionary:
 			"ok": false,
 			"reason": "incompatible",
 			"message": "The launched server changed compatibility before authority was granted.",
+			"proof_stage_attempts": stage_attempts.duplicate(true),
 		}
 	return {
 		"ok": true,
@@ -1048,6 +1267,7 @@ func _effect_prove(payload: Dictionary) -> Dictionary:
 		"fingerprint": fingerprint,
 		"version": final_version,
 		"transport": _transport_from(port, final_ws_port, final_live, final_capability),
+		"proof_stage_attempts": stage_attempts.duplicate(true),
 	}
 
 
@@ -1289,6 +1509,9 @@ func _prove_payload() -> Dictionary:
 		"ws_capability": str(launch.get("ws_capability", "")),
 		"baseline_instance_id": str(launch.get("baseline_instance_id", "")),
 		"grant": _process_grant,
+		"proof_stage_attempts": _episode.get(
+			"proof_stage_attempts", {"launch": 0, "first_server": 0, "final_server": 0}
+		),
 	}
 
 
@@ -1742,7 +1965,8 @@ static func _dormant_episode(episode_id: int) -> Dictionary:
 		"id": episode_id, "state": DORMANT, "phase": "", "reason": "",
 		"message": "Server lifecycle is dormant.", "ready_kind": "", "effect": "",
 		"expected_version": "", "actual_version": "", "blocked_target": {},
-		"launch": {}, "after_stop": "",
+		"launch": {}, "after_stop": "", "snapshot_diagnostic": {},
+		"proof_stage_attempts": {"launch": 0, "first_server": 0, "final_server": 0},
 	}
 
 

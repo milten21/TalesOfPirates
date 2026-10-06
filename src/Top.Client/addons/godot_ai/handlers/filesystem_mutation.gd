@@ -10,17 +10,30 @@ const MAX_ENTRIES := 10000
 const MAX_FILE_BYTES := 256 * 1024
 const MAX_TOTAL_BYTES := 64 * 1024 * 1024
 const MAX_TARGETS := 256
-const BUDGET_USEC := 2000
+## Container magic Godot writes for a compressed binary resource.
+const COMPRESSED_MAGIC := "RSCC"
+## Work allowed between frame yields: a share of how long the editor last took
+## to come back, within these bounds. A fixed slice starves discovery once the
+## editor is unfocused, because its low-processor mode then sleeps ~100 ms per
+## frame (`interface/editor/timers/unfocused_low_processor_mode_sleep_usec`)
+## and the frame count, not the work, reaches the deadline (#1120). The floor is
+## what a focused editor gets; the ceiling bounds one slice on a stalled editor.
+const BUDGET_MIN_USEC := 2000
+const BUDGET_MAX_USEC := 50000
+const BUDGET_GAP_DIVISOR := 3
 const DEADLINE_MSEC := 25000
 static var _busy := false
 
 var _alive: Callable
 var _deadline := 0
 var _yield_at := 0
+var _budget := BUDGET_MIN_USEC
 var _bytes := 0
 var _directories: Dictionary = {}
 var _fingerprints: Dictionary = {}
+var _large_owners: Dictionary = {}
 var _fault := ""
+var _fault_code := ""
 var _io: Callable
 
 ## Dispatch stays synchronous; the retained job owns work across frame yields.
@@ -59,6 +72,13 @@ func run(params: Dictionary, operation: String, active: Callable = Callable()) -
 	_alive = active
 	_deadline = Time.get_ticks_msec() + DEADLINE_MSEC
 	_yield_at = Time.get_ticks_usec()
+	_budget = BUDGET_MIN_USEC
+	_bytes = 0
+	_directories.clear()
+	_fingerprints.clear()
+	_large_owners.clear()
+	_fault = ""
+	_fault_code = ""
 	var result := await _run(params, operation)
 	_busy = false
 	return result
@@ -100,7 +120,7 @@ func _run(params: Dictionary, operation: String) -> Dictionary:
 		return _unchanged(_fault)
 	var files: Array[String] = []
 	if not await _collect_tree("res://", files):
-		return _unchanged(_fault)
+		return _fault_result()
 	if directory and not _directories.has(source):
 		return _unchanged("Source directory was excluded or has noncanonical casing; nothing changed")
 	var targets := {}
@@ -112,27 +132,46 @@ func _run(params: Dictionary, operation: String) -> Dictionary:
 	if targets.size() > MAX_TARGETS:
 		return _unchanged("Mutation exceeds the %d-resource limit; use smaller groups" % MAX_TARGETS)
 	for path in files:
-		if path == source or (directory and path.begins_with(source + "/")) or path in [source + ".uid", source + ".import"]:
+		if not _mutation_member(path, source, directory):
+			continue
+		if path.get_extension().to_lower() in OWNER_EXTENSIONS:
 			# Owner-extension targets are read and fingerprinted by the owner
 			# pass below; reading them here too would charge the byte budget twice.
-			if path.get_extension().to_lower() in OWNER_EXTENSIONS:
-				continue
-			if await _read_bounded(path) == null:
-				return _unchanged(_fault)
+			continue
+		if await _read_bounded(path) == null:
+			return _fault_result()
 	var owners := []
 	for path in files:
-		if path.get_extension().to_lower() not in OWNER_EXTENSIONS:
+		var extension := path.get_extension().to_lower()
+		if extension not in OWNER_EXTENSIONS:
 			continue
-		var content: Variant = await _read_bounded(path)
-		if content == null:
-			return _unchanged(_fault)
-		# One call per owner: _references lowercases and regex-scans the whole
-		# file, so a per-target loop repeated that up to MAX_TARGETS times.
-		var hits := await _references(path, content, targets)
+		var hits: Array[Dictionary]
+		var length := _file_length(path)
+		if length < 0:
+			return _fault_result()
+		if length > MAX_FILE_BYTES:
+			# Dependency enumeration can replace a literal scan for packed binary
+			# owners, but not for scripts or text resources: those can refer to a
+			# target in ordinary strings the graph does not report. Fail closed.
+			if extension not in ["res", "scn"]:
+				_set_fault("Cannot safely read owner %s (exceeds %d bytes)" % [path, MAX_FILE_BYTES], Errors.FILESYSTEM_DISCOVERY_FAILED)
+				return _fault_result()
+			hits = await _large_owner_references(path, targets)
+		else:
+			var content: Variant = await _read_bounded(path)
+			if content == null:
+				return _fault_result()
+			if extension in ["res", "scn"]:
+				hits = await _binary_references(path, content, targets)
+			else:
+				# One call per owner: _references lowercases and regex-scans the
+				# whole file, so a per-target loop repeated that up to MAX_TARGETS
+				# times.
+				hits = await _references(path, content, targets)
 		if not _fault.is_empty():
-			return _unchanged(_fault)
+			return _fault_result()
 		if not await _yield_if_needed():
-			return _unchanged(_fault)
+			return _fault_result()
 		if not hits.is_empty() and not (operation == "remove" and targets.has(path)):
 			owners.append({"path": path, "references": hits})
 	var editor_guard := _editor_state_guard(targets)
@@ -152,17 +191,18 @@ func _run(params: Dictionary, operation: String) -> Dictionary:
 				group.append({"from": source + suffix, "to": destination + suffix})
 	for item in group:
 		if not _confined_without_links(item.from):
-			return _unchanged(_fault)
+			return _fault_result()
 		if operation != "remove" and not _destination_available(item.from, item.to):
-			return _unchanged(_fault)
+			return _fault_result()
 	# Re-read owner bytes and directory entry censuses after the yielding plan.
 	if not await _revalidate():
-		return _unchanged(_fault)
+		return _fault_result()
 	if not _active():
-		return _unchanged("Filesystem request expired before mutation; nothing changed")
+		_set_fault("Filesystem request expired before mutation; nothing changed", Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return _fault_result()
 	for item in group:
 		if not _confined_without_links(item.from) or (operation != "remove" and not _destination_available(item.from, item.to)):
-			return _unchanged(_fault)
+			return _fault_result()
 	# Revalidation yields. Recheck mutable editor authority after the last
 	# callback/yield, with no suspension between this guard and disk effects.
 	editor_guard = _editor_state_guard(targets)
@@ -179,15 +219,24 @@ func _active() -> bool:
 
 func _yield_if_needed() -> bool:
 	if not _active():
-		_fault = "Filesystem discovery expired or was cancelled; nothing changed"
+		_set_fault("Filesystem discovery expired or was cancelled; nothing changed", Errors.FILESYSTEM_DISCOVERY_FAILED)
 		return false
-	if Time.get_ticks_usec() - _yield_at >= BUDGET_USEC:
+	var paused := Time.get_ticks_usec()
+	if paused - _yield_at >= _budget:
 		await (Engine.get_main_loop() as SceneTree).process_frame
 		_yield_at = Time.get_ticks_usec()
+		_budget = _frame_budget(_yield_at - paused)
 	if not _active():
-		_fault = "Filesystem discovery expired or was cancelled; nothing changed"
+		_set_fault("Filesystem discovery expired or was cancelled; nothing changed", Errors.FILESYSTEM_DISCOVERY_FAILED)
 		return false
 	return true
+
+
+## The next slice for an editor that was away `gap_usec` between two slices.
+## The frame sleep absorbs work shorter than itself, so a third of the gap is a
+## quarter of a sleeping editor's frame and lengthens a busy one by a third.
+static func _frame_budget(gap_usec: int) -> int:
+	return clampi(gap_usec / BUDGET_GAP_DIVISOR, BUDGET_MIN_USEC, BUDGET_MAX_USEC)
 
 
 func _collect_tree(root: String, files: Array[String]) -> bool:
@@ -197,11 +246,11 @@ func _collect_tree(root: String, files: Array[String]) -> bool:
 		var path: String = pending.pop_back()
 		var dir := DirAccess.open(path)
 		if dir == null:
-			_fault = "Cannot inspect directory: %s" % path
+			_set_fault("Cannot inspect directory: %s" % path, Errors.FILESYSTEM_DISCOVERY_FAILED)
 			return false
 		dir.include_hidden = true
 		if dir.list_dir_begin() != OK:
-			_fault = "Cannot list directory: %s" % path
+			_set_fault("Cannot list directory: %s" % path, Errors.FILESYSTEM_DISCOVERY_FAILED)
 			return false
 		var entries: Array[String] = []
 		var name := dir.get_next()
@@ -222,7 +271,7 @@ func _collect_tree(root: String, files: Array[String]) -> bool:
 						files.append(child)
 					count += 1
 					if count > MAX_ENTRIES:
-						_fault = "Project discovery exceeds %d entries; nothing changed" % MAX_ENTRIES
+						_set_fault("Project discovery exceeds %d entries; nothing changed" % MAX_ENTRIES, Errors.FILESYSTEM_DISCOVERY_FAILED)
 						dir.list_dir_end()
 						return false
 			if not await _yield_if_needed():
@@ -237,20 +286,23 @@ func _collect_tree(root: String, files: Array[String]) -> bool:
 
 func _read_bounded(path: String) -> Variant:
 	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null or file.get_length() > MAX_FILE_BYTES:
-		_fault = "Cannot safely read owner %s (unreadable or exceeds %d bytes)" % [path, MAX_FILE_BYTES]
+	if file == null:
+		_set_fault("Cannot safely read owner %s (unreadable)" % path, Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return null
+	if file.get_length() > MAX_FILE_BYTES:
+		_set_fault("Cannot safely read owner %s (exceeds %d bytes)" % [path, MAX_FILE_BYTES], Errors.FILESYSTEM_DISCOVERY_FAILED)
 		return null
 	var bytes := PackedByteArray()
 	var length := file.get_length()
 	while file.get_position() < length:
 		var part := file.get_buffer(mini(16384, length - file.get_position()))
 		if part.is_empty():
-			_fault = "Short read while inspecting %s" % path
+			_set_fault("Short read while inspecting %s" % path, Errors.FILESYSTEM_DISCOVERY_FAILED)
 			return null
 		bytes.append_array(part)
 		_bytes += part.size()
 		if _bytes > MAX_TOTAL_BYTES:
-			_fault = "Filesystem discovery exceeds its byte budget; nothing changed"
+			_set_fault("Filesystem discovery exceeds its byte budget; nothing changed", Errors.FILESYSTEM_DISCOVERY_FAILED)
 			return null
 		if not await _yield_if_needed():
 			return null
@@ -262,11 +314,173 @@ func _read_bounded(path: String) -> Variant:
 	return bytes
 
 
+func _mutation_member(path: String, source: String, directory: bool) -> bool:
+	if directory:
+		return path == source or path.begins_with(source + "/")
+	return path == source or path in [source + ".uid", source + ".import"]
+
+
+func _file_length(path: String) -> int:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		_set_fault("Cannot inspect owner metadata: %s" % path, Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return -1
+	var length := file.get_length()
+	file.close()
+	return length
+
+
+func _owner_dependencies(path: String) -> PackedStringArray:
+	var dependencies := PackedStringArray()
+	for dependency in ResourceLoader.get_dependencies(path):
+		dependencies.append(str(dependency))
+	return dependencies
+
+
+## Lowercased `uid://` and path segments of the engine's dependency records.
+func _dependency_segments(dependencies: PackedStringArray) -> Dictionary:
+	var segments: Dictionary = {}
+	for dependency in dependencies:
+		for segment in dependency.split("::", false):
+			segments[segment.to_lower()] = true
+	return segments
+
+
+func _large_owner_references(path: String, targets: Dictionary) -> Array[Dictionary]:
+	var dependencies := _owner_dependencies(path)
+	var dependency_paths := _dependency_segments(dependencies)
+	_large_owners[path] = {
+		"modified": FileAccess.get_modified_time(path),
+		"size": _file_length(path),
+		"dependencies": dependencies,
+	}
+	if int(_large_owners[path]["size"]) < 0:
+		return []
+	var hits: Array[Dictionary] = []
+	for target: String in targets:
+		if not await _yield_if_needed():
+			return hits
+		var uid: int = targets[target].uid
+		var uid_text := ResourceUID.id_to_text(uid) if uid != ResourceUID.INVALID_ID else ""
+		if dependency_paths.has(target.to_lower()) or (not uid_text.is_empty() and dependency_paths.has(uid_text.to_lower())):
+			# A dependency path can be a UID-backed ext_resource. Without reading
+			# the oversized owner we cannot prove the file reference is safe to
+			# rewrite, so fail closed for moves; force-remove may still use it.
+			hits.append({"path": target, "kind": "path"})
+	return hits
+
+
+func _binary_references(path: String, bytes: PackedByteArray, targets: Dictionary) -> Array[Dictionary]:
+	var hits: Array[Dictionary] = []
+	var payload: Variant = _binary_scan_bytes(path, bytes)
+	if payload == null:
+		return hits
+	# The binary format stores an ext_resource UID as an integer, which no text
+	# scan can see, so the engine's dependency records are consulted as well.
+	var dependency_paths := _dependency_segments(_owner_dependencies(path))
+	for target: String in targets:
+		# Keep cancellation and frame progress even when a path match continues.
+		if not await _yield_if_needed():
+			return hits
+		var uid: int = targets[target].uid
+		var uid_text := ResourceUID.id_to_text(uid) if uid != ResourceUID.INVALID_ID else ""
+		var uses_path: bool = (
+			_bytes_contains_ci(payload, target.to_utf8_buffer())
+			or dependency_paths.has(target.to_lower())
+			or (not uid_text.is_empty() and dependency_paths.has(uid_text.to_lower()))
+		)
+		var uses_uid: bool = not uid_text.is_empty() and _bytes_contains_ci(payload, uid_text.to_utf8_buffer())
+		if uses_path:
+			hits.append({"path": target, "kind": "path"})
+		elif uses_uid:
+			if not ResourceUID.has_id(uid) or ResourceUID.get_id_path(uid) != target:
+				_set_fault("UID mapping is not authoritative for %s" % target)
+				return hits
+			hits.append({"path": target, "kind": "uid"})
+	return hits
+
+
+## The bytes a literal scan can inspect. The editor saves binary resources
+## compressed by default (`filesystem/on_save/compress_binary_resources`), and
+## a compressed container shows none of its serialized paths, so expand it
+## first. Layout: magic, mode, block size and expanded size (u32 each), one
+## u32 compressed size per block, then the blocks.
+##
+## Returns an empty array when the expanded payload exceeds the per-file limit
+## (the caller then relies on dependency records alone, like any oversized
+## binary owner) and null, with a fault, for a container that cannot be read.
+func _binary_scan_bytes(path: String, bytes: PackedByteArray) -> Variant:
+	if bytes.size() < 4 or bytes.slice(0, 4).get_string_from_ascii() != COMPRESSED_MAGIC:
+		return bytes
+	var unreadable := "Cannot inspect compressed binary owner: %s" % path
+	if bytes.size() < 16:
+		_set_fault(unreadable, Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return null
+	var mode := bytes.decode_u32(4)
+	var block_size := bytes.decode_u32(8)
+	var total := bytes.decode_u32(12)
+	if mode > FileAccess.COMPRESSION_BROTLI or block_size == 0:
+		_set_fault(unreadable, Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return null
+	if total > MAX_FILE_BYTES:
+		return PackedByteArray()
+	var block_count := total / block_size + 1
+	var offset := 16 + block_count * 4
+	if offset > bytes.size():
+		_set_fault(unreadable, Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return null
+	var payload := PackedByteArray()
+	for index in block_count:
+		var compressed_size := bytes.decode_u32(16 + index * 4)
+		var expected := total % block_size if index == block_count - 1 else block_size
+		if offset + compressed_size > bytes.size():
+			_set_fault(unreadable, Errors.FILESYSTEM_DISCOVERY_FAILED)
+			return null
+		if expected > 0:
+			var block := bytes.slice(offset, offset + compressed_size).decompress(expected, mode)
+			if block.size() != expected:
+				_set_fault(unreadable, Errors.FILESYSTEM_DISCOVERY_FAILED)
+				return null
+			payload.append_array(block)
+		offset += compressed_size
+	_bytes += payload.size()
+	if _bytes > MAX_TOTAL_BYTES:
+		_set_fault("Filesystem discovery exceeds its byte budget; nothing changed", Errors.FILESYSTEM_DISCOVERY_FAILED)
+		return null
+	return payload
+
+
+func _ascii_lower(value: int) -> int:
+	if value >= 65 and value <= 90:
+		return value + 32
+	return value
+
+
+func _bytes_contains_ci(haystack: PackedByteArray, needle: PackedByteArray) -> bool:
+	if needle.is_empty() or haystack.size() < needle.size():
+		return false
+	var lower := _ascii_lower(needle[0])
+	var upper := lower - 32 if lower >= 97 and lower <= 122 else lower
+	var candidates := [lower]
+	if candidates[0] != upper:
+		candidates.append(upper)
+	for candidate in candidates:
+		var position := haystack.find(candidate)
+		while position >= 0:
+			if position + needle.size() <= haystack.size():
+				var matches := true
+				for index in needle.size():
+					if _ascii_lower(haystack[position + index]) != _ascii_lower(needle[index]):
+						matches = false
+						break
+				if matches:
+					return true
+			position = haystack.find(candidate, position + 1)
+	return false
+
+
 func _references(path: String, bytes: PackedByteArray, targets: Dictionary) -> Array[Dictionary]:
 	var hits: Array[Dictionary] = []
-	if path.get_extension().to_lower() in ["res", "scn"]:
-		_fault = "Binary dependency discovery is unsupported for safe mutations: %s" % path
-		return hits
 	# Compare paths conservatively across case-insensitive project volumes.
 	# A case-only false positive on a sensitive volume is a safe refusal.
 	var text := bytes.get_string_from_utf8().to_lower()
@@ -358,7 +572,24 @@ func _revalidate() -> bool:
 		if _fingerprints[path] != original[path]:
 			_fault = "Owner changed during discovery: %s" % path
 			return false
+	var original_large := _large_owners.duplicate(true)
+	for path in original_large:
+		if not await _large_owner_unchanged(path, original_large[path]):
+			_fault = "Owner changed during discovery: %s" % path
+			return false
 	return true
+
+
+func _large_owner_unchanged(path: String, original: Dictionary) -> bool:
+	if not FileAccess.file_exists(path):
+		return false
+	if FileAccess.get_modified_time(path) != int(original.get("modified", 0)):
+		return false
+	if _file_length(path) != int(original.get("size", -1)):
+		return false
+	if str(_owner_dependencies(path)) != str(original.get("dependencies", PackedStringArray())):
+		return false
+	return await _yield_if_needed()
 
 
 func _confined_without_links(path: String) -> bool:
@@ -491,6 +722,17 @@ static func _uid_count(targets: Dictionary) -> int:
 
 static func _is_sidecar(path: String) -> bool:
 	return path.ends_with(".uid") or path.ends_with(".import")
+
+
+func _set_fault(message: String, code: String = "") -> void:
+	_fault = message
+	_fault_code = code
+
+
+func _fault_result() -> Dictionary:
+	if _fault_code == Errors.FILESYSTEM_DISCOVERY_FAILED:
+		return _failure(_fault, "unchanged", {}, _fault_code)
+	return _unchanged(_fault)
 
 
 static func _unchanged(message: String, details: Dictionary = {}) -> Dictionary:

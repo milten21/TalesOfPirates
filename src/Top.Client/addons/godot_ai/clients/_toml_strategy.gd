@@ -19,10 +19,16 @@ static func configure(
 	var resolution := client.resolved_config_path_details()
 	var path := str(resolution.get("path", ""))
 	var path_error := str(resolution.get("error", ""))
+	if path_error.is_empty() and not path.is_empty():
+		path_error = McpClient.unshared_flatpak_config_error(client.display_name, path)
 	if not path_error.is_empty():
 		return {"status": "error", "message": path_error}
 	if path.is_empty():
 		return {"status": "error", "message": "Could not resolve config path for %s" % client.display_name}
+	## Set only while no candidate file exists, so this never blocks an update.
+	var create_error := str(resolution.get("create_error", ""))
+	if not create_error.is_empty():
+		return {"status": "error", "message": create_error}
 
 	var seed_path := str(resolution.get("seed_path", ""))
 	var read_path := seed_path if not FileAccess.file_exists(path) and not seed_path.is_empty() else path
@@ -198,6 +204,8 @@ static func remove(client: McpClient, _server_name: String) -> Dictionary:
 	var resolution := client.resolved_config_path_details()
 	var path := str(resolution.get("path", ""))
 	var path_error := str(resolution.get("error", ""))
+	if path_error.is_empty() and not path.is_empty():
+		path_error = McpClient.unshared_flatpak_config_error(client.display_name, path)
 	if not path_error.is_empty():
 		return {"status": "error", "message": path_error}
 	if path.is_empty() or not FileAccess.file_exists(path):

@@ -156,8 +156,13 @@ func _process(_delta: float) -> void:
 	## through the debugger packet path in a single tick. Surplus stays in
 	## `_pending_outbound` and bleeds out across subsequent frames.
 	if not _logger_attached or _logger == null:
+		_pending_outbound.clear()
 		return
 	if not EngineDebugger.is_active():
+		## No remote can consume these lines. Drop current and already-drained
+		## batches so a detached/headless run cannot retain logs indefinitely (#1123).
+		_logger.clear()
+		_pending_outbound.clear()
 		return
 	if _pending_outbound.is_empty():
 		if not _logger.has_pending():
@@ -1024,13 +1029,7 @@ func _handle_eval(data: Array) -> void:
 	_eval_token_counter += 1
 	var token := str(_eval_token_counter)
 	var run_fn := "_mcp_run_%s" % token
-	var script_source := (
-		"extends Node\n"
-		+ "func execute():\n"
-		+ "\treturn await %s()\n\n" % run_fn
-		+ "func %s():\n" % run_fn
-		+ _indent_eval_code(code)
-	)
+	var script_source := _build_eval_script_source(run_fn, code)
 
 	## Snapshot the logger's script-error seq BEFORE running so we only attribute
 	## errors raised by this eval. In a debug build a parse error aborts reload()
@@ -1227,7 +1226,23 @@ func _handle_eval_check(data: Array) -> void:
 	_try_report_eval_runtime_error(request_id)
 
 
-func _indent_eval_code(code: String) -> String:
+## `execute()` always returns, so it carries a return type. The inner function
+## holds caller code that need not return on every path; a declared return type
+## there makes Godot reject it with "Not all code paths return a value". It
+## stays untyped and suppresses `untyped_declaration` on its own declaration
+## instead (#1119). The annotation shares the `func` line so the line numbers
+## reported for caller code do not move.
+static func _build_eval_script_source(run_fn: String, code: String) -> String:
+	return (
+		"extends Node\n"
+		+ "func execute() -> Variant:\n"
+		+ "\treturn await %s()\n\n" % run_fn
+		+ "@warning_ignore(\"untyped_declaration\") func %s():\n" % run_fn
+		+ _indent_eval_code(code)
+	)
+
+
+static func _indent_eval_code(code: String) -> String:
 	var lines: PackedStringArray = code.split("\n")
 	var out := ""
 	for line in lines:

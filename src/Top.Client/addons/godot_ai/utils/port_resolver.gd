@@ -21,6 +21,12 @@ const SNAPSHOT_DIAGNOSTIC_CATEGORIES := [
 	"snapshot_size", "snapshot_json", "snapshot_shape", "collector_null", "row_shape",
 	"row_pid", "row_chain", "row_identity", "lineage_cycle",
 ]
+## Public lifecycle evidence uses a smaller, stable vocabulary than the
+## internal collector diagnostics. Keep the detailed category internally so a
+## future fix can distinguish malformed JSON from an inaccessible ancestor.
+const SNAPSHOT_FAILURE_CATEGORIES := [
+	"process_query", "json_shape", "ancestor_capture", "identity_mismatch",
+]
 static var _process_spawn_mutex := Mutex.new()
 
 enum PortOccupancy { UNKNOWN, FREE, OCCUPIED }
@@ -529,6 +535,39 @@ static func _snapshot_failure(
 				"elapsed_ms": clampi(elapsed_ms, -1, 600000), "count": 1,
 			})
 	return {"capture_error": true}
+
+
+## Map one internal collector refusal to the bounded category retained in the
+## editor log. `row_identity` at depth zero is malformed target metadata;
+## the same refusal on an ancestor is an ancestor-capture failure. A refusal
+## this table does not know stays "unknown" instead of borrowing a category.
+static func snapshot_failure_category(detail: String, depth := -1) -> String:
+	match detail:
+		"shell_exit", "empty_output", "invalid_pid", "collector_null":
+			return "process_query"
+		"lineage_cycle":
+			return "ancestor_capture"
+		"row_identity":
+			return "ancestor_capture" if depth > 0 else "json_shape"
+		"outer_size", "outer_json", "outer_shape", "snapshot_size", "snapshot_json", \
+		"snapshot_shape", "row_shape", "row_pid", "row_chain":
+			return "json_shape"
+	return "unknown"
+
+
+## Return only the creation-time portion of a captured identity. Windows rows
+## append the command line after `|`; Linux rows use `linux:<start>|<command>`.
+## The command line is intentionally never copied into diagnostics.
+static func process_creation_identity(pid: int, snapshot: Variant = null) -> String:
+	if pid <= 1 or not (snapshot is Dictionary) or capture_failed(snapshot):
+		return ""
+	var identity := str(_process_snapshot_row(snapshot, pid).get("identity", "")).strip_edges()
+	if identity.is_empty():
+		return ""
+	var separator := identity.find("|")
+	if separator > 0:
+		identity = identity.substr(0, separator).strip_edges()
+	return identity.substr(0, 128)
 
 
 
