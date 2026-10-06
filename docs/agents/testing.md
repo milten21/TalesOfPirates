@@ -19,6 +19,10 @@ from the editor, reads the live scene tree and UI controls, sends clicks and key
 logs. The addon runs only in a visible editor. A headless editor skips it. The addon is in git, and `.mcp.json` pins
 the server to the same version.
 
+- Read logs with `logs_read` source `game` or `editor`. Source `all` returns mostly plugin readiness lines.
+- godot-ai cannot enable an editor plugin, and `project_manage` refuses the `editor_plugins/*` keys. Ask the user to
+  enable the plugin in Project Settings.
+
 ## Launch profile
 
 In a debug build, a launch profile logs in and enters the world as a named character, with no clicks. A profile is
