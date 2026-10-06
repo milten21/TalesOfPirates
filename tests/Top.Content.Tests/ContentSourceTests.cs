@@ -155,6 +155,25 @@ namespace Top.Content.Tests
         [TestCase("models/./item/0002090001.glb")]
         [TestCase("models//item/0002090001.glb")]
         [TestCase("models/item/")]
+        [TestCase("C:/Windows/win.ini")]
+        [TestCase("c:/windows/win.ini")]
+        [TestCase("C:win.ini")]
+        [TestCase("models/C:/win.ini")]
+        [TestCase("models/item/0002090001.glb:stream")]
+        [TestCase("//server/share/file.glb")]
+        [TestCase("models/.. /../elsewhere.glb")]
+        [TestCase("models/.../elsewhere.glb")]
+        [TestCase("models/../elsewhere.glb")]
+        [TestCase("models/item./0002090001.glb")]
+        [TestCase("models/item /0002090001.glb")]
+        [TestCase("models/item/0002090001.glb.")]
+        [TestCase("models/ite*m/0002090001.glb")]
+        [TestCase("models/item/0002090001?.glb")]
+        [TestCase("models/item/\"0002090001\".glb")]
+        [TestCase("models/<item>/0002090001.glb")]
+        [TestCase("models/item|/0002090001.glb")]
+        [TestCase("models/item/0002090001\0.glb")]
+        [TestCase("models/item/0002090001\n.glb")]
         public void A_path_that_breaks_the_rules_is_refused(string path)
         {
             var content = Create("models/item/0002090001.glb");
@@ -168,6 +187,10 @@ namespace Top.Content.Tests
         [TestCase("models\\item")]
         [TestCase("models/..")]
         [TestCase("models//item")]
+        [TestCase("C:")]
+        [TestCase("C:/models")]
+        [TestCase("models/C:")]
+        [TestCase("models/item.")]
         public void A_prefix_that_breaks_the_rules_is_refused(string prefix)
         {
             var content = Create("models/item/0002090001.glb");

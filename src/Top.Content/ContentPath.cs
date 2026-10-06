@@ -6,6 +6,8 @@ namespace Top.Content
 {
     internal static class ContentPath
     {
+        private static readonly char[] ForbiddenCharacters = { ':', '*', '?', '"', '<', '>', '|' };
+
         public static void CheckPath(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -61,12 +63,23 @@ namespace Top.Content
                 throw new ArgumentException("Content paths use forward slashes: " + path, argument);
             }
 
-            if (path.Split('/').Any(segment => segment.Length == 0 || segment == "." || segment == ".."))
+            if (path.Split('/').Any(IsUnsafeSegment))
             {
                 throw new ArgumentException(
-                    "Content paths carry one name per segment, relative to the root: " + path,
+                    "Content paths carry one plain name per segment, relative to the root: " + path,
                     argument);
             }
+        }
+
+        private static bool IsUnsafeSegment(string segment)
+        {
+            return segment.Length == 0
+                || segment == "."
+                || segment == ".."
+                || segment.EndsWith(".", StringComparison.Ordinal)
+                || segment.EndsWith(" ", StringComparison.Ordinal)
+                || segment.IndexOfAny(ForbiddenCharacters) >= 0
+                || segment.Any(char.IsControl);
         }
     }
 }

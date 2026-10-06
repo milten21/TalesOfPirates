@@ -65,7 +65,19 @@ namespace Top.Content
                 }
             }
 
-            return ResolveFile(directory, segments[segments.Length - 1]);
+            var file = ResolveFile(directory, segments[segments.Length - 1]);
+
+            return file != null && IsInsideRoot(file) ? file : null;
+        }
+
+        private bool IsInsideRoot(string file)
+        {
+            var root = Path.GetFullPath(_root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var relative = Path.GetRelativePath(root, Path.GetFullPath(file));
+
+            return !Path.IsPathRooted(relative)
+                && relative != ".."
+                && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
         }
 
         private static string ResolveDirectory(string parent, string name)
