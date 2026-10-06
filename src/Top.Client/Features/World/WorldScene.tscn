@@ -46,7 +46,7 @@ ClickMarker = NodePath("../WorldRoot/ClickMarker")
 
 [node name="Ui" type="CanvasLayer" parent="." unique_id=1469466712]
 
-[node name="Root" type="Control" parent="Ui" unique_id=396860293 groups=["theme_root"]]
+[node name="Root" type="Control" parent="Ui" unique_id=396860293]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

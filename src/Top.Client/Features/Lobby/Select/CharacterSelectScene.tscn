@@ -50,7 +50,7 @@ fov = 86.06
 
 [node name="Ui" type="CanvasLayer" parent="." unique_id=1098491000]
 
-[node name="Root" type="Control" parent="Ui" unique_id=2015531314 groups=["theme_root"]]
+[node name="Root" type="Control" parent="Ui" unique_id=2015531314]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

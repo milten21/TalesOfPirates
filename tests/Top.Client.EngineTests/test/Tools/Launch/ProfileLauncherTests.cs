@@ -74,7 +74,7 @@ public class ProfileLauncherTests
 
         _session = new Session();
         var serverStore = new ServerStore(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
-        var router = new SceneRouter(_tree, null, serverStore, _session, _connection,
+        var router = new SceneRouter(_tree, serverStore, _session, _connection,
             TestContent.ServerContent, new WorldCursorService(new CursorSkin(ThemePaths.BaseFolder)));
 
         _launcher = new ProfileLauncher(_connection, _session, router);

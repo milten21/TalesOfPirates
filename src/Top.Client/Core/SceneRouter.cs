@@ -13,15 +13,12 @@ namespace Top.Client.Core;
 
 public class SceneRouter(
     SceneTree tree,
-    Theme? theme,
     ServerStore serverStore,
     Session session,
     IServerConnection connection,
     ServerContent content,
     WorldCursorService worldCursorService)
 {
-    private const string ThemeRootGroup = "theme_root";
-
     private const string MainMenuScenePath = "res://Features/MainMenu/MainMenuScene.tscn";
 
     private const string CharacterSelectScenePath = "res://Features/Lobby/Select/CharacterSelectScene.tscn";
@@ -46,8 +43,6 @@ public class SceneRouter(
                 viewer.Setup(content);
                 break;
         }
-
-        ApplyTheme(scene);
     }
 
     public void GoToMainMenu(MainMenuPayload payload)
@@ -85,24 +80,6 @@ public class SceneRouter(
         Callable.From(() => GoToMainMenu(new MainMenuPayload(lostConnectionText))).CallDeferred();
     }
 
-    private static Control? FindThemeRoot(Node node)
-    {
-        if (node is Control control && control.IsInGroup(ThemeRootGroup))
-        {
-            return control;
-        }
-
-        foreach (Node child in node.GetChildren())
-        {
-            if (FindThemeRoot(child) is { } found)
-            {
-                return found;
-            }
-        }
-
-        return null;
-    }
-
     private void ForgetLogin()
     {
         session.CurrentAccountName = null;
@@ -125,8 +102,6 @@ public class SceneRouter(
 
         setup(scene);
 
-        ApplyTheme(scene);
-
         Error error = tree.ChangeSceneToNode(scene);
 
         if (error != Error.Ok)
@@ -134,14 +109,6 @@ public class SceneRouter(
             Log.Error($"the scene at {path} did not become the current scene ({error})");
 
             scene.QueueFree();
-        }
-    }
-
-    private void ApplyTheme(Node scene)
-    {
-        if (theme != null && FindThemeRoot(scene) is { } root)
-        {
-            root.Theme = theme;
         }
     }
 }

@@ -68,6 +68,8 @@ public partial class App : Node
 
         _session = new Session();
 
+        ProjectTheme.Apply(ThemeLibrary.Load(ThemeName));
+
         _cursorSkin = new CursorSkin(ThemePaths.BaseFolder);
 
         _cursorSkin.Reload();
@@ -76,7 +78,7 @@ public partial class App : Node
 
         _worldCursorService.Start(GetTree());
 
-        _router = new SceneRouter(GetTree(), ThemeLibrary.Load(ThemeName), ServerStore, _session, _connection,
+        _router = new SceneRouter(GetTree(), ServerStore, _session, _connection,
             Content, _worldCursorService);
 
         _connectionWatch = new ConnectionWatch(_session, _router);

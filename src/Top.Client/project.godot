@@ -39,7 +39,7 @@ enabled=PackedStringArray("res://addons/TopGltf/plugin.cfg", "res://addons/godot
 [gui]
 
 theme/default_font_antialiasing=2
-theme/custom="uid://b6os3qs1l2eio"
+theme/custom="uid://dq7k2m4x9vplc"
 
 [input]
 

@@ -44,7 +44,7 @@ transform = Transform3D(0.96394974, -0.060986686, 0.25900093, 0, 0.9733792, 0.22
 
 [node name="Ui" type="CanvasLayer" parent="." unique_id=853828686]
 
-[node name="Root" type="Control" parent="Ui" unique_id=1438994987 groups=["theme_root"]]
+[node name="Root" type="Control" parent="Ui" unique_id=1438994987]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
