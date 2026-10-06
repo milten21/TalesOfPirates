@@ -45,6 +45,8 @@ public partial class ItemCell : Panel
 
     private bool _isExpired;
 
+    private bool _isBlocked;
+
     private bool _isLocked;
 
     private float _cooldownLeft;
@@ -160,21 +162,30 @@ public partial class ItemCell : Panel
         CooldownFill.OffsetTop = -inset - ((Size.Y - (2f * inset)) * cooldownLeft);
     }
 
-    public void ShowLocked(bool isLocked)
+    public void SetBlocked(bool isBlocked)
     {
-        if (isLocked == _isLocked)
+        if (isBlocked == _isBlocked)
         {
             return;
         }
 
-        _isLocked = isLocked;
+        _isBlocked = isBlocked;
+
+        UpdateCursor();
 
         QueueRedraw();
     }
 
+    public void SetLocked(bool isLocked)
+    {
+        _isLocked = isLocked;
+
+        UpdateCursor();
+    }
+
     public override void _Draw()
     {
-        if (_isLocked)
+        if (_isBlocked)
         {
             DrawHatch();
         }
@@ -266,5 +277,10 @@ public partial class ItemCell : Panel
         {
             Icon.Texture = isExpired && texture != null ? ToGreyscale(texture) : texture;
         }
+    }
+
+    private void UpdateCursor()
+    {
+        MouseDefaultCursorShape = _isBlocked || _isLocked ? CursorShape.Forbidden : CursorShape.Arrow;
     }
 }

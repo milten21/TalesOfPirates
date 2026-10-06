@@ -16,6 +16,8 @@ using Top.Client.Messages.Play.Commands;
 using Top.Client.Messages.Play.Data;
 using Top.Client.Messages.Play.Events;
 using Top.Client.Tools.Launch;
+using Top.Client.UI;
+using Top.Client.UI.Cursors;
 using static GdUnit4.Assertions;
 
 namespace Top.Client.EngineTests.Test.Tools.Launch;
@@ -73,7 +75,7 @@ public class ProfileLauncherTests
         _session = new Session();
         var serverStore = new ServerStore(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
         var router = new SceneRouter(_tree, null, serverStore, _session, _connection,
-            TestContent.ServerContent);
+            TestContent.ServerContent, new WorldCursorService(new CursorSkin(ThemePaths.BaseFolder)));
 
         _launcher = new ProfileLauncher(_connection, _session, router);
     }

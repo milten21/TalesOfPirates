@@ -1,5 +1,6 @@
 using Godot;
 using Top.Client.Core;
+using Top.Client.UI.Cursors;
 
 namespace Top.Client.Features.Camera;
 
@@ -12,6 +13,8 @@ public partial class FollowCamera : Camera3D
     private Node3D? _target;
 
     private InputGate? _inputGate;
+
+    private WorldCursorService? _worldCursorService;
 
     [Export] public float StartDistance { get; set; } = 50f;
 
@@ -60,6 +63,11 @@ public partial class FollowCamera : Camera3D
         }
     }
 
+    public override void _ExitTree()
+    {
+        _worldCursorService?.Release();
+    }
+
     public override void _Process(double delta)
     {
         _pose.Advance((float)delta);
@@ -68,14 +76,17 @@ public partial class FollowCamera : Camera3D
         {
             _pose.TrackFocus(_target.GlobalPosition.Y);
 
+            SetCameraCursor();
+
             Place();
         }
     }
 
-    public void Follow(Node3D target, InputGate inputGate)
+    public void Follow(Node3D target, InputGate inputGate, WorldCursorService worldCursorService)
     {
         _target = target;
         _inputGate = inputGate;
+        _worldCursorService = worldCursorService;
         _pose.PlaceFocus(target.GlobalPosition.Y);
 
         Place();
@@ -99,6 +110,18 @@ public partial class FollowCamera : Camera3D
     private static float ReadNotches(InputEvent received)
     {
         return received is InputEventMouseButton { Factor: > 0f } wheel ? wheel.Factor : 1f;
+    }
+
+    private void SetCameraCursor()
+    {
+        if (_inputGate!.IsActionPressed("camera_turn"))
+        {
+            _worldCursorService!.Hold(WorldCursor.Camera);
+        }
+        else
+        {
+            _worldCursorService!.Release();
+        }
     }
 
     private bool TrySteer(InputEvent received)

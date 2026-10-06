@@ -65,6 +65,13 @@ public partial class LoadingScreen : Panel
 
     [Export] public Label Tip { get; set; } = null!;
 
+    public override void _Ready()
+    {
+        VisibilityChanged += ShowBusyCursor;
+
+        ShowBusyCursor();
+    }
+
     public override void _Process(double delta)
     {
         if (!_isRunning)
@@ -189,6 +196,11 @@ public partial class LoadingScreen : Panel
     {
         label.Text = word.Text;
         label.ThemeTypeVariation = word.ThemeType;
+    }
+
+    private void ShowBusyCursor()
+    {
+        MouseDefaultCursorShape = Visible ? CursorShape.Busy : CursorShape.Arrow;
     }
 
     private void Open()

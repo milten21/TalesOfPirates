@@ -22,6 +22,8 @@ namespace Top.Conversion.Pipeline
 
         public string Maps => Path.Combine(_root, "map");
 
+        public string Cursors => Path.Combine(_root, "cursor");
+
         public string CharacterAction => Path.Combine(_root, "scripts", "txt", "CharacterAction.tx");
 
         public string Tips => Path.Combine(_root, "scripts", "txt", "tips.tx");

@@ -1,0 +1,24 @@
+{
+  "cursors": {
+    "normal": {"image":"cursors/normal.png","frame":[32,32],"hotspot":[0,0]},
+    "active": {"image":"cursors/active.png","frame":[32,32],"hotspot":[1,1]},
+    "click": {"image":"cursors/click.png","frame":[32,32],"hotspot":[1,1]},
+    "drag": {"image":"cursors/drag.png","frame":[32,32],"hotspot":[4,3]},
+    "vertical": {"image":"cursors/vertical.png","frame":[32,32],"hotspot":[0,0],"steps":[0,1],"ms":333},
+    "wait": {"image":"cursors/wait.png","frame":[32,32],"hotspot":[16,16],"ms":167},
+    "forbid": {"image":"cursors/forbid.png","frame":[32,32],"hotspot":[3,3]},
+    "attack": {"image":"cursors/attack.png","frame":[32,32],"hotspot":[0,0],"steps":[0,1],"ms":250},
+    "skill": {"image":"cursors/skill.png","frame":[32,32],"hotspot":[15,15],"steps":[0,1,2,1],"ms":167},
+    "land": {"image":"cursors/land.png","frame":[32,32],"hotspot":[14,16],"steps":[0,1],"ms":517},
+    "board": {"image":"cursors/board.png","frame":[32,32],"hotspot":[0,0],"steps":[0,1],"ms":350},
+    "pick": {"image":"cursors/pick.png","frame":[32,32],"hotspot":[0,0],"steps":[0,1],"ms":[267,283]},
+    "camera": {"image":"cursors/camera.png","frame":[32,32],"hotspot":[0,0]},
+    "chat": {"image":"cursors/chat.png","frame":[32,32],"hotspot":[0,0],"steps":[0,1,2,3,4,5],"ms":317},
+    "player": {"image":"cursors/player.png","frame":[32,32],"hotspot":[0,0],"steps":[0,0,1,1],"ms":167},
+    "hide": {"image":"cursors/hide.png","frame":[32,32],"hotspot":[0,0]},
+    "search": {"image":"cursors/search.png","frame":[32,32],"hotspot":[4,4],"steps":[0,1,2,3,4,5,6,0],"ms":[167,83,83,117,83,83,83,167]},
+    "block": {"image":"cursors/block.png","frame":[32,32],"hotspot":[1,8]},
+    "repair": {"image":"cursors/repair.png","frame":[32,32],"hotspot":[[9,20],[9,19],[9,19],[9,19]],"ms":[350,167,167,167]},
+    "feed": {"image":"cursors/feed.png","frame":[32,32],"hotspot":[3,3],"steps":[0,1],"ms":167}
+  }
+}

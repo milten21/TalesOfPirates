@@ -25,6 +25,7 @@ using Top.Client.Messages.Party.Events;
 using Top.Client.Messages.Play.Commands;
 using Top.Client.Messages.Play.Data;
 using Top.Client.Messages.Play.Events;
+using Top.Client.UI.Cursors;
 using Top.Contracts.Tables.Items;
 using Top.Contracts.Tables.World;
 using Top.Logging;
@@ -58,6 +59,8 @@ public partial class WorldScene : Node
     private SceneRouter _router = null!;
 
     private WorldPayload _payload = null!;
+
+    private WorldCursorService _worldCursorService = null!;
 
     private FloatingOrigin _floatingOrigin = null!;
 
@@ -94,13 +97,14 @@ public partial class WorldScene : Node
     public Walkability? Walkability => _walkability;
 
     public void Setup(Session session, IServerConnection connection, ServerContent content,
-        SceneRouter router, WorldPayload payload)
+        SceneRouter router, WorldPayload payload, WorldCursorService worldCursorService)
     {
         _session = session;
         _connection = connection;
         _content = content;
         _router = router;
         _payload = payload;
+        _worldCursorService = worldCursorService;
         _party = new PartyRoster(payload.EnteredMap.Character.WorldId);
         _inventory = new CharacterInventory(payload.EnteredMap);
     }
@@ -294,7 +298,7 @@ public partial class WorldScene : Node
         _walkability = walkability;
         _player = player;
 
-        Camera.Follow(player, _inputGate);
+        Camera.Follow(player, _inputGate, _worldCursorService);
 
         PlayerController.Setup(Camera, WorldRoot, Map.Grid, _predictedMotion, _inputGate);
 

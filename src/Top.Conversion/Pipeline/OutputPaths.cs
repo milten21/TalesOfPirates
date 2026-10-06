@@ -30,6 +30,10 @@ namespace Top.Conversion.Pipeline
 
         public static string MapContentPath(string name) => $"maps/{Lower(name)}.map";
 
+        public static string CursorContentPath(string key) => $"cursors/{Lower(key)}.png";
+
+        public string CursorMetadata => At("cursors.json");
+
         public string TextureDir(string kind) => Path.Combine(root, "textures", Lower(kind));
 
         public static string TextureContentPath(string kind, string fileName) =>

@@ -6,6 +6,7 @@ using Top.Client.Features.MainMenu.Servers;
 using Top.Client.Features.World;
 using Top.Client.Messages;
 using Top.Client.Tools;
+using Top.Client.UI.Cursors;
 using Top.Logging;
 
 namespace Top.Client.Core;
@@ -16,7 +17,8 @@ public class SceneRouter(
     ServerStore serverStore,
     Session session,
     IServerConnection connection,
-    ServerContent content)
+    ServerContent content,
+    WorldCursorService worldCursorService)
 {
     private const string ThemeRootGroup = "theme_root";
 
@@ -61,7 +63,8 @@ public class SceneRouter(
 
     public void GoToWorld(WorldPayload payload)
     {
-        GoTo<WorldScene>(WorldScenePath, scene => scene.Setup(session, connection, content, this, payload));
+        GoTo<WorldScene>(WorldScenePath,
+            scene => scene.Setup(session, connection, content, this, payload, worldCursorService));
     }
 
     public void LeaveServer()

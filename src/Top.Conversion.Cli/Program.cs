@@ -62,7 +62,7 @@ namespace Top.Conversion.Cli
 
                 try
                 {
-                    foreach (var result in Units(kind, pipeline, run))
+                    foreach (var result in pipeline.ConvertAll(kind, run))
                     {
                         run.Add(result);
                     }
@@ -86,20 +86,6 @@ namespace Top.Conversion.Cli
             }
 
             return runs;
-        }
-
-        private static IEnumerable<UnitResult> Units(string kind, ConversionPipeline pipeline,
-            IProgress<ConversionProgress> progress)
-        {
-            return kind switch
-            {
-                ContentKind.Character => pipeline.Characters.ConvertAll(progress),
-                ContentKind.Item => pipeline.Items.ConvertAll(progress),
-                ContentKind.Scene => pipeline.SceneObjects.ConvertAll(progress),
-                ContentKind.Table => pipeline.Tables.ConvertAll(progress),
-                ContentKind.Map => pipeline.Maps.ConvertAll(progress),
-                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-            };
         }
 
         private static int Report(IReadOnlyList<KindRun> runs)

@@ -10,6 +10,7 @@ using Top.Client.Messages.Events;
 using Top.Client.Tools.Debug;
 using Top.Client.Tools.Launch;
 using Top.Client.UI;
+using Top.Client.UI.Cursors;
 using Top.Logging;
 
 namespace Top.Client.Core;
@@ -38,6 +39,10 @@ public partial class App : Node
 
     private ProfileLauncher? _profileLauncher;
 
+    private CursorSkin _cursorSkin = null!;
+
+    private WorldCursorService _worldCursorService = null!;
+
     [Export] public string ThemeName { get; set; } = ThemePaths.DefaultName;
 
     public ServerContent Content { get; private set; } = null!;
@@ -63,8 +68,16 @@ public partial class App : Node
 
         _session = new Session();
 
+        _cursorSkin = new CursorSkin(ThemePaths.BaseFolder);
+
+        _cursorSkin.Reload();
+
+        _worldCursorService = new WorldCursorService(_cursorSkin);
+
+        _worldCursorService.Start(GetTree());
+
         _router = new SceneRouter(GetTree(), ThemeLibrary.Load(ThemeName), ServerStore, _session, _connection,
-            Content);
+            Content, _worldCursorService);
 
         _connectionWatch = new ConnectionWatch(_session, _router);
 

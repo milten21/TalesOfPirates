@@ -16,6 +16,7 @@ Do not change the reference code.
 | Writing, naming or reviewing any C#                            | `docs/agents/standards.md`       |
 | Adding or changing a legacy packet, its decoder or its encoder | `docs/agents/legacy-protocol.md` |
 | Checking client behaviour in the engine, the editor or live    | `docs/agents/testing.md`         |
+| Adding world hover, click interactions, NPC actions or UI drag | `docs/agents/cursors.md`         |
 
 ## Communication
 

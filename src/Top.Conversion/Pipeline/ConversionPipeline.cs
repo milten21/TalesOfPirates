@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
 using Top.Conversion.Textures;
 
 namespace Top.Conversion.Pipeline
@@ -27,6 +30,7 @@ namespace Top.Conversion.Pipeline
             Characters = new CharacterConverter(settings, tables, Rigs, Items, Models, translucency);
             Tables = new TableConverter(settings, tables);
             Maps = new MapConverter(settings, tables);
+            Cursors = new CursorConverter(settings);
         }
 
         public ConversionSettings Settings { get; }
@@ -46,5 +50,22 @@ namespace Top.Conversion.Pipeline
         public TableConverter Tables { get; }
 
         public MapConverter Maps { get; }
+
+        public CursorConverter Cursors { get; }
+
+        public IEnumerable<UnitResult> ConvertAll(string kind, IProgress<ConversionProgress> progress = null,
+            CancellationToken cancellation = default)
+        {
+            return kind switch
+            {
+                ContentKind.Character => Characters.ConvertAll(progress, cancellation),
+                ContentKind.Item => Items.ConvertAll(progress, cancellation),
+                ContentKind.Scene => SceneObjects.ConvertAll(progress, cancellation),
+                ContentKind.Table => Tables.ConvertAll(progress, cancellation),
+                ContentKind.Map => Maps.ConvertAll(progress, cancellation),
+                ContentKind.Cursor => Cursors.ConvertAll(progress, cancellation),
+                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+            };
+        }
     }
 }

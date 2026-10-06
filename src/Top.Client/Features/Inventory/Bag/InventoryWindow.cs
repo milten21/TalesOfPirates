@@ -408,6 +408,15 @@ public partial class InventoryWindow : PanelContainer
         LockIcon.Text = isLocked ? "lock" : "lock_open";
         LockCaption.Text = isLocked ? "Locked" : "Lock";
 
+        foreach (var cells in new[]
+                 { _bagCells, _temporaryBagCells, _leftColumnCells, _rightColumnCells, _companionCells })
+        {
+            foreach (var cell in cells)
+            {
+                cell.SetLocked(isLocked);
+            }
+        }
+
         UnlockForm.Visible = isLocked;
         UnlockForm.ShowWaiting(isUnlocking);
     }
@@ -911,7 +920,7 @@ public partial class InventoryWindow : PanelContainer
     {
         for (var index = 0; index < cells.Count; index++)
         {
-            cells[index].ShowLocked(index >= capacity);
+            cells[index].SetBlocked(index >= capacity);
             ShowItemIn(cells[index], items[index]);
         }
     }
@@ -1018,6 +1027,7 @@ public partial class InventoryWindow : PanelContainer
         if (received is InputEventMouseButton { ButtonIndex: MouseButton.Left } button)
         {
             _isDragging = button.Pressed;
+            TitleBar.MouseDefaultCursorShape = _isDragging ? CursorShape.Move : CursorShape.Arrow;
             TitleBar.AcceptEvent();
         }
         else if (received is InputEventMouseMotion motion && _isDragging)

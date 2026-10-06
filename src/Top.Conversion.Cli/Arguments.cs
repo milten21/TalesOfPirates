@@ -16,17 +16,15 @@ namespace Top.Conversion.Cli
 
         private const int WaterQuadTiles = 4;
 
-        private static readonly string[] EveryKind =
-        [
-            ContentKind.Character, ContentKind.Item, ContentKind.Scene, ContentKind.Table, ContentKind.Map
-        ];
-
         public static readonly string Usage = $"""
             usage: Top.Conversion.Cli [--source <dir>] [--out <dir>] [--kinds <list>] [--chunk-size <n>]
 
               --source <dir>    original client root, default {DefaultSource}
               --out <dir>       converted tree root, default {DefaultOutput}
-              --kinds <list>    comma separated, any of {string.Join(", ", EveryKind)}. Default all
+              --kinds <list>    comma separated, any of {string.Join(", ", ContentKind.All)}.
+                                default {string.Join(", ", ContentKind.Defaults)}. {ContentKind.Cursor} is
+                                opt-in: it runs only when named, with --out set to the client's base
+                                theme folder
               --chunk-size <n>  map chunk size in tiles, default {Pipeline.Maps.MapBuilder.DefaultChunkSize}
               --help, -h        this text
 
@@ -55,7 +53,7 @@ namespace Top.Conversion.Cli
         {
             var source = DefaultSource;
             var output = DefaultOutput;
-            IReadOnlyList<string> kinds = EveryKind;
+            var kinds = ContentKind.Defaults;
             var mapChunkSize = Pipeline.Maps.MapBuilder.DefaultChunkSize;
 
             arguments = null;
@@ -148,14 +146,14 @@ namespace Top.Conversion.Cli
                 return false;
             }
 
-            var unknown = named.FirstOrDefault(kind => !EveryKind.Contains(kind, StringComparer.Ordinal));
+            var unknown = named.FirstOrDefault(kind => !ContentKind.All.Contains(kind, StringComparer.Ordinal));
 
             if (unknown == null)
             {
                 return true;
             }
 
-            error = $"unknown kind '{unknown}', expected any of {string.Join(", ", EveryKind)}";
+            error = $"unknown kind '{unknown}', expected any of {string.Join(", ", ContentKind.All)}";
 
             return false;
         }

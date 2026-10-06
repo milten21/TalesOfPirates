@@ -4,6 +4,8 @@ public static class ThemePaths
 {
     public const string DefaultName = "Default";
 
+    public const string BaseFolder = Folder + DefaultName + "/";
+
     private const string Folder = "res://UI/Assets/";
 
     private const string Extension = ".tres";
